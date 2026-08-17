@@ -39,16 +39,22 @@ final class HIDDevice {
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         self.manager = manager
 
-        // Build matching dictionary — all four keys must match
-        let match: [[String: Any]] = [
+        // Build matching dictionaries — all four keys must match, for any
+        // one of the known vendor/product pairs
+        let match: [[String: Any]] = Deck.deviceIDs.map { ids in
             [
-                kIOHIDVendorIDKey as String:  Deck.vendorID,
-                kIOHIDProductIDKey as String: Deck.productID,
+                kIOHIDVendorIDKey as String:  ids.vendor,
+                kIOHIDProductIDKey as String: ids.product,
                 kIOHIDDeviceUsagePageKey as String: Deck.usagePage,
                 kIOHIDDeviceUsageKey as String: Deck.usage
             ]
-        ]
+        }
         IOHIDManagerSetDeviceMatchingMultiple(manager, match as CFArray)
+
+        let idList = Deck.deviceIDs
+            .map { String(format: "%04x:%04x", $0.vendor, $0.product) }
+            .joined(separator: ", ")
+        print("Waiting for deck (\(idList))...")
 
         // SAFETY: HIDDevice is created once in main.swift and lives for the
         // entire process. passUnretained is safe because `self` outlives the

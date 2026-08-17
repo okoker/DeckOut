@@ -3,8 +3,13 @@
 // MARK: - Device constants
 
 enum Deck {
-    static let vendorID: Int  = 0x5548
-    static let productID: Int = 0x1001
+    /// Known USB vendor/product ID pairs. These decks are rebadged clones and
+    /// not all of them enumerate under the same IDs, but they all speak CRT and
+    /// expose the same 0xFFA0/0x01 vendor HID interface with 1024-byte reports.
+    static let deviceIDs: [(vendor: Int, product: Int)] = [
+        (0x5548, 0x1001),   // TreasLin N3 / N3 Pro, Mirabox HSV602, DOPWii KKM-K3
+        (0x0300, 0x3002)    // AJAZZ AKP03 — enumerates as "HOTSPOTEKUSB HID DEMO"
+    ]
     static let usagePage: Int = 0xFFA0
     static let usage: Int     = 0x0001
     static let packetSize: Int = 1025   // 1 byte report ID + 1024 data

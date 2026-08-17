@@ -150,4 +150,8 @@ print("StreamDeckController running. SIGHUP to reload config, Ctrl+C to stop.")
 // Block on the run loop — IOKit HID reports only arrive while this is running
 CFRunLoopRun()
 
+// Release anything still held (e.g. a modifier chord) before exiting, or it
+// stays latched system-wide after the daemon is gone.
+dispatcher.shutdown()
+
 print("StreamDeckController stopped.")

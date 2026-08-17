@@ -45,6 +45,32 @@ final class ActionDispatcher {
         return combined
     }()
 
+    /// Modifier name -> (event flag, left-hand virtual keycode). The keycode is
+    /// needed because a flagsChanged event still names the physical key.
+    private static let modifierKeys: [String: (flag: CGEventFlags, keyCode: CGKeyCode)] = [
+        "cmd":     (.maskCommand,   0x37),
+        "command": (.maskCommand,   0x37),
+        "shift":   (.maskShift,     0x38),
+        "ctrl":    (.maskControl,   0x3B),
+        "control": (.maskControl,   0x3B),
+        "alt":     (.maskAlternate, 0x3A),
+        "opt":     (.maskAlternate, 0x3A),
+        "option":  (.maskAlternate, 0x3A)
+    ]
+
+    // MARK: - Held modifier chord state
+
+    private typealias Modifier = (flag: CGEventFlags, keyCode: CGKeyCode)
+
+    /// The button currently holding a bare modifier chord down, if any.
+    private var heldChord: (button: ButtonID, modifiers: [Modifier])?
+
+    /// Failsafe release. A dropped buttonRelease packet would otherwise leave
+    /// modifiers latched down system-wide, which is close to unrecoverable
+    /// without killing the daemon.
+    private var chordWatchdog: DispatchWorkItem?
+    private static let chordHoldLimit: TimeInterval = 30
+
     // MARK: - Init
 
     init(config: DeckConfig) {
@@ -58,13 +84,18 @@ final class ActionDispatcher {
         // Warn once if key: actions are configured but Input Monitoring is not granted
         let hasKeyActions = config.buttons.values.contains { $0.action.hasPrefix("key:") }
             || config.knobs.values.contains { $0.rotate.action.hasPrefix("key:") || $0.press.action.hasPrefix("key:") }
+        // CGEvent.post(tap:) needs Accessibility, not Input Monitoring — Input
+        // Monitoring gates *listening* to input, which this daemon never does.
         if hasKeyActions && !AXIsProcessTrusted() {
-            print("WARNING: key: actions configured but Input Monitoring not granted. Keyboard shortcuts will silently fail. Grant access in System Settings → Privacy & Security → Input Monitoring.")
+            print("WARNING: key: actions configured but Accessibility not granted. Keyboard shortcuts will silently fail. Grant access in System Settings → Privacy & Security → Accessibility.")
         }
     }
 
     /// Graceful teardown before replacement on config reload.
     func shutdown() {
+        // Must come first: a chord still held here would stay latched
+        // system-wide after this dispatcher is discarded.
+        releaseHeldModifiers()
         brightnessControl?.shutdown()
     }
 
@@ -80,9 +111,19 @@ final class ActionDispatcher {
                 print("Warning: no config for button \(id.configKey)")
                 return
             }
+            // A key: action naming only modifiers is held for as long as the
+            // deck button is held, rather than fired once on press.
+            if buttonConfig.action.hasPrefix("key:"),
+               let mods = Self.parseModifierOnly(String(buttonConfig.action.dropFirst("key:".count))) {
+                holdModifiers(mods, for: id)
+                return
+            }
             execute(action: buttonConfig.action, step: nil)
 
-        case .buttonRelease:
+        case .buttonRelease(let id):
+            if heldChord?.button == id {
+                releaseHeldModifiers()
+            }
             return
 
         // Knob rotation
@@ -264,5 +305,68 @@ final class ActionDispatcher {
 
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
+    }
+
+    // MARK: - Bare modifier chords (press-and-hold)
+
+    /// Returns the modifiers if `spec` names only modifiers ("ctrl+shift"),
+    /// or nil if it contains a real key and should be sent as a shortcut.
+    private static func parseModifierOnly(_ spec: String) -> [Modifier]? {
+        let parts = spec.lowercased().split(separator: "+").map(String.init)
+        guard !parts.isEmpty else { return nil }
+        var mods: [Modifier] = []
+        for part in parts {
+            guard let mod = modifierKeys[part] else { return nil }
+            mods.append(mod)
+        }
+        return mods
+    }
+
+    /// Posts a flagsChanged event carrying the modifier state after this change.
+    private func postFlagsChanged(keyCode: CGKeyCode, flags: CGEventFlags) {
+        guard let event = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true) else {
+            print("Warning: could not create flagsChanged event for keycode \(keyCode)")
+            return
+        }
+        event.type = .flagsChanged
+        event.flags = flags
+        event.post(tap: .cghidEventTap)
+    }
+
+    private func holdModifiers(_ modifiers: [Modifier], for button: ButtonID) {
+        // Never stack two chords — drop any previous hold first.
+        if heldChord != nil { releaseHeldModifiers() }
+
+        // Press one at a time, each event carrying the cumulative flags, the
+        // way real hardware reports a chord being built up.
+        var flags: CGEventFlags = []
+        for mod in modifiers {
+            flags.insert(mod.flag)
+            postFlagsChanged(keyCode: mod.keyCode, flags: flags)
+        }
+        heldChord = (button, modifiers)
+
+        let watchdog = DispatchWorkItem { [weak self] in
+            guard let self, self.heldChord != nil else { return }
+            print("Warning: modifier chord held past \(Int(Self.chordHoldLimit))s — releasing (missed button release?)")
+            self.releaseHeldModifiers()
+        }
+        chordWatchdog = watchdog
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.chordHoldLimit, execute: watchdog)
+    }
+
+    private func releaseHeldModifiers() {
+        chordWatchdog?.cancel()
+        chordWatchdog = nil
+        guard let held = heldChord else { return }
+        heldChord = nil
+
+        // Unwind in reverse, each event carrying what remains held.
+        var flags: CGEventFlags = []
+        for mod in held.modifiers { flags.insert(mod.flag) }
+        for mod in held.modifiers.reversed() {
+            flags.remove(mod.flag)
+            postFlagsChanged(keyCode: mod.keyCode, flags: flags)
+        }
     }
 }

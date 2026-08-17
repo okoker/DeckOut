@@ -1,5 +1,11 @@
 import AppKit
 import Foundation
+
+// Line-buffer stdout. When launchd redirects it to a log file it is block
+// buffered by default, so a long-running daemon that never exits appears to
+// write nothing at all.
+_ = setvbuf(stdout, nil, _IOLBF, 0)
+
 // MARK: - Config path resolution
 
 let homeDir = FileManager.default.homeDirectoryForCurrentUser.path

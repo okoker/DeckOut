@@ -4,10 +4,6 @@ import ImageIO
 
 enum ImageLoader {
 
-    // LCD viewport offset — calibrated empirically to center on physical LCD
-    private static let shiftX: CGFloat = -9
-    private static let shiftY: CGFloat = 8
-
     /// Load an image file (.icns, .png, .jpg) of any size or aspect ratio,
     /// auto-trim transparent padding, scale to fit, center, rotate 90° CW,
     /// encode as JPEG.
@@ -16,7 +12,13 @@ enum ImageLoader {
     /// decoding above this is wasted work.
     private static let maxSourceDimension = 1024
 
-    static func loadAsJPEG(path: String, size: Int = 85, quality: Double = 0.9) -> Data? {
+    static func loadAsJPEG(
+        path: String,
+        size: Int = LCDConfig.defaultSize,
+        shiftX: CGFloat = CGFloat(LCDConfig.defaultShiftX),
+        shiftY: CGFloat = CGFloat(LCDConfig.defaultShiftY),
+        quality: Double = 0.9
+    ) -> Data? {
         let url = URL(fileURLWithPath: path) as CFURL
         guard let source = CGImageSourceCreateWithURL(url, nil),
               CGImageSourceGetCount(source) > 0 else {

@@ -8,10 +8,12 @@ enum ImageLoader {
     private static let shiftX: CGFloat = -9
     private static let shiftY: CGFloat = 8
 
-    /// Load an image file (.icns, .png, .jpg), auto-trim transparent padding,
-    /// center in 90x90, rotate 90° CW, encode as JPEG.
-    /// Max source image dimension (pixels). Icons are rendered at 85x85 —
-    /// anything larger than 1024px is almost certainly not an icon.
+    /// Load an image file (.icns, .png, .jpg) of any size or aspect ratio,
+    /// auto-trim transparent padding, scale to fit, center, rotate 90° CW,
+    /// encode as JPEG.
+    /// Decode ceiling (pixels). Larger sources are downscaled while decoding
+    /// rather than rejected; the icon is rendered at 85x85 regardless, so
+    /// decoding above this is wasted work.
     private static let maxSourceDimension = 1024
 
     static func loadAsJPEG(path: String, size: Int = 85, quality: Double = 0.9) -> Data? {
@@ -22,16 +24,18 @@ enum ImageLoader {
             return nil
         }
 
-        // Check dimensions from metadata before full decode
-        if let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-           let pw = props[kCGImagePropertyPixelWidth] as? Int,
-           let ph = props[kCGImagePropertyPixelHeight] as? Int,
-           pw > maxSourceDimension || ph > maxSourceDimension {
-            print("Warning: image too large (\(pw)x\(ph), max \(maxSourceDimension)px) at \(path)")
-            return nil
-        }
-
-        guard let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+        // Downscale while decoding rather than rejecting oversized sources.
+        // ImageIO picks the best-matching representation in a multi-size
+        // .icns and resamples in one step, so a 1024px source costs no more
+        // than a small one.
+        let thumbnailOptions: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxSourceDimension
+        ]
+        let decoded = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions as CFDictionary)
+            ?? CGImageSourceCreateImageAtIndex(source, 0, nil)
+        guard let image = decoded else {
             print("Warning: could not decode image at \(path)")
             return nil
         }
@@ -64,10 +68,27 @@ enum ImageLoader {
         ctx.translateBy(x: CGFloat(size) + shiftX, y: shiftY)
         ctx.rotate(by: CGFloat.pi / 2)
 
-        // Center the trimmed icon with a small margin
+        // Center the trimmed icon with a small margin, preserving its aspect
+        // ratio. Drawing into a fixed square stretches anything that isn't
+        // already square, which most artwork other than .icns isn't; the
+        // unused axis stays black, matching the LCD background.
         let margin: CGFloat = 4
         let drawSize = CGFloat(size) - margin * 2
-        let drawRect = CGRect(x: margin, y: margin, width: drawSize, height: drawSize)
+        let srcWidth = CGFloat(cropped.width)
+        let srcHeight = CGFloat(cropped.height)
+        guard srcWidth > 0, srcHeight > 0 else {
+            print("Warning: image has zero dimension at \(path)")
+            return nil
+        }
+        let fitScale = min(drawSize / srcWidth, drawSize / srcHeight)
+        let fittedWidth = srcWidth * fitScale
+        let fittedHeight = srcHeight * fitScale
+        let drawRect = CGRect(
+            x: margin + (drawSize - fittedWidth) / 2,
+            y: margin + (drawSize - fittedHeight) / 2,
+            width: fittedWidth,
+            height: fittedHeight
+        )
 
         ctx.interpolationQuality = .high
 

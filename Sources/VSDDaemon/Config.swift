@@ -5,11 +5,31 @@ struct DisplayConfig: Codable {
     let serial: String          // AN Serial from `m1ddc display list detailed`
 }
 
+/// LCD geometry. These decks are rebadged clones and do not all share the
+/// same panel: values that centre the image on one model crop it on another.
+/// Defaults match the TreasLin N3; an AJAZZ AKP03 wants 72 with no shift.
+struct LCDConfig: Codable {
+    let size: Int?
+    let shiftX: Int?
+    let shiftY: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case size
+        case shiftX = "shift_x"
+        case shiftY = "shift_y"
+    }
+
+    static let defaultSize = 85
+    static let defaultShiftX = -9
+    static let defaultShiftY = 8
+}
+
 struct DeckConfig: Codable {
     let brightness: Int
     let buttons: [String: ButtonConfig]
     let knobs: [String: KnobConfig]
     let displays: [DisplayConfig]?
+    let lcd: LCDConfig?
 
     static func load(from path: String) -> DeckConfig? {
         let url = URL(fileURLWithPath: path)

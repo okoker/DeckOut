@@ -185,12 +185,46 @@ Keyboard shortcuts support modifiers `cmd`, `shift`, `ctrl`, `alt`/`opt` and key
   },
   "displays": [                  // optional, for monitor brightness
     { "name": "Left", "serial": "AN_SERIAL_FROM_M1DDC" }
-  ]
+  ],
+  "lcd": {                       // optional, LCD geometry — see below
+    "size": 85,
+    "shift_x": -9,
+    "shift_y": 8
+  }
 }
 ```
 
 Valid button keys: `lcd_1` through `lcd_6`, `btn_1` through `btn_3`.
 Valid knob keys: `big`, `small_1`, `small_2`. Each has `rotate` and `press` sub-actions.
+
+Icons may be `.icns`, `.png` or `.jpg`, at any size or aspect ratio. Larger
+images are downscaled, and non-square ones are fitted and centered rather than
+stretched, with the unused axis left black to match the LCD background.
+
+### LCD geometry
+
+The `lcd` section is optional and only matters if your icons look cropped or
+off-center. It controls the size icons are rendered at, and an offset applied
+to compensate for where the panel's visible area sits.
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `size` | `85` | Render size in pixels, before the panel crops to its viewport |
+| `shift_x` | `-9` | Horizontal viewport offset |
+| `shift_y` | `8` | Vertical viewport offset |
+
+The defaults suit the TreasLin N3. These decks are rebadged clones and do not
+all use the same panel — an **AJAZZ AKP03** wants the LCD's native size with no
+offset:
+
+```jsonc
+"lcd": { "size": 72, "shift_x": 0, "shift_y": 0 }
+```
+
+Symptoms of a mismatch: icons cropped unevenly, most visibly as rounded corners
+surviving on some sides of a key and cut flat on others. If yours look wrong,
+start from `{ "size": 72, "shift_x": 0, "shift_y": 0 }` and adjust the offsets
+until the image is centered.
 
 ## History
 

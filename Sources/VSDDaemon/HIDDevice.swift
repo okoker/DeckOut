@@ -137,7 +137,12 @@ final class HIDDevice {
         for (configKey, keyIndex) in lcdKeys {
             guard let buttonConfig = config.buttons[configKey],
                   let iconPath = buttonConfig.icon else { continue }
-            guard let jpegData = ImageLoader.loadAsJPEG(path: iconPath) else {
+            guard let jpegData = ImageLoader.loadAsJPEG(
+                path: iconPath,
+                size: config.lcd?.size ?? LCDConfig.defaultSize,
+                shiftX: CGFloat(config.lcd?.shiftX ?? LCDConfig.defaultShiftX),
+                shiftY: CGFloat(config.lcd?.shiftY ?? LCDConfig.defaultShiftY)
+            ) else {
                 print("Warning: failed to load icon for \(configKey): \(iconPath)")
                 continue
             }

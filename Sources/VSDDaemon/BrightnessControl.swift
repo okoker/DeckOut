@@ -137,7 +137,6 @@ final class BrightnessControl {
             }
         }
         connectedDisplays = connected
-        targetMode = .all
         cacheValid = true
     }
 

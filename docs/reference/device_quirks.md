@@ -69,5 +69,17 @@ Chrome's saved tab groups cannot be opened from command line, AppleScript, or ex
 ## Device Power Cycle
 If the device gets into a bad state (commands accepted but no events returned), unplug for 5-10 seconds to reset firmware. A quick replug may not be enough.
 
+## Replacing the Installed Binary
+Don't `cp` a new build over the installed binary in place. macOS caches code-signature data per file, so Apple's guidance is to replace a signed executable rather than modify it. Observed 02/11/2026: right after an in-place `cp`, commands reading the file were SIGKILLed. Copy to a temporary name in the same folder, then rename over the old file:
+
+```bash
+DIR=~/Library/Application\ Support/StreamDeckController
+cp .build/release/StreamDeckController "$DIR/StreamDeckController.new"
+mv -f "$DIR/StreamDeckController.new" "$DIR/StreamDeckController"
+launchctl kickstart -k gui/$(id -u)/com.streamdeck.controller
+```
+
+The first launch after a replacement can still be killed once (KI-008); launchd relaunches ~10 s later and it runs. Judge success by `launchctl print gui/$(id -u)/com.streamdeck.controller` (pid, runs) after ~15 s, not by the first crash report in `~/Library/Logs/DiagnosticReports/`.
+
 ## Config Key Mapping
 JSON config uses underscored keys (lcd_1, btn_1, small_1) but Swift enum rawValues are camelCase (lcd1, btn1, small1). The `configKey` computed property on ButtonID/KnobID handles this mapping. Do not use `rawValue` for config lookups.

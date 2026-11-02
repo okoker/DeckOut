@@ -149,6 +149,11 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.streamdeck.controlle
 
 # View logs
 tail -f ~/Library/Logs/StreamDeckController.log
+
+# Update after rebuilding — copy then rename; don't overwrite the installed binary in place
+cp .build/release/StreamDeckController ~/Library/Application\ Support/StreamDeckController/StreamDeckController.new
+mv -f ~/Library/Application\ Support/StreamDeckController/StreamDeckController.new ~/Library/Application\ Support/StreamDeckController/StreamDeckController
+launchctl kickstart -k gui/$(id -u)/com.streamdeck.controller
 ```
 
 ## Action types

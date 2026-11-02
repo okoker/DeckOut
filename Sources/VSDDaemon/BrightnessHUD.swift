@@ -48,6 +48,7 @@ final class BrightnessHUD {
             styleMask: .borderless,
             backing: .buffered,
             defer: false)
+        win.isReleasedWhenClosed = false
         win.level = .floating
         win.backgroundColor = NSColor.black.withAlphaComponent(0.80)
         win.isOpaque = false

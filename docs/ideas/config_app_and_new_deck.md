@@ -1,0 +1,23 @@
+# Config App + Second Deck
+
+Idea, noted 02/11/2026. Trigger: the arrival of a second, more capable stream deck.
+
+## What
+- Turn the daemon into a macOS app with a UI for assigning buttons and knobs (today: hand-edited `~/.config/vsd/config.json`).
+- Support the new deck (model TBD) alongside or instead of the TreasLin N3.
+
+## Leaning
+- **Distribution: direct, not the App Store.** The App Store sandbox blocks what makes the tool useful: `shell:` actions (arbitrary commands), spawning `m1ddc` for monitor brightness, and osascript automation of other apps. Direct distribution = Developer ID signed + notarized.
+- **Signing waits for the app.** The current ad-hoc binary shows "Item from unidentified developer" in Login Items — accepted until then. A Developer-ID-signed app shows the certificate's name there and keeps macOS permissions across updates (ad-hoc builds lose them on every rebuild).
+- Keep signing identity names out of the repo; configure them locally.
+
+## What changes
+- `REQUIREMENTS.md` Non-Goals "No GUI" and "No multi-deck support" flip.
+- Device-specific (new deck likely needs its own): `Protocol.swift`, `HIDDevice.swift` (CRT packets, init order, keepalive), `ImageLoader.swift` (85x85 JPEG, rotation, LCD offsets).
+- Likely reusable: `Config.swift`, `ActionDispatcher.swift`, `VolumeControl.swift`, `BrightnessControl.swift`, `BrightnessHUD.swift`.
+
+## Open questions
+- Which deck, and is its protocol documented or does it need reverse-engineering like the N3?
+- One app, or a background daemon plus a separate settings app?
+- Login item: register the agent from inside the app bundle (`SMAppService`, macOS 13+) instead of a hand-installed LaunchAgent plist?
+- Config format: keep the current JSON (so existing configs carry over) or migrate?

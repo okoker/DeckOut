@@ -38,7 +38,7 @@ The device requires a CRT CONNECT packet every 5-10 seconds or it stops respondi
 - Rotation events: state is always 0x00, direction encoded in event code (even=CCW, odd=CW)
 
 ## AppKit Import Does NOT Break IOKit
-Importing AppKit (for NSEvent media key simulation) does NOT interfere with IOKit HID communication. Earlier we thought it did — the actual issue was the init sequence order change and malformed BAT image packets happening at the same time.
+Importing AppKit (used for the brightness HUD windows) does NOT interfere with IOKit HID communication. Earlier we thought it did — the actual issue was the init sequence order change and malformed BAT image packets happening at the same time.
 
 ## BAT Image Protocol — Working
 LCD key images are sent via CRT BAT. Sequence: BAT header (with JPEG length + 1-indexed key ID) → raw JPEG data in 1024-byte chunks → STP to commit. Protocol sourced from `4ndv/mirajazz` Rust library (same VID/PID).
@@ -55,7 +55,7 @@ LCD key images are sent via CRT BAT. Sequence: BAT header (with JPEG length + 1-
 - Previous corruption was caused by the sendPacket report-ID stripping bug, not the BAT protocol itself.
 
 ## osascript Blocks CFRunLoop
-Do NOT call osascript (Process with waitUntilExit) on the main thread — it blocks the CFRunLoop and freezes all HID event delivery. Either use a background DispatchQueue or (better) avoid osascript entirely. For volume control, use NSEvent media key simulation instead.
+Do NOT call osascript (Process with waitUntilExit) on the main thread — it blocks the CFRunLoop and freezes all HID event delivery. Either use a background DispatchQueue or (better) avoid osascript entirely. For volume control, use CoreAudio (see below).
 
 ## Volume Control — Use CoreAudio API
 Three approaches tried, in order:

@@ -51,6 +51,13 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-044 | `SystemLoadTests/memoryColourFollowsPressureLevel` | Memory colour follows macOS's pressure level (1/2/4 → green/amber/red), not the % |
 | T-045 | `SystemLoadTests/systemReadingsWorkOnThisMac` | The host call and both sysctl names really read on this Mac (a typo would show "–" forever) |
 | T-046 | `SystemLoadTests/loadRendersWithMissingFigures` | The load block renders with either or both figures missing |
+| T-047 | `LatencyProbeTests/trendFollowsThreshold` | The arrow shows only for a change of at least `arrow_ms` (rise ▲, fall ▼); none on the first reading |
+| T-048 | `LatencyProbeTests/echoRequestLayoutAndChecksum` | The echo request bytes, checked against a hand-computed checksum |
+| T-049 | `LatencyProbeTests/echoRequestChecksumFoldsToAllOnes` | The checksum is valid for any identifier and sequence |
+| T-050 | `LatencyProbeTests/replyMatchesWithOrWithoutIPHeader` | Our echo reply is recognised whether or not macOS includes the IPv4 header |
+| T-051 | `LatencyProbeTests/replyForSomeoneElseDoesNotMatch` | Replies to other identifiers or sequences, requests, and truncated packets are ignored (every ICMP socket sees every reply) |
+| T-052 | `LatencyProbeTests/internetRendersAllStates` | The internet block renders rising, falling, steady, no reading yet, and no reply |
+| T-053 | `LatencyProbeTests/failedBlockIsRed` | No reply turns the whole block red; a normal reading keeps a black background |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

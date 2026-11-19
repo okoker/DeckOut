@@ -18,6 +18,19 @@ public final class Daemon {
     private var cpuTicks: CPUTicks?
     private var loadReading: LoadReading?
 
+    private var latencyProbe: LatencyProbe?
+    private var latencyInFlightSince: Date?
+    private var latencyPrevious: Double?
+    private var internetReading: InternetReading?
+
+    private struct InternetReading: Equatable {
+        let ms: Double?
+        let trend: Trend
+        let failed: Bool
+        /// What the block shows; two readings that look the same don't redraw.
+        var shown: String { failed ? "failed" : "\(ms.map(StripRenderer.latencyFigure) ?? "–") \(trend)" }
+    }
+
     private struct LoadReading: Equatable {
         let cpu: Int?
         let mem: Int?
@@ -60,6 +73,7 @@ public final class Daemon {
     private func tick() {
         decks.connections.forEach { $0.keepalive() }
         if loadActive { sampleLoad() }
+        if latencyProbe != nil { measureLatency() }
     }
 
     // MARK: - Decks
@@ -134,6 +148,63 @@ public final class Daemon {
             cpuTicks = nil
             loadReading = nil
         }
+
+        if shown.contains(.internet), let block = internetBlock() {
+            if latencyProbe?.host != block.host || latencyProbe?.timeout != block.timeoutS {
+                latencyProbe = LatencyProbe(host: block.host, timeout: block.timeoutS)
+                latencyInFlightSince = nil
+                latencyPrevious = nil
+                internetReading = nil
+                measureLatency()
+            }
+        } else if latencyProbe != nil {
+            latencyProbe = nil
+            latencyInFlightSince = nil
+            latencyPrevious = nil
+            internetReading = nil
+        }
+    }
+
+    /// The settings of the (first) internet block; every internet block shows the same reading.
+    private func internetBlock() -> StripBlockConfig? {
+        config.n4?.strip.sorted(by: { $0.key < $1.key }).first(where: { $0.value.type == .internet })?.value
+    }
+
+    /// Starts one latency reading, unless one is still running. A lookup can hang far past the echo
+    /// timeout when DNS is down: then the block turns red now instead of waiting for it.
+    private func measureLatency() {
+        guard let probe = latencyProbe else { return }
+        if let since = latencyInFlightSince {
+            if Date().timeIntervalSince(since) > probe.timeout { showLatency(nil, stillRunning: true) }
+            return
+        }
+        latencyInFlightSince = Date()
+        probe.measure { [weak self] ms in
+            guard let self, self.latencyProbe === probe else { return }   // probe replaced or stopped
+            self.latencyInFlightSince = nil
+            self.showLatency(ms)
+        }
+    }
+
+    private func showLatency(_ ms: Double?, stillRunning: Bool = false) {
+        let reading: InternetReading
+        if let ms {
+            let threshold = internetBlock()?.arrowMs ?? 2
+            reading = InternetReading(ms: ms, trend: Trend.from(previous: latencyPrevious, current: ms, thresholdMs: threshold),
+                                      failed: false)
+        } else {
+            reading = InternetReading(ms: nil, trend: .none, failed: true)
+        }
+        latencyPrevious = ms
+        if internetReading == nil || internetReading?.failed != reading.failed {
+            let host = latencyProbe?.host ?? "?"
+            print(reading.failed
+                  ? "Internet: no reply from \(host)\(stillRunning ? " (lookup or echo still running)" : "")"
+                  : "Internet: \(host) answers in \(StripRenderer.latencyFigure(ms ?? 0)) ms")
+        }
+        let changed = internetReading?.shown != reading.shown
+        internetReading = reading
+        if changed { redrawLive(.internet) }
     }
 
     /// One load reading; redraws the load blocks only when a figure changed.
@@ -157,7 +228,10 @@ public final class Daemon {
         case .load:
             let r = loadReading ?? LoadReading(cpu: nil, mem: SystemLoad.memoryPercent(), memLevel: SystemLoad.pressureLevel())
             return StripRenderer.load(cpu: r.cpu, mem: r.mem, memLevel: r.memLevel)
-        case .internet, .picture, .empty:
+        case .internet:
+            let r = internetReading
+            return StripRenderer.internet(ms: r?.ms, trend: r?.trend ?? .none, failed: r?.failed ?? false)
+        case .picture, .empty:
             return nil
         }
     }

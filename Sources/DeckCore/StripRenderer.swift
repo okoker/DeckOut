@@ -117,4 +117,49 @@ enum StripRenderer {
             }
         } ?? blank()
     }
+
+    // MARK: - Internet
+
+    /// How a latency shows: one decimal below 10 ms, whole ms above.
+    static func latencyFigure(_ ms: Double) -> String {
+        ms < 10 ? String(format: "%.1f", ms) : "\(Int(ms.rounded()))"
+    }
+
+    /// Latency in ms with a big arrow behind it (red ▲ rose, green ▼ fell). No reply: the whole block red.
+    static func internet(ms: Double?, trend: Trend, failed: Bool) -> Data {
+        Canvas.jpeg(width: width, height: height) { ctx in
+            let white = Canvas.color(0xFFFFFF)
+            if failed {
+                ctx.setFillColor(Canvas.color(0xD32F2F))
+                ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+                Canvas.drawText("NO REPLY", in: ctx, center: CGPoint(x: 88, y: 62),
+                                font: Canvas.font(size: 22, weight: .heavy), color: white)
+                Canvas.drawText("PING", in: ctx, center: CGPoint(x: 88, y: 18),
+                                font: Canvas.font(size: 12, weight: .semibold), color: white)
+                return
+            }
+            if trend != .none {
+                let up = trend == .up
+                let (apex, base): (CGFloat, CGFloat) = up ? (106, 8) : (6, 104)
+                ctx.setFillColor(up ? Canvas.color(0xFF453A) : Canvas.color(0x30D158))
+                ctx.setAlpha(0.45)
+                ctx.move(to: CGPoint(x: 88, y: apex))
+                ctx.addLine(to: CGPoint(x: 26, y: base))
+                ctx.addLine(to: CGPoint(x: 150, y: base))
+                ctx.closePath()
+                ctx.fillPath()
+                ctx.setAlpha(1)
+            }
+            if let ms {
+                let figure = latencyFigure(ms)
+                Canvas.drawText([(figure, Canvas.font(size: 38, weight: .bold), textColor),
+                                 ("ms", Canvas.font(size: 15, weight: .semibold), dimText)],
+                                in: ctx, center: CGPoint(x: 88, y: 60))
+            } else {
+                Canvas.drawText("–", in: ctx, center: CGPoint(x: 88, y: 60), font: Canvas.font(size: 38), color: dimText)
+            }
+            Canvas.drawText("PING", in: ctx, center: CGPoint(x: 88, y: 18),
+                            font: Canvas.font(size: 12, weight: .semibold), color: dimText)
+        } ?? blank()
+    }
 }

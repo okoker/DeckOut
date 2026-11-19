@@ -22,6 +22,18 @@ public enum ConfigFile {
         }
     }
 
+    /// Why a config wasn't written.
+    public enum SaveError: Error, Equatable, CustomStringConvertible {
+        /// What would be written doesn't load back (the agent would refuse it): the file is left as it was.
+        case wouldNotLoad(String)
+
+        public var description: String {
+            switch self {
+            case .wouldNotLoad(let reason): return "Not saved: the result wouldn't load (\(reason))"
+            }
+        }
+    }
+
     /// Where to look, in order, when `--config` isn't given.
     public static func candidates(home: String, execDir: String) -> [String] {
         [home + "/.config/vsd/config.json", execDir + "/config.json"]
@@ -86,6 +98,7 @@ public enum ConfigFile {
 
     /// Writes `config` to `path` atomically at mode 0600, creating the folder (0700) if needed. Before the first
     /// save over an existing file, copies that file to `<path>.before-app` (once; later saves leave it alone).
+    /// Throws `SaveError.wouldNotLoad`, writing nothing, when the encoded config wouldn't load back.
     public static func save(_ config: AppConfig, to path: String) throws {
         let url = URL(fileURLWithPath: path)
         let folder = url.deletingLastPathComponent().path
@@ -94,6 +107,14 @@ public enum ConfigFile {
                                                     attributes: [.posixPermissions: 0o700])
         }
         let data = try config.encoded()
+        // Only write what loads back and re-encodes to the same bytes: the agent reads it as written.
+        do {
+            guard try AppConfig.parse(data).encoded() == data else { throw SaveError.wouldNotLoad("it reads back differently") }
+        } catch let error as SaveError {
+            throw error
+        } catch {
+            throw SaveError.wouldNotLoad(describe(error))
+        }
 
         var st = stat()
         let backup = path + ".before-app"

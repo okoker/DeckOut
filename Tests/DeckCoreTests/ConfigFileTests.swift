@@ -102,3 +102,15 @@ private let sample = AppConfig(
     #expect(resolve(["deck"], existing: []) == homeConfig)
     #expect(resolve(["deck", "--config"], existing: [homeConfig]) == nil)
 }
+
+@Test func saveRefusesWhatDoesNotRoundTrip() throws {               // T-119
+    // A config the agent would refuse to load (zoom outside 1…10) is never written: the file stays as it was.
+    let folder = try freshFolder()
+    let path = folder + "/config.json"
+    try ConfigFile.save(sample, to: path)
+    var bad = sample
+    bad.n4?.lockPhoto = LockPhotoConfig(path: "/p.jpg", zoom: 20)
+    #expect(throws: ConfigFile.SaveError.self) { try ConfigFile.save(bad, to: path) }
+    #expect(try ConfigFile.load(at: path).get() == sample)
+    #expect(try FileManager.default.contentsOfDirectory(atPath: folder).sorted() == ["config.json"])
+}

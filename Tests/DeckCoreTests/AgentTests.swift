@@ -88,7 +88,7 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
     nonisolated(unsafe) var exited = false
     let agent = Agent(configPath: path, environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]),
                       exit: { exited = true })
-    await onMain { (done: @escaping (Bool) -> Void) in agent.restart(); done(true) }
+    _ = await onMain { (done: @escaping (Bool) -> Void) in agent.restart(); done(true) }
     #expect(!exited)    // not at once: the reply must get out first
     try? await Task.sleep(nanoseconds: 600_000_000)
     #expect(exited)

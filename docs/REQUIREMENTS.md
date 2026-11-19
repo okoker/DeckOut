@@ -259,7 +259,9 @@ How it works: `docs/reference/app.md`. Contracts:
 - Talks to the agent only over XPC, each side checking the other's code signature; restarts an agent of another
   build once per launch
 - The app's "running" indicator comes from the agent's `status`, never from `SMAppService.status`
-- Editing (plan 3) and the rest of the design's phases are not built yet: until then the config is set by hand
+- Every change in the app is saved whole and atomically, then the agent is asked to reload; undo puts back the whole
+  previous config. A config that wouldn't load back is never written. A hand edit made while the app is open is built
+  on, not overwritten; a hand edit that doesn't load is never saved over
 
 ## Non-Goals (for now)
 - No CLI config tool

@@ -63,6 +63,15 @@ Three approaches tried, in order:
 2. **NSEvent media key simulation** — works + shows HUD, but requires Accessibility permission. macOS TCC invalidates trust on every binary replacement (CDHash changes), causing silent failure after every reinstall. Rejected.
 3. **CoreAudio `kAudioDevicePropertyVolumeScalar`** — direct API, no permissions needed, survives binary replacement. No HUD overlay but reliable. Set on all channels (master/left/right) for compatibility. This is what we use.
 
+## Media Keys (`media_play_pause`, `media_next`, `media_previous`)
+Posted as `NSEvent` system-defined events (subtype 8, key down then up) to the HID tap, `MediaKeys.swift`. Like
+`key:`, they need Accessibility; a dev build run from a terminal uses the terminal's grant.
+- **Play / pause (code 16):** checked on the device 19/11/2026: plays and pauses a video in QuickTime Player.
+- **Next / previous (19 / 20, `NX_KEYTYPE_FAST` / `REWIND`, what an Apple keyboard's F9 / F7 send):** not yet
+  checked. No track player was at hand. If they don't skip tracks in Music, try 17 / 18 (`NX_KEYTYPE_NEXT` /
+  `PREVIOUS`).
+- Only apps that take the Mac's media keys react: Avaz Player ignores them, the keyboard's own F8 included.
+
 ## Chrome Tab Groups — Not Accessible via CLI
 Chrome's saved tab groups cannot be opened from command line, AppleScript, or extensions. This is an intentional Chrome limitation. Best you can do is `open -a "Google Chrome"` to bring it to front.
 

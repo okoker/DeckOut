@@ -39,43 +39,66 @@ One JSON file: `~/.config/vsd/config.json`, or `config.json` next to the executa
 `SIGHUP` or the reload notification (`--post-reload`); a reload that fails the security checks or doesn't parse keeps the previous config.
 
 ### Structure
-Shared settings at the top; one section per deck under `decks`. Full example: `config.example.json`.
+Shared settings at the top; one section per deck under `decks`. Each deck holds its presets (the keys, and on the
+N4 the strip) and names the live one in `active_preset`; knobs, brightness, the swipe and the lock photo belong to the
+deck. Full example: `config.example.json`.
 ```json
 {
   "displays": [ { "name": "Left", "serial": "AN_SERIAL_FROM_M1DDC" } ],
   "decks": {
     "n3": {
       "brightness": 50,
-      "buttons": { "lcd_1": { "action": "shell:open -a Safari", "icon": "/Applications/Safari.app/Contents/Resources/AppIcon.icns" } },
-      "knobs": { "big": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } }
+      "knobs": { "big": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } },
+      "presets": [
+        { "name": "Default",
+          "buttons": { "lcd_1": { "action": "shell:open -a Safari", "icon": "/Applications/Safari.app/Contents/Resources/AppIcon.icns" } } }
+      ],
+      "active_preset": "Default"
     },
     "n4": {
       "brightness": 50,
-      "keys":  { "key_1": { "action": "shell:open -a Notes", "icon": "/path/to/icon.icns" } },
       "knobs": { "knob_1": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } },
-      "strip": {
-        "1": { "type": "internet", "host": "one.one.one.one", "arrow_ms": 2, "timeout_s": 3, "action": "shell:…" },
-        "2": { "type": "load", "action": "shell:open -a 'Activity Monitor'" },
-        "3": { "type": "empty" },
-        "4": { "type": "volume" }
-      },
       "swipe": { "action": "none" },
-      "lock_photo": "/path/to/photo.jpg"
+      "lock_photo": "/path/to/photo.jpg",
+      "presets": [
+        { "name": "Work",
+          "keys":  { "key_1": { "action": "shell:open -a Notes", "icon": "/path/to/icon.icns" },
+                     "key_2": { "action": "system_volume", "step": -5 } },
+          "strip": {
+            "1": { "type": "internet", "host": "one.one.one.one", "arrow_ms": 2, "timeout_s": 3, "action": "shell:…" },
+            "2": { "type": "load", "action": "shell:open -a 'Activity Monitor'" },
+            "3": { "type": "empty" },
+            "4": { "type": "volume" }
+          } },
+        { "name": "Music", "keys": { "key_1": { "action": "shell:open -a Music" } }, "strip": {} }
+      ],
+      "active_preset": "Work"
     }
   }
 }
 ```
-- **N3:** buttons `lcd_1`–`lcd_6`, `btn_1`–`btn_3`; knobs `big`, `small_1`, `small_2`. `brightness`, `buttons` and
+- **N3:** buttons `lcd_1`–`lcd_6`, `btn_1`–`btn_3` (per preset); knobs `big`, `small_1`, `small_2`. `brightness` and
   `knobs` are required.
-- **N4:** keys `key_1`–`key_5` (top row, left → right), `key_6`–`key_10` (bottom row); knobs `knob_1`–`knob_4` left →
-  right; strip blocks `"1"`–`"4"` left → right. `brightness` is required; `keys`, `knobs`, `strip`, `swipe` and
-  `lock_photo` may be left out.
+- **N4:** keys `key_1`–`key_5` (top row, left → right), `key_6`–`key_10` (bottom row) and strip blocks `"1"`–`"4"` left
+  → right (per preset); knobs `knob_1`–`knob_4` left → right. `brightness` is required; `knobs`, `swipe` and
+  `lock_photo` may be left out, and a preset may leave out `keys` and `strip`.
+- **Presets:** at least one, each with a name; an empty name or two presets with the same name make the file invalid.
+  `active_preset` names the live one; a name no preset has falls back to the first, with a log line. The load
+  summary prints `Preset: Work (2 presets)` per deck.
+- **Steps on presses:** a key, knob press, strip block or swipe may carry a signed `step` (`5` up, `-5` down) for the
+  stepped actions (`system_volume`, `display_brightness`, `zr7_volume`). A knob turn's step is its `rotate.step`
+  (default 1) times the turn's direction.
 - **Strip block `type`:** `internet` (`host`, default `one.one.one.one`; `arrow_ms`, default 2, 0 or more; `timeout_s`, default 3, 0.1–60 — out-of-range numbers are refused at load),
   `load`, `volume`, `picture` (shows `icon`), `empty`. A tap runs the block's `action`. An unknown type makes the whole
   file invalid.
 - **`swipe.action`:** one action for a swipe on the strip. **`lock_photo`:** shown across the N4 while the Mac is locked.
-- **Old format still loads:** a file with no `decks` key is read as the N3 section — top-level `brightness`, `buttons`,
-  `knobs` (the v1.0.0 layout). When `decks` is present, top-level `brightness`/`buttons`/`knobs` are ignored.
+- **Older files still load:** a deck section without `presets` reads as one preset named "Default", made from its
+  `buttons` (N3, then required) or `keys` + `strip` (N4). A file with no `decks` key is read as the N3 section —
+  top-level `brightness`, `buttons`, `knobs` (the v1.0.0 layout). When `decks` is present, top-level
+  `brightness`/`buttons`/`knobs` are ignored.
+- **Written form:** the daemon library writes the file pretty-printed with sorted keys, always in the `decks` form
+  with `presets` and `active_preset`, and only keys it knows; `host`, `arrow_ms` and `timeout_s` only for `internet`
+  blocks.
 
 ## Actions
 
@@ -168,5 +191,5 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - No GUI
 - No CLI config tool
 - Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController`) or `StreamDeckController --post-reload`
-- No pages or scenes: one layout per deck model
+- No switching presets from the deck itself: the live preset is the config's `active_preset`
 - No Windows/Linux support

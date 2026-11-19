@@ -128,3 +128,130 @@ private func parse(_ json: String) throws -> AppConfig {
     #expect(ok.n4?.strip["1"]?.timeoutS == 0.5)
     #expect(ok.n4?.strip["1"]?.arrowMs == 0)
 }
+
+// MARK: - Presets and encoding
+
+private func fixture(_ name: String) throws -> Data {
+    try Data(contentsOf: repoRoot.appendingPathComponent(name))
+}
+
+private let presetsConfig = """
+{
+  "displays": [ { "name": "Left", "serial": "S1" }, { "name": "Right", "serial": "S2" } ],
+  "decks": {
+    "n3": {
+      "brightness": 40,
+      "knobs": { "big": { "rotate": { "action": "system_volume", "step": 5 },
+                          "press":  { "action": "system_mute_toggle", "step": -2 } } },
+      "presets": [
+        { "name": "Work",  "buttons": { "lcd_1": { "action": "system_volume", "icon": "/i/a.png", "step": 5 } } },
+        { "name": "Music", "buttons": { "lcd_1": { "action": "shell:open -a Music" } } }
+      ],
+      "active_preset": "Music"
+    },
+    "n4": {
+      "brightness": 60,
+      "knobs": { "knob_1": { "rotate": { "action": "display_brightness", "step": 5 },
+                             "press":  { "action": "display_brightness_cycle" } } },
+      "swipe": { "action": "system_volume", "step": -5 },
+      "lock_photo": "/tmp/photo.jpg",
+      "presets": [
+        { "name": "Work",
+          "keys": { "key_1": { "action": "shell:open -a Notes", "icon": "/i/notes.icns" },
+                    "key_2": { "action": "system_volume", "step": -5 } },
+          "strip": { "1": { "type": "internet", "host": "example.net", "arrow_ms": 4, "timeout_s": 5,
+                            "action": "shell:open -a Terminal", "step": 3 },
+                     "2": { "type": "picture", "icon": "/i/pic.png" },
+                     "3": { "type": "empty" } } },
+        { "name": "Music",
+          "keys": { "key_1": { "action": "shell:open -a Music" } },
+          "strip": { "1": { "type": "volume", "action": "system_mute_toggle" } } }
+      ],
+      "active_preset": "Music"
+    }
+  }
+}
+"""
+
+@Test func roundTripKeepsEveryField() throws {                      // T-063
+    let original = try parse(presetsConfig)
+    let again = try AppConfig.parse(try original.encoded())
+    #expect(again == original)
+    #expect(again.n4?.presets.count == 2)
+    #expect(again.n3?.presets.count == 2)
+}
+
+@Test func oldFilesReadAsOneDefaultPreset() throws {                // T-064
+    let v1 = try AppConfig.parse(try fixture("Tests/DeckCoreTests/Fixtures/config-v1.0.0.json"))
+    let decks = try AppConfig.parse(try fixture("config.example.json"))
+    for config in [v1, decks] {
+        let n3 = try #require(config.n3)
+        #expect(n3.presets.map(\.name) == ["Default"])
+        #expect(n3.activePreset == "Default")
+        #expect(n3.buttons.count == 9)
+        #expect(n3.buttons["lcd_4"]?.action == "key:cmd+space")
+    }
+    let n4 = try #require(decks.n4)
+    #expect(n4.presets.map(\.name) == ["Default"])
+    #expect(n4.activePreset == "Default")
+    #expect(n4.keys.count == 3)
+    #expect(n4.strip.count == 4)
+}
+
+@Test func activePresetPicksKeysAndStrip() throws {                 // T-065
+    let c = try parse(presetsConfig)
+    let n4 = try #require(c.n4)
+    #expect(n4.keys["key_1"]?.action == "shell:open -a Music")
+    #expect(n4.keys["key_2"] == nil)
+    #expect(n4.strip["1"]?.type == .volume)
+    #expect(c.n3?.buttons["lcd_1"]?.action == "shell:open -a Music")
+    #expect(ActionResolver.resolve(.keyDown("key_1"), deck: .n4, config: c)
+            == ResolvedAction(action: "shell:open -a Music", step: nil))
+    #expect(ActionResolver.resolve(.stripTap("1"), deck: .n4, config: c)
+            == ResolvedAction(action: "system_mute_toggle", step: nil))
+}
+
+@Test func unknownActivePresetFallsBackToFirst() throws {           // T-066
+    let c = try parse(presetsConfig.replacingOccurrences(of: #""active_preset": "Music""#, with: #""active_preset": "Gone""#))
+    #expect(c.n4?.activePreset == "Gone")
+    #expect(c.n4?.keys["key_1"]?.action == "shell:open -a Notes")     // Work, the first
+    #expect(c.n4?.strip["1"]?.type == .internet)
+    #expect(c.n3?.buttons["lcd_1"]?.action == "system_volume")
+}
+
+@Test func duplicateOrEmptyPresetNamesAreRefused() {                // T-067
+    for presets in [#"[{"name":"A"},{"name":"A"}]"#, #"[{"name":""}]"#, "[]"] {
+        #expect(throws: (any Error).self, "n4 \(presets)") {
+            try parse(#"{ "decks": { "n4": { "brightness": 50, "presets": "# + presets + " } } }")
+        }
+        #expect(throws: (any Error).self, "n3 \(presets)") {
+            try parse(#"{ "decks": { "n3": { "brightness": 50, "knobs": {}, "presets": "# + presets + " } } }")
+        }
+    }
+}
+
+@Test func encodedFileUsesTheDecksFormat() throws {                 // T-068
+    let v1 = try AppConfig.parse(try fixture("Tests/DeckCoreTests/Fixtures/config-v1.0.0.json"))
+    let object = try #require(try JSONSerialization.jsonObject(with: try v1.encoded()) as? [String: Any])
+    #expect(object["buttons"] == nil)
+    #expect(object["brightness"] == nil)
+    #expect(object["knobs"] == nil)
+    let n3 = try #require((object["decks"] as? [String: Any])?["n3"] as? [String: Any])
+    let presets = try #require(n3["presets"] as? [[String: Any]])
+    #expect(presets.first?["name"] as? String == "Default")
+    #expect(n3["active_preset"] as? String == "Default")
+    #expect(n3["buttons"] == nil)
+
+    // The v1.0.0 file has no N4: the strip check uses the example config.
+    let example = try AppConfig.parse(try fixture("config.example.json"))
+    let exampleObject = try #require(try JSONSerialization.jsonObject(with: try example.encoded()) as? [String: Any])
+    let n4 = try #require((exampleObject["decks"] as? [String: Any])?["n4"] as? [String: Any])
+    #expect(n4["keys"] == nil)
+    #expect(n4["strip"] == nil)
+    let strip = try #require((n4["presets"] as? [[String: Any]])?.first?["strip"] as? [String: [String: Any]])
+    #expect(strip["3"]?["type"] as? String == "empty")
+    for key in ["host", "arrow_ms", "timeout_s"] {
+        #expect(strip["3"]?[key] == nil, "\(key)")
+        #expect(strip["1"]?[key] != nil, "\(key)")
+    }
+}

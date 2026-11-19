@@ -102,17 +102,25 @@ func printKnobs(_ knobs: [String: KnobConfig]) {
     }
 }
 
+/// "Preset: Music (2 presets)", and a warning when `active_preset` names no preset.
+func printPreset(active: String, live: String, count: Int) {
+    if active != live { print("  Warning: active_preset \"\(active)\" not found, using \"\(live)\"") }
+    print("  Preset: \(live) (\(count) preset\(count == 1 ? "" : "s"))")
+}
+
 func loadAndPrintConfig() -> AppConfig? {
     guard let config = AppConfig.load(from: configPath) else { return nil }
     print("Config loaded from: \(configPath)")
     if let n3 = config.n3 {
         print(" N3:")
+        printPreset(active: n3.activePreset, live: n3.active.name, count: n3.presets.count)
         print("  Brightness:        \(n3.brightness)")
         printButtons(n3.buttons, label: "Buttons")
         printKnobs(n3.knobs)
     }
     if let n4 = config.n4 {
         print(" N4:")
+        printPreset(active: n4.activePreset, live: n4.active.name, count: n4.presets.count)
         print("  Brightness:        \(n4.brightness)")
         printButtons(n4.keys, label: "Keys")
         printKnobs(n4.knobs)

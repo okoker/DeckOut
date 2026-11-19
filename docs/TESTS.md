@@ -67,6 +67,13 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-060 | `ConfigTests/internetNumbersOutOfRangeAreRefused` | An internet block's `timeout_s` outside 0.1–60 or a negative `arrow_ms` makes the config invalid (else the daemon crashes at the first measurement and launchd restarts it into the same crash) |
 | T-061 | `ReloadTests/burstOfRequestsReloadsOnce` | Twenty reload requests in a burst run one reload, and every requester gets its result (a slider drag in the app must not redraw the decks dozens of times) |
 | T-062 | `ReloadTests/brightnessIsRebuiltOnlyWhenDisplaysChange` | The monitor control (which runs `m1ddc` and can stall) is rebuilt on reload only when `displays` changes, order included; no displays and an empty list are the same |
+| T-063 | `ConfigTests/roundTripKeepsEveryField` | A config with every field set, two presets per deck, steps and an internet block reads back equal after encoding (the app rewrites the file on every change) |
+| T-064 | `ConfigTests/oldFilesReadAsOneDefaultPreset` | The v1.0.0 file and a `decks` file without `presets` each read as one preset "Default", live, with all their keys |
+| T-065 | `ConfigTests/activePresetPicksKeysAndStrip` | The live preset's keys and strip are what the deck shows and runs |
+| T-066 | `ConfigTests/unknownActivePresetFallsBackToFirst` | An `active_preset` that names no preset falls back to the first preset, never blank keys |
+| T-067 | `ConfigTests/duplicateOrEmptyPresetNamesAreRefused` | Two presets with one name, an empty name, or no presets make the file invalid (the live preset is picked by name) |
+| T-068 | `ConfigTests/encodedFileUsesTheDecksFormat` | Writing an old file gives the `decks` form with presets and no top-level `buttons` / `brightness`; non-internet blocks don't carry the internet settings |
+| T-084 | `ActionResolverTests/pressesCarryTheirStep` | A key, knob press, strip tap and swipe pass their own signed `step` (else a volume key does nothing); a key without one passes none |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

@@ -99,3 +99,21 @@ private func sampleConfig() throws -> AppConfig {
         #expect(LockPolicy.allows(input, action: "key:cmd+space", locked: false))
     }
 }
+
+// MARK: - Steps on presses
+
+@Test func pressesCarryTheirStep() throws {                         // T-084
+    let c = try AppConfig.parse(Data("""
+    { "decks": { "n4": { "brightness": 50,
+      "keys": { "key_1": { "action": "system_volume", "step": 5 }, "key_2": { "action": "system_volume" } },
+      "knobs": { "knob_1": { "rotate": { "action": "system_volume", "step": 5 },
+                             "press":  { "action": "display_brightness", "step": -5 } } },
+      "strip": { "1": { "type": "empty", "action": "system_volume", "step": -5 } },
+      "swipe": { "action": "system_volume", "step": -5 } } } }
+    """.utf8))
+    #expect(ActionResolver.resolve(.keyDown("key_1"), deck: .n4, config: c) == ResolvedAction(action: "system_volume", step: 5))
+    #expect(ActionResolver.resolve(.keyDown("key_2"), deck: .n4, config: c) == ResolvedAction(action: "system_volume", step: nil))
+    #expect(ActionResolver.resolve(.knobDown("knob_1"), deck: .n4, config: c) == ResolvedAction(action: "display_brightness", step: -5))
+    #expect(ActionResolver.resolve(.stripTap("1"), deck: .n4, config: c) == ResolvedAction(action: "system_volume", step: -5))
+    #expect(ActionResolver.resolve(.swipe, deck: .n4, config: c) == ResolvedAction(action: "system_volume", step: -5))
+}

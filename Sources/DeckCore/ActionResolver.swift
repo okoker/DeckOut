@@ -1,7 +1,7 @@
 // Which action an input runs, and whether it may run while the Mac is locked.
 
-/// An action string from the config (`shell:…`, `key:…`, `system_volume`, …) and, for a knob turn,
-/// the signed step.
+/// An action string from the config (`shell:…`, `key:…`, `system_volume`, …) and its signed step: a knob turn's
+/// `step` times the turn's direction, or the `step` set on a key, knob press, strip block or swipe.
 struct ResolvedAction: Equatable {
     let action: String
     let step: Int?
@@ -26,15 +26,16 @@ enum ActionResolver {
         let resolved: ResolvedAction?
         switch input {
         case .keyDown(let key):
-            resolved = keys[key].map { ResolvedAction(action: $0.action, step: nil) }
+            resolved = keys[key].map { ResolvedAction(action: $0.action, step: $0.step) }
         case .knobTurn(let knob, let sign):
             resolved = knobs[knob].map { ResolvedAction(action: $0.rotate.action, step: ($0.rotate.step ?? 1) * sign) }
         case .knobDown(let knob):
-            resolved = knobs[knob].map { ResolvedAction(action: $0.press.action, step: nil) }
+            resolved = knobs[knob].map { ResolvedAction(action: $0.press.action, step: $0.press.step) }
         case .stripTap(let block):
-            resolved = deck == .n4 ? config.n4?.strip[block]?.action.map { ResolvedAction(action: $0, step: nil) } : nil
+            let tapped = deck == .n4 ? config.n4?.strip[block] : nil
+            resolved = tapped?.action.map { ResolvedAction(action: $0, step: tapped?.step) }
         case .swipe:
-            resolved = deck == .n4 ? config.n4?.swipe.map { ResolvedAction(action: $0.action, step: nil) } : nil
+            resolved = deck == .n4 ? config.n4?.swipe.map { ResolvedAction(action: $0.action, step: $0.step) } : nil
         case .keyUp, .knobUp:
             resolved = nil
         }

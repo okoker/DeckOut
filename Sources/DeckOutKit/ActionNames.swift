@@ -34,13 +34,29 @@ public enum ActionNames {
         }
     }
 
-    /// `cmd+shift+4` → `⌘⇧4`.
+    /// `cmd+shift+4` → `⇧⌘4`: modifiers in the Mac's own order (⌃⌥⇧⌘), then the key.
     public static func shortcutSymbols(_ keys: String) -> String {
-        let symbols = ["cmd": "⌘", "command": "⌘", "shift": "⇧", "alt": "⌥", "opt": "⌥", "option": "⌥",
-                       "ctrl": "⌃", "control": "⌃"]
-        return keys.lowercased().split(separator: "+").map { part in
-            symbols[String(part)] ?? (part.count == 1 ? part.uppercased() : part.capitalized)
-        }.joined()
+        let order: [(names: Set<String>, symbol: String)] = [
+            (["ctrl", "control"], "⌃"), (["alt", "opt", "option"], "⌥"), (["shift"], "⇧"), (["cmd", "command"], "⌘"),
+        ]
+        let parts = keys.lowercased().split(separator: "+").map(String.init)
+        guard let key = parts.last else { return "" }
+        let modifiers = Set(parts.dropLast())
+        let symbols = order.filter { !$0.names.isDisjoint(with: modifiers) }.map(\.symbol).joined()
+        let keyLabel: String
+        switch key {
+        case "space": keyLabel = "Space"
+        case "return", "enter": keyLabel = "↩"
+        case "tab": keyLabel = "⇥"
+        case "escape", "esc": keyLabel = "⎋"
+        case "delete": keyLabel = "⌫"
+        case "left": keyLabel = "←"
+        case "right": keyLabel = "→"
+        case "up": keyLabel = "↑"
+        case "down": keyLabel = "↓"
+        default: keyLabel = key.count == 1 ? key.uppercased() : key.uppercased()
+        }
+        return symbols + keyLabel
     }
 
     /// `/Applications/Notes.app` → `Notes`.

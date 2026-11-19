@@ -117,6 +117,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-110 | `RegistrarTests/requiresApprovalIsReported` | Switched off in Login Items → "needs approval", also when `register()` is refused for that reason; any other refusal passes its message on |
 | T-111 | `AgentLinkTests/restartsAnOlderAgentOnce` | An agent of another build (or one too old to report it) is asked to restart once; if the same build comes back, the app says so and doesn't loop |
 | T-112 | `AgentLinkTests/hearsStatusAndStrip`, `silentAgentIsReportedOnce` | The app's link hears status and live strip pushes, reconnects when the agent goes away, and reports an agent that doesn't answer (registering it again once) |
+| T-113 | `AppLocationTests/onlyFromApplications` | DeckOut runs only as `/Applications/DeckOut.app`: Downloads, a translocated copy, a subfolder, a renamed copy or a disk image are refused (the agent would point at a folder that goes away); the dev variant runs anywhere |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

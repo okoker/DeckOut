@@ -122,6 +122,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-115 | `DeckFaceTests/everyConfigKeyOnce` | Each deck's drawing has every config key exactly once (N3: 6 keys, 3 buttons, 3 knobs; N4: 10 keys, 4 strip blocks, 4 knobs) and no two controls overlap |
 | T-116 | `DeckFaceTests/previewIsUpright` | Key and picture previews come out upright at the deck's sizes (the deck's own copies are turned), and a live block's JPEG as drawn on the deck is turned back upright |
 | T-117 | `DeckViewTests/drawsImagesAndRing` | The deck drawing shows a key's image on its screen, a red ring around the selected control only, and an empty screen as empty; writes light / dark PNGs of both decks to the temp folder for a look |
+| T-118 | `AppModelTests/screenFollowsTheDecks`, `screenBeforeTheDecks`, `ScreenSnapshotTests/writesEveryScreen` | The window's screen: not in Applications → move it; not registered yet → starting; switched off in Login Items → allow it; failed or not answering → the problem with Try Again; then the decks: none → plug in, one → it, both → pick, the shown deck stays while plugged in and gives way to the other (or plug in) when unplugged, never a deck that isn't there. Every screen renders (PNGs for a look) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

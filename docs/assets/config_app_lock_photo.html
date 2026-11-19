@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lock photo mode</title>
+<style>
+  :root { --blue:#0a84ff; --red:#ff3b30; --ink:#1d1d1f; --line:#e2e2e6; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:28px 32px 60px; background:#f0f0f3; color:var(--ink);
+         font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif; }
+  h1 { font-size:22px; font-weight:650; margin:0 0 4px; letter-spacing:-.01em; }
+  .sub { color:#6e6e73; font-size:14px; margin:0 0 6px; max-width:1040px; line-height:1.45; }
+  .changes { font-size:13px; color:#3a3a3c; background:#fff; border:1px solid var(--line); border-radius:10px;
+             padding:10px 14px 10px 30px; margin:14px 0 26px; max-width:1040px; line-height:1.6; }
+  .changes li::marker { color:var(--red); }
+
+  .cards { display:flex; flex-direction:column; gap:40px; }
+  .card { cursor:pointer; display:inline-block; padding:16px; border-radius:18px; border:2px solid transparent; transition:border-color .15s, background .15s; }
+  .card:hover { background:rgba(10,132,255,.04); }
+  .card.selected { border-color:var(--blue); background:rgba(10,132,255,.06); }
+  .card-head { display:flex; align-items:baseline; gap:12px; margin:0 0 12px 2px; }
+  .letter { width:26px; height:26px; border-radius:50%; background:#1d1d1f; color:#fff; font-size:13px; font-weight:700;
+            display:inline-flex; align-items:center; justify-content:center; transform:translateY(-2px); }
+  .card.selected .letter { background:var(--blue); }
+  .card-head h2 { font-size:17px; margin:0; font-weight:650; }
+  .card-head .tag { font-size:12px; color:var(--blue); font-weight:600; }
+  .dims { font-size:12px; color:#8e8e93; margin-left:4px; }
+
+  /* window chrome */
+  .window { border-radius:12px; overflow:hidden; background:#fff; display:flex; flex-direction:column;
+            box-shadow:0 22px 60px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.22); }
+  .toolbar { height:56px; flex:none; display:flex; align-items:center; gap:10px; padding:0 14px;
+             background:linear-gradient(#f7f7f7,#eeeeef); border-bottom:1px solid #dadadc; font-size:12.5px; }
+  .lights { display:flex; gap:8px; margin-right:10px; }
+  .lights i { width:12px; height:12px; border-radius:50%; display:block; }
+  .lights i:nth-child(1){background:#ff5f57} .lights i:nth-child(2){background:#febc2e} .lights i:nth-child(3){background:#28c840}
+  .spacer { flex:1; }
+  .lbl { color:#6e6e73; }
+
+  /* deck buttons: real buttons, not a segmented toggle */
+  .devbtn { display:flex; align-items:center; gap:8px; padding:5px 12px 5px 7px; border-radius:8px; background:#fff; white-space:nowrap;
+            box-shadow:0 0 0 .5px rgba(0,0,0,.22), 0 1px 1.5px rgba(0,0,0,.14); color:var(--ink); font-weight:500; }
+  .devbtn.on { background:#dcdce1; box-shadow:inset 0 1px 2.5px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.28); font-weight:650; }
+  .devbtn.off { background:#f2f2f4; color:#aeaeb2; box-shadow:0 0 0 .5px rgba(0,0,0,.12); }
+  .devbtn.off svg { filter:grayscale(1); opacity:.4; }
+
+  .popup { display:inline-flex; align-items:center; gap:10px; background:#fff; border-radius:6px; padding:4px 7px 4px 10px;
+           box-shadow:0 0 0 .5px rgba(0,0,0,.2), 0 .5px 1px rgba(0,0,0,.1); white-space:nowrap; }
+  .chev { font-size:8px; color:#6e6e73; line-height:1.05; display:flex; flex-direction:column; }
+  .btn { display:inline-flex; align-items:center; gap:6px; background:#fff; border-radius:6px; padding:4px 10px;
+         box-shadow:0 0 0 .5px rgba(0,0,0,.2), 0 .5px 1px rgba(0,0,0,.1); white-space:nowrap; font-size:12.5px; }
+  .slider { display:flex; align-items:center; gap:8px; }
+  .track { width:100px; height:4px; border-radius:2px; background:#d1d1d6; position:relative; }
+  .track b { position:absolute; left:0; top:0; bottom:0; width:75%; background:var(--blue); border-radius:2px; }
+  .track u { position:absolute; left:75%; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:#fff;
+             box-shadow:0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.25); }
+  .body { flex:1; display:flex; min-height:0; }
+  .status { height:26px; flex:none; border-top:1px solid #e6e6e8; background:#f7f7f8; font-size:11.5px; color:#6e6e73;
+            display:flex; align-items:center; gap:14px; padding:0 14px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:#30d158; display:inline-block; }
+
+  /* stage + deck (deck is the same size as v1) */
+  .stage { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+           background:radial-gradient(ellipse at 50% 38%, #fcfcfd 0%, #ececef 80%); }
+  .hint { font-size:12px; color:#8e8e93; }
+  .deck { padding:26px 28px 16px; border-radius:22px; background:linear-gradient(162deg,#303033 0%,#1b1b1d 55%,#141416 100%);
+          box-shadow:0 22px 40px rgba(0,0,0,.30), 0 4px 10px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.09); }
+  .keys { display:grid; grid-template-columns:repeat(5,56px); column-gap:30px; row-gap:32px; }
+  .key { width:56px; height:56px; border-radius:7px; background:#000; display:flex; align-items:center; justify-content:center; position:relative;
+         box-shadow:0 0 0 2px #0a0a0b, 0 0 0 3.5px #3b3b3e, 0 3px 6px rgba(0,0,0,.6); overflow:hidden; }
+  .key.sel { outline:3px solid var(--red); outline-offset:5px; }
+  .knob.sel { outline:3px solid var(--red); outline-offset:4px; }
+  .key.empty::after { content:"+"; color:#3a3a3c; font-size:20px; font-weight:300; }
+  .ico { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
+  .txt { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+         font-size:10px; font-weight:650; line-height:1.15; color:#fff; padding:4px; white-space:nowrap; }
+  .strip { margin-top:32px; width:400px; height:60px; display:grid; grid-template-columns:repeat(4,1fr); border-radius:9px; background:#000;
+           box-shadow:0 0 0 2px #0a0a0b, 0 0 0 3.5px #3b3b3e, 0 3px 6px rgba(0,0,0,.6); overflow:hidden; }
+  .blk { height:60px; position:relative; color:#fff; font-size:10px; border-left:1px solid #2c2c2f; }
+  .blk:first-child { border-left:0; }
+  .strip.seamless .blk { border-left:0; }
+  .blk.sel { outline:none; box-shadow:inset 0 0 0 2.5px var(--red); border-radius:7px; }
+  .knobs { margin-top:20px; display:grid; grid-template-columns:repeat(4,100px); justify-items:center; }
+  .kcol { display:flex; flex-direction:column; align-items:center; }
+  .knob { width:44px; height:44px; border-radius:50%;
+          background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.05) 0 4deg, rgba(0,0,0,.08) 4deg 8deg),
+                     radial-gradient(circle at 36% 30%, #5d5d61 0%, #2a2a2d 45%, #111113 100%);
+          box-shadow:0 5px 9px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.07); }
+  .klabel { margin-top:7px; font-size:9.5px; color:#8e8e93; }
+
+  /* inspector */
+  .inspector { width:300px; flex:none; border-left:1px solid var(--line); background:#fbfbfc; padding:18px 18px 16px; display:flex; flex-direction:column; font-size:12.5px; }
+  .ititle { font-size:11px; font-weight:650; letter-spacing:.04em; text-transform:uppercase; color:#8e8e93; margin-bottom:14px; }
+  .row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .row > .k { width:52px; color:#6e6e73; text-align:right; flex:none; }
+  .segc { display:flex; background:rgba(0,0,0,.06); border-radius:7px; padding:2px; font-size:11.5px; }
+  .segc span { padding:3px 8px; border-radius:5px; color:#3a3a3c; }
+  .segc span.on { background:#fff; box-shadow:0 .5px 1.5px rgba(0,0,0,.2); color:var(--ink); font-weight:550; }
+  .preview { display:flex; align-items:center; gap:12px; margin:4px 0 14px 62px; }
+  .preview small { color:#8e8e93; font-size:11px; line-height:1.35; }
+  .divider { height:1px; background:var(--line); margin:4px 0 14px; }
+  .testrow { display:flex; align-items:center; gap:10px; }
+  .testnote { font-size:11px; color:#8e8e93; line-height:1.35; }
+  .clear { margin-top:auto; color:var(--red); font-size:12.5px; }
+
+  /* sidebar (B) */
+  .sidebar { width:200px; flex:none; background:#ececf0; border-right:1px solid #dcdce0; padding:12px 10px; font-size:12.5px; }
+  .sh { font-size:11px; font-weight:650; color:#8e8e93; margin:10px 8px 6px; }
+  .si { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:6px; }
+  .si.on { background:rgba(0,0,0,.09); font-weight:550; }
+  .si .live { margin-left:auto; font-size:9.5px; font-weight:700; color:#fff; background:#30d158; border-radius:4px; padding:1px 5px; }
+  .si.add { color:var(--blue); }
+  .si .sym { width:16px; text-align:center; color:#6e6e73; }
+  .sdev { display:flex; flex-direction:column; gap:6px; padding:0 4px; }
+  .sdev .devbtn { width:100%; }
+
+  /* insets */
+  .insets { display:flex; gap:22px; margin-top:18px; align-items:flex-start; }
+  .inset { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px 14px; font-size:12.5px; }
+  .inset h4 { margin:0 0 10px; font-size:12px; color:#3a3a3c; font-weight:650; }
+  .frag { display:flex; gap:8px; align-items:center; padding:9px 10px; background:linear-gradient(#f7f7f7,#eeeeef); border-radius:8px;
+          border:1px solid #e0e0e3; font-size:12.5px; }
+  .fraglbl { font-size:11px; color:#8e8e93; margin:8px 0 4px 2px; }
+  .fraglbl:first-of-type { margin-top:0; }
+  .arrow { text-align:center; color:#8e8e93; font-size:13px; margin:2px 0; }
+  .menu { width:230px; background:rgba(252,252,253,.98); border-radius:9px; padding:5px; font-size:13px;
+          box-shadow:0 10px 30px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.2); margin-top:4px; }
+  .mi { padding:3px 8px 3px 22px; border-radius:5px; position:relative; line-height:1.5; }
+  .mi.chk::before { content:"✓"; position:absolute; left:7px; font-size:12px; }
+  .mi.hl { background:var(--blue); color:#fff; }
+  .msep { height:1px; background:#e3e3e6; margin:5px 8px; }
+  .mnote { font-size:11.5px; color:#6e6e73; line-height:1.45; margin-top:10px; max-width:260px; }
+  .ringdemo { display:flex; gap:26px; align-items:center; padding:10px 6px 2px; }
+  .ringdemo .cap { font-size:11px; color:#8e8e93; text-align:center; margin-top:10px; }
+
+  .pdeck { position:relative; width:456px; height:357px; border-radius:22px; overflow:hidden; cursor:grab;
+           background:linear-gradient(162deg,#303033 0%,#1b1b1d 55%,#141416 100%);
+           box-shadow:0 22px 40px rgba(0,0,0,.30), 0 4px 10px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.09); }
+  .ghost { position:absolute; left:28px; top:26px; width:400px; height:232px; opacity:.28; }
+  .scr { position:absolute; background-color:#000; box-shadow:0 0 0 2px #0a0a0b, 0 0 0 3.5px #3b3b3e, 0 3px 6px rgba(0,0,0,.6); }
+  .scr.k { border-radius:7px; } .scr.s { border-radius:3px; box-shadow:none; }
+  .spanel { position:absolute; left:28px; top:202px; width:400px; height:56px; border-radius:9px;
+            box-shadow:0 0 0 2px #0a0a0b, 0 0 0 3.5px #3b3b3e, 0 3px 6px rgba(0,0,0,.6); }
+  .pknob { position:absolute; top:278px; width:44px; height:44px; border-radius:50%;
+          background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.05) 0 4deg, rgba(0,0,0,.08) 4deg 8deg),
+                     radial-gradient(circle at 36% 30%, #5d5d61 0%, #2a2a2d 45%, #111113 100%);
+          box-shadow:0 5px 9px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.07); }
+  .dragchip { position:absolute; left:50%; top:329px; transform:translateX(-50%); background:rgba(0,0,0,.62); color:#fff; font-size:11.5px;
+              padding:4px 10px; border-radius:12px; backdrop-filter:blur(6px); white-space:nowrap; }
+  .btnon { background:#dcdce1 !important; box-shadow:inset 0 1px 2.5px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.28) !important; font-weight:600; }
+  .toggle { width:30px; height:18px; border-radius:9px; background:#30d158; position:relative; flex:none; }
+  .toggle::after { content:""; position:absolute; right:2px; top:2px; width:14px; height:14px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.3); }
+  .thumb { width:44px; height:26px; border-radius:4px; box-shadow:0 0 0 .5px rgba(0,0,0,.25); flex:none; }
+  .zoomtrack { flex:1; height:4px; border-radius:2px; background:#d1d1d6; position:relative; }
+  .zoomtrack b { position:absolute; left:0; top:0; bottom:0; width:30%; background:var(--blue); border-radius:2px; }
+  .zoomtrack u { position:absolute; left:30%; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:#fff;
+                 box-shadow:0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.25); }
+  .note { font-size:11px; color:#8e8e93; line-height:1.4; }
+  .primary { background:var(--blue); color:#fff; border-radius:6px; padding:5px 14px; font-size:12.5px; font-weight:550; text-align:center; }
+</style>
+</head>
+<body>
+
+<h1>Lock photo: editing it in the main window</h1>
+<p class="sub">Clicking <b>Lock Photo…</b> switches the window into photo mode, with no separate window. The deck shows the photo exactly as its 14 screens will, and the parts the frames hide show faintly between them, so you can place the photo deliberately. In this example the eyes land in the gap between the two key rows, which is the problem you've had with the fixed crop. Dragging the photo down a little puts them on a key. With "Show on the deck" on, the real N4 shows it too while you edit.</p>
+
+<div style="padding:16px">
+  <div class="card-head"><span class="letter">A</span><h2>Photo mode</h2><span class="dims">same 946 × 544 window</span></div>
+  <div class="window" style="width:946px;height:544px">
+    <div class="toolbar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="devbtn on"><span class="n4svg"></span>N4</div>
+      <div class="devbtn off"><span class="n3svg"></span>N3</div>
+      <span class="lbl" style="margin-left:10px">Preset</span>
+      <span class="popup" style="opacity:.45">Work <span class="chev">▲<br>▼</span></span>
+      <div class="spacer"></div>
+      <div class="slider"><span class="lbl">☀︎</span><div class="track"><b></b><u></u></div><span class="lbl" style="width:18px">75</span></div>
+      <span class="btn btnon">Lock Photo…</span>
+    </div>
+    <div class="body">
+      <div class="stage">
+        <div class="pdeck" id="pdeck"><div class="ghost" id="ghost"></div><div class="spanel"></div><div class="dragchip">✥ Drag to move · scroll or pinch to zoom</div></div>
+        <div class="hint">What the N4 shows while your Mac is locked</div>
+      </div>
+      <div class="inspector">
+        <div class="ititle">Lock photo · N4</div>
+        <div class="row"><span class="k">Photo</span><span style="display:flex;align-items:center;gap:8px;flex:1"><span class="thumb" id="thumb"></span>sunset.jpg</span><span class="btn">Choose…</span></div>
+        <div class="row"><span class="k">Zoom</span><span class="lbl" style="font-size:11px">−</span><div class="zoomtrack"><b></b><u></u></div><span class="lbl" style="font-size:11px">+</span><span class="lbl" style="width:34px;text-align:right">130%</span></div>
+        <div class="row"><span class="k">Position</span><span style="flex:1;color:#3a3a3c">Drag on the deck</span><span class="btn">Reset</span></div>
+        <div class="divider"></div>
+        <div class="row" style="align-items:flex-start"><span class="k"></span><div style="display:flex;gap:10px;align-items:flex-start;flex:1"><div class="toggle"></div><div><div>Show on the deck</div><div class="note">The real N4 shows the photo while you edit. It goes back to your keys when you click Done.</div></div></div></div>
+        <div class="row" style="align-items:flex-start;margin-top:4px"><span class="k"></span><div style="display:flex;gap:10px;align-items:flex-start;flex:1"><div class="toggle"></div><div><div>Show hidden parts</div><div class="note">Faintly shows what falls behind the frames.</div></div></div></div>
+        <div class="divider"></div>
+        <div class="note" style="margin-left:62px">The app keeps its own copy of the photo, so moving or deleting the original changes nothing.</div>
+        <div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between"><span class="clear" style="margin:0">Remove Photo</span><span class="primary">Done</span></div>
+      </div>
+    </div>
+    <div class="status"><span><span class="dot"></span>&nbsp; Deck controller running</span><span>Changes apply at once · ⌘Z undoes</span></div>
+  </div>
+  <ul class="changes" style="margin-top:18px">
+    <li><b>Why not a separate window:</b> it would be a second layer, which you didn't want for presets, and it would only reach the deck after you click Save. Here every drag shows on the deck at once.</li>
+    <li>The lock photo belongs to the N4 itself, not to a preset. With the N3 selected, the <b>Lock Photo…</b> button isn't shown, since the N3 has no lock photo.</li>
+    <li>While in photo mode the preset menu is dimmed, and Done goes back to the keys.</li>
+  </ul>
+</div>
+
+<script>
+const N4SVG = `<svg width="36" height="24" viewBox="0 0 30 20"><rect x=".5" y=".5" width="29" height="19" rx="3.5" fill="#2a2a2c"/><g fill="#6aa8ff"><rect x="4" y="3" width="3" height="3" rx=".5"/><rect x="8.5" y="3" width="3" height="3" rx=".5"/><rect x="13.5" y="3" width="3" height="3" rx=".5"/><rect x="18.5" y="3" width="3" height="3" rx=".5"/><rect x="23" y="3" width="3" height="3" rx=".5"/><rect x="4" y="7.5" width="3" height="3" rx=".5"/><rect x="8.5" y="7.5" width="3" height="3" rx=".5"/><rect x="13.5" y="7.5" width="3" height="3" rx=".5"/><rect x="18.5" y="7.5" width="3" height="3" rx=".5"/><rect x="23" y="7.5" width="3" height="3" rx=".5"/></g><rect x="4" y="12" width="22" height="2.2" rx=".6" fill="#4a4a4e"/><g fill="#77777c"><circle cx="6.5" cy="16.8" r="1.4"/><circle cx="12" cy="16.8" r="1.4"/><circle cx="18" cy="16.8" r="1.4"/><circle cx="23.5" cy="16.8" r="1.4"/></g></svg>`;
+const N3SVG = `<svg width="36" height="24" viewBox="0 0 30 20"><rect x=".5" y=".5" width="29" height="19" rx="3.5" fill="#2a2a2c"/><g fill="#6aa8ff"><rect x="4" y="3.5" width="3.4" height="3.4" rx=".5"/><rect x="8.6" y="3.5" width="3.4" height="3.4" rx=".5"/><rect x="13.2" y="3.5" width="3.4" height="3.4" rx=".5"/><rect x="4" y="8.4" width="3.4" height="3.4" rx=".5"/><rect x="8.6" y="8.4" width="3.4" height="3.4" rx=".5"/><rect x="13.2" y="8.4" width="3.4" height="3.4" rx=".5"/></g><circle cx="23" cy="7.5" r="4" fill="#4a4a4e"/><g fill="#77777c"><circle cx="5.7" cy="15.6" r="1.4"/><circle cx="10.3" cy="15.6" r="1.4"/><circle cx="14.9" cy="15.6" r="1.4"/><circle cx="20.5" cy="15.6" r="1.7"/><circle cx="25.3" cy="15.6" r="1.7"/></g></svg>`;
+document.querySelectorAll('.n4svg').forEach(e => e.outerHTML = N4SVG);
+document.querySelectorAll('.n3svg').forEach(e => e.outerHTML = N3SVG);
+
+// A stand-in photo (800x464, the deck face's shape): a sunset with a figure whose head sits near the row gap.
+const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 464'><defs><linearGradient id='s' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#1e3a8a'/><stop offset='.5' stop-color='#c2410c'/><stop offset='.75' stop-color='#f59e0b'/><stop offset='1' stop-color='#fde68a'/></linearGradient></defs><rect width='800' height='464' fill='url(#s)'/><circle cx='560' cy='235' r='62' fill='#fff4cc'/><path d='M0 300 L120 215 L230 282 L340 196 L460 292 L575 226 L690 300 L800 246 L800 464 L0 464Z' fill='#7c2d12'/><path d='M0 352 L150 292 L300 352 L420 304 L560 362 L700 314 L800 344 L800 464 L0 464Z' fill='#431407'/><rect y='404' width='800' height='60' fill='#1c1917'/><g fill='#111'><circle cx='250' cy='176' r='34'/><path d='M196 420 C196 270 214 230 250 226 C286 230 304 270 304 420Z'/></g><g fill='#fde68a'><circle cx='238' cy='172' r='4'/><circle cx='262' cy='172' r='4'/></g></svg>`;
+const url = 'url("data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '")';
+
+// Real screen rectangles from the daemon (LockPhoto.n4Rects), at half scale: keys 56 at 86 pitch, rows 88 apart,
+// strip blocks 88x56 at 104 pitch, 176 below the top row. Face = 400 x 232.
+const rects = [];
+for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) rects.push({x:c*86, y:r*88, w:56, h:56, k:true});
+for (let c = 0; c < 4; c++) rects.push({x:c*104, y:176, w:88, h:56, k:false});
+
+const z = 1.3, W = 400*z, H = 232*z, ox = -(W-400)/2 + 26, oy = -(H-232)/2 - 6;
+const deck = document.getElementById('pdeck');
+const ghost = document.getElementById('ghost');
+ghost.style.backgroundImage = url; ghost.style.backgroundSize = W+'px '+H+'px'; ghost.style.backgroundPosition = ox+'px '+oy+'px';
+for (const r of rects) {
+  const d = document.createElement('div');
+  d.className = 'scr ' + (r.k ? 'k' : 's');
+  Object.assign(d.style, {left:(28+r.x)+'px', top:(26+r.y)+'px', width:r.w+'px', height:r.h+'px',
+    backgroundImage:url, backgroundSize:W+'px '+H+'px', backgroundPosition:(ox-r.x)+'px '+(oy-r.y)+'px'});
+  deck.insertBefore(d, deck.querySelector('.dragchip'));
+}
+for (let c = 0; c < 4; c++) { const k = document.createElement('div'); k.className='pknob'; k.style.left = (28 + c*100 + 28)+'px'; deck.appendChild(k); }
+const t = document.getElementById('thumb'); t.style.backgroundImage = url; t.style.backgroundSize = 'cover';
+</script>
+
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DeckOut main window</title>
+<style>
+  :root { --blue:#0a84ff; --red:#ff3b30; --ink:#1d1d1f; --line:#e2e2e6; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:28px 32px 60px; background:#f0f0f3; color:var(--ink);
+         font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif; }
+  h1 { font-size:22px; font-weight:650; margin:0 0 4px; letter-spacing:-.01em; }
+  .sub { color:#6e6e73; font-size:14px; margin:0 0 6px; max-width:1040px; line-height:1.45; }
+  .changes { font-size:13px; color:#3a3a3c; background:#fff; border:1px solid var(--line); border-radius:10px;
+             padding:10px 14px 10px 30px; margin:14px 0 26px; max-width:1040px; line-height:1.6; }
+  .changes li::marker { color:var(--red); }
+
+  .cards { display:flex; flex-direction:column; gap:40px; }
+  .card { cursor:pointer; display:inline-block; padding:16px; border-radius:18px; border:2px solid transparent; transition:border-color .15s, background .15s; }
+  .card:hover { background:rgba(10,132,255,.04); }
+  .card.selected { border-color:var(--blue); background:rgba(10,132,255,.06); }
+  .card-head { display:flex; align-items:baseline; gap:12px; margin:0 0 12px 2px; }
+  .letter { width:26px; height:26px; border-radius:50%; background:#1d1d1f; color:#fff; font-size:13px; font-weight:700;
+            display:inline-flex; align-items:center; justify-content:center; transform:translateY(-2px); }
+  .card.selected .letter { background:var(--blue); }
+  .card-head h2 { font-size:17px; margin:0; font-weight:650; }
+  .card-head .tag { font-size:12px; color:var(--blue); font-weight:600; }
+  .dims { font-size:12px; color:#8e8e93; margin-left:4px; }
+
+  /* window chrome */
+  .window { border-radius:12px; overflow:hidden; background:#fff; display:flex; flex-direction:column;
+            box-shadow:0 22px 60px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.22); }
+  .toolbar { height:56px; flex:none; display:flex; align-items:center; gap:10px; padding:0 14px;
+             background:linear-gradient(#f7f7f7,#eeeeef); border-bottom:1px solid #dadadc; font-size:12.5px; }
+  .lights { display:flex; gap:8px; margin-right:10px; }
+  .lights i { width:12px; height:12px; border-radius:50%; display:block; }
+  .lights i:nth-child(1){background:#ff5f57} .lights i:nth-child(2){background:#febc2e} .lights i:nth-child(3){background:#28c840}
+  .spacer { flex:1; }
+  .lbl { color:#6e6e73; }
+
+  /* deck buttons: real buttons, not a segmented toggle */
+  .devbtn { display:flex; align-items:center; gap:8px; padding:5px 12px 5px 7px; border-radius:8px; background:#fff; white-space:nowrap;
+            box-shadow:0 0 0 .5px rgba(0,0,0,.22), 0 1px 1.5px rgba(0,0,0,.14); color:var(--ink); font-weight:500; }
+  .devbtn.on { background:#dcdce1; box-shadow:inset 0 1px 2.5px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.28); font-weight:650; }
+  .devbtn.off { background:#f2f2f4; color:#aeaeb2; box-shadow:0 0 0 .5px rgba(0,0,0,.12); }
+  .devbtn.off svg { filter:grayscale(1); opacity:.4; }
+
+  .popup { display:inline-flex; align-items:center; gap:10px; background:#fff; border-radius:6px; padding:4px 7px 4px 10px;
+           box-shadow:0 0 0 .5px rgba(0,0,0,.2), 0 .5px 1px rgba(0,0,0,.1); white-space:nowrap; }
+  .chev { font-size:8px; color:#6e6e73; line-height:1.05; display:flex; flex-direction:column; }
+  .btn { display:inline-flex; align-items:center; gap:6px; background:#fff; border-radius:6px; padding:4px 10px;
+         box-shadow:0 0 0 .5px rgba(0,0,0,.2), 0 .5px 1px rgba(0,0,0,.1); white-space:nowrap; font-size:12.5px; }
+  .slider { display:flex; align-items:center; gap:8px; }
+  .track { width:100px; height:4px; border-radius:2px; background:#d1d1d6; position:relative; }
+  .track b { position:absolute; left:0; top:0; bottom:0; width:75%; background:var(--blue); border-radius:2px; }
+  .track u { position:absolute; left:75%; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:#fff;
+             box-shadow:0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.25); }
+  .body { flex:1; display:flex; min-height:0; }
+  .status { height:26px; flex:none; border-top:1px solid #e6e6e8; background:#f7f7f8; font-size:11.5px; color:#6e6e73;
+            display:flex; align-items:center; gap:14px; padding:0 14px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:#30d158; display:inline-block; }
+
+  /* stage + deck (deck is the same size as v1) */
+  .stage { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+           background:radial-gradient(ellipse at 50% 38%, #fcfcfd 0%, #ececef 80%); }
+  .hint { font-size:12px; color:#8e8e93; }
+  .deck { padding:26px 28px 16px; border-radius:22px; background:linear-gradient(162deg,#303033 0%,#1b1b1d 55%,#141416 100%);
+          box-shadow:0 22px 40px rgba(0,0,0,.30), 0 4px 10px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.09); }
+  .keys { display:grid; grid-template-columns:repeat(5,56px); column-gap:30px; row-gap:32px; }
+  .key { width:56px; height:56px; border-radius:7px; background:#000; display:flex; align-items:center; justify-content:center; position:relative;
+         box-shadow:0 0 0 2px #0a0a0b, 0 0 0 3.5px #3b3b3e, 0 3px 6px rgba(0,0,0,.6); overflow:hidden; }
+  .key.sel { outline:3px solid var(--red); outline-offset:5px; }
+  .knob.sel { outline:3px solid var(--red); outline-offset:4px; }
+  .key.empty::after { content:"+"; color:#3a3a3c; font-size:20px; font-weight:300; }
+  .ico { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
+  .txt { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+         font-size:10px; font-weight:650; line-height:1.15; color:#fff; padding:4px; white-space:nowrap; }
+  .strip { margin-top:32px; width:400px; height:60px; display:grid; grid-template-columns:repeat(4,1fr); border-radius:9px; background:#000;
+           box-shadow:0 0 0 2px #0a0a0b, 0 0 0 3.5px #3b3b3e, 0 3px 6px rgba(0,0,0,.6); overflow:hidden; }
+  .blk { height:60px; position:relative; color:#fff; font-size:10px; border-left:1px solid #2c2c2f; }
+  .blk:first-child { border-left:0; }
+  .strip.seamless .blk { border-left:0; }
+  .blk.sel { outline:none; box-shadow:inset 0 0 0 2.5px var(--red); border-radius:7px; }
+  .knobs { margin-top:20px; display:grid; grid-template-columns:repeat(4,100px); justify-items:center; }
+  .kcol { display:flex; flex-direction:column; align-items:center; }
+  .knob { width:44px; height:44px; border-radius:50%;
+          background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.05) 0 4deg, rgba(0,0,0,.08) 4deg 8deg),
+                     radial-gradient(circle at 36% 30%, #5d5d61 0%, #2a2a2d 45%, #111113 100%);
+          box-shadow:0 5px 9px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.07); }
+  .klabel { margin-top:7px; font-size:9.5px; color:#8e8e93; }
+
+  /* inspector */
+  .inspector { width:300px; flex:none; border-left:1px solid var(--line); background:#fbfbfc; padding:18px 18px 16px; display:flex; flex-direction:column; font-size:12.5px; }
+  .ititle { font-size:11px; font-weight:650; letter-spacing:.04em; text-transform:uppercase; color:#8e8e93; margin-bottom:14px; }
+  .row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .row > .k { width:52px; color:#6e6e73; text-align:right; flex:none; }
+  .segc { display:flex; background:rgba(0,0,0,.06); border-radius:7px; padding:2px; font-size:11.5px; }
+  .segc span { padding:3px 8px; border-radius:5px; color:#3a3a3c; }
+  .segc span.on { background:#fff; box-shadow:0 .5px 1.5px rgba(0,0,0,.2); color:var(--ink); font-weight:550; }
+  .preview { display:flex; align-items:center; gap:12px; margin:4px 0 14px 62px; }
+  .preview small { color:#8e8e93; font-size:11px; line-height:1.35; }
+  .divider { height:1px; background:var(--line); margin:4px 0 14px; }
+  .testrow { display:flex; align-items:center; gap:10px; }
+  .testnote { font-size:11px; color:#8e8e93; line-height:1.35; }
+  .clear { margin-top:auto; color:var(--red); font-size:12.5px; }
+
+  /* sidebar (B) */
+  .sidebar { width:200px; flex:none; background:#ececf0; border-right:1px solid #dcdce0; padding:12px 10px; font-size:12.5px; }
+  .sh { font-size:11px; font-weight:650; color:#8e8e93; margin:10px 8px 6px; }
+  .si { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:6px; }
+  .si.on { background:rgba(0,0,0,.09); font-weight:550; }
+  .si .live { margin-left:auto; font-size:9.5px; font-weight:700; color:#fff; background:#30d158; border-radius:4px; padding:1px 5px; }
+  .si.add { color:var(--blue); }
+  .si .sym { width:16px; text-align:center; color:#6e6e73; }
+  .sdev { display:flex; flex-direction:column; gap:6px; padding:0 4px; }
+  .sdev .devbtn { width:100%; }
+
+  /* insets */
+  .insets { display:flex; gap:22px; margin-top:18px; align-items:flex-start; }
+  .inset { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px 14px; font-size:12.5px; }
+  .inset h4 { margin:0 0 10px; font-size:12px; color:#3a3a3c; font-weight:650; }
+  .frag { display:flex; gap:8px; align-items:center; padding:9px 10px; background:linear-gradient(#f7f7f7,#eeeeef); border-radius:8px;
+          border:1px solid #e0e0e3; font-size:12.5px; }
+  .fraglbl { font-size:11px; color:#8e8e93; margin:8px 0 4px 2px; }
+  .fraglbl:first-of-type { margin-top:0; }
+  .arrow { text-align:center; color:#8e8e93; font-size:13px; margin:2px 0; }
+  .menu { width:230px; background:rgba(252,252,253,.98); border-radius:9px; padding:5px; font-size:13px;
+          box-shadow:0 10px 30px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.2); margin-top:4px; }
+  .mi { padding:3px 8px 3px 22px; border-radius:5px; position:relative; line-height:1.5; }
+  .mi.chk::before { content:"✓"; position:absolute; left:7px; font-size:12px; }
+  .mi.hl { background:var(--blue); color:#fff; }
+  .msep { height:1px; background:#e3e3e6; margin:5px 8px; }
+  .mnote { font-size:11.5px; color:#6e6e73; line-height:1.45; margin-top:10px; max-width:260px; }
+  .ringdemo { display:flex; gap:26px; align-items:center; padding:10px 6px 2px; }
+  .ringdemo .cap { font-size:11px; color:#8e8e93; text-align:center; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<h1>DeckOut main window (approved 19/11/2026)</h1>
+<p class="sub">Deck first. The touch strip is one thin-outlined panel with thin lines between its four areas. Design: <code>docs/design/config_app.md</code>.</p>
+
+<div class="cards">
+
+<!-- ===================== A v2 ===================== -->
+<div style="padding:16px">
+  <div class="card-head"><span class="letter">A</span><h2>Deck first, with your changes</h2><span class="dims">946 × 544</span></div>
+  <div class="window" style="width:946px;height:544px">
+    <div class="toolbar">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="devbtn on"><span class="n4svg"></span>N4</div>
+      <div class="devbtn off" title="Not connected"><span class="n3svg"></span>N3</div>
+      <span class="lbl" style="margin-left:10px">Preset</span>
+      <span class="popup">Work <span class="chev">▲<br>▼</span></span>
+      <div class="spacer"></div>
+      <div class="slider"><span class="lbl">☀︎</span><div class="track"><b></b><u></u></div><span class="lbl" style="width:18px">75</span></div>
+      <span class="btn">Lock Photo…</span>
+    </div>
+    <div class="body">
+      <div class="stage"><div class="deckslot"></div><div class="hint">Click a key, strip block or knob to set it up</div></div>
+      <div class="inspector inspslot"></div>
+    </div>
+    <div class="status"><span><span class="dot"></span>&nbsp; Deck controller running</span><span>Changes apply at once · ⌘Z undoes</span></div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+const N4SVG = `<svg width="36" height="24" viewBox="0 0 30 20"><rect x=".5" y=".5" width="29" height="19" rx="3.5" fill="#2a2a2c"/><g fill="#6aa8ff"><rect x="4" y="3" width="3" height="3" rx=".5"/><rect x="8.5" y="3" width="3" height="3" rx=".5"/><rect x="13.5" y="3" width="3" height="3" rx=".5"/><rect x="18.5" y="3" width="3" height="3" rx=".5"/><rect x="23" y="3" width="3" height="3" rx=".5"/><rect x="4" y="7.5" width="3" height="3" rx=".5"/><rect x="8.5" y="7.5" width="3" height="3" rx=".5"/><rect x="13.5" y="7.5" width="3" height="3" rx=".5"/><rect x="18.5" y="7.5" width="3" height="3" rx=".5"/><rect x="23" y="7.5" width="3" height="3" rx=".5"/></g><rect x="4" y="12" width="22" height="2.2" rx=".6" fill="#4a4a4e"/><g fill="#77777c"><circle cx="6.5" cy="16.8" r="1.4"/><circle cx="12" cy="16.8" r="1.4"/><circle cx="18" cy="16.8" r="1.4"/><circle cx="23.5" cy="16.8" r="1.4"/></g></svg>`;
+const N3SVG = `<svg width="36" height="24" viewBox="0 0 30 20"><rect x=".5" y=".5" width="29" height="19" rx="3.5" fill="#2a2a2c"/><g fill="#6aa8ff"><rect x="4" y="3.5" width="3.4" height="3.4" rx=".5"/><rect x="8.6" y="3.5" width="3.4" height="3.4" rx=".5"/><rect x="13.2" y="3.5" width="3.4" height="3.4" rx=".5"/><rect x="4" y="8.4" width="3.4" height="3.4" rx=".5"/><rect x="8.6" y="8.4" width="3.4" height="3.4" rx=".5"/><rect x="13.2" y="8.4" width="3.4" height="3.4" rx=".5"/></g><circle cx="23" cy="7.5" r="4" fill="#4a4a4e"/><g fill="#77777c"><circle cx="5.7" cy="15.6" r="1.4"/><circle cx="10.3" cy="15.6" r="1.4"/><circle cx="14.9" cy="15.6" r="1.4"/><circle cx="20.5" cy="15.6" r="1.7"/><circle cx="25.3" cy="15.6" r="1.7"/></g></svg>`;
+const NOTES = `<div class="ico" style="background:#fff;flex-direction:column;justify-content:flex-start;overflow:hidden"><div style="height:11px;width:100%;background:#ffd60a"></div><div style="width:28px;margin-top:6px;border-top:1.5px solid #d1d1d6;height:5px"></div><div style="width:28px;border-top:1.5px solid #d1d1d6;height:5px"></div><div style="width:28px;border-top:1.5px solid #d1d1d6"></div></div>`;
+const DECK = `<div class="deck"><div class="keys">
+<div class="key"><div class="ico" style="background:linear-gradient(#3fa2ff,#0a63e0)"><svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M13 13 L18.5 7.5 L14.4 14.4 Z" fill="#ff453a"/><path d="M13 13 L7.5 18.5 L11.6 11.6 Z" fill="#fff"/></svg></div></div>
+<div class="key"><div class="ico" style="background:#2b2b2e;box-shadow:inset 0 0 0 1px #48484c"><span style="font:600 15px ui-monospace,Menlo,monospace;color:#30d158">&gt;_</span></div></div>
+<div class="key sel">${NOTES}</div>
+<div class="key"><div class="ico" style="background:#fff;flex-direction:column;overflow:hidden;justify-content:flex-start"><div style="font-size:8px;font-weight:700;color:#ff3b30;margin-top:4px;letter-spacing:.04em">NOV</div><div style="font-size:19px;font-weight:300;color:#1d1d1f;line-height:1">19</div></div></div>
+<div class="key"><div class="ico" style="background:linear-gradient(#ff5e7a,#fa233b);font-size:22px">♪</div></div>
+<div class="key" style="background:#0f8a7e"><div class="txt">Standup<span style="font-weight:500;opacity:.8;font-size:9px">Zoom</span></div></div>
+<div class="key" style="background:#c35a00"><div class="txt"><span style="font:600 13px ui-monospace,Menlo,monospace">{ }</span>Backup</div></div>
+<div class="key" style="background:#3a3a3c"><div class="txt"><span style="font-size:13px">⌘⇧4</span><span style="font-weight:500;opacity:.8;font-size:9px">Screenshot</span></div></div>
+<div class="key"><div class="ico" style="background:linear-gradient(135deg,#bf5af2,#5e5ce6)"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M11 2a6 6 0 0 0-3.5 10.9V15h7v-2.1A6 6 0 0 0 11 2z" fill="#fff"/><rect x="8" y="16.2" width="6" height="1.6" rx=".8" fill="#fff"/><rect x="8.8" y="18.6" width="4.4" height="1.6" rx=".8" fill="#fff"/></svg></div></div>
+<div class="key empty"></div></div>
+<div class="strip">
+<div class="blk"><div style="position:absolute;left:7px;top:5px;font-size:7.5px;color:#8e8e93;letter-spacing:.06em">INTERNET</div><div style="position:absolute;left:7px;bottom:7px;font-size:17px;font-weight:600">12.4<span style="font-size:9px;font-weight:500;color:#aeaeb2"> ms</span></div><div style="position:absolute;right:8px;bottom:9px;color:#30d158;font-size:12px">▼</div></div>
+<div class="blk"><div style="position:absolute;left:7px;right:7px;top:9px;font-size:9px;display:flex;justify-content:space-between"><span style="color:#aeaeb2">CPU</span><b>23%</b></div><div style="position:absolute;left:7px;right:7px;top:22px;height:3px;background:#2c2c2e;border-radius:2px"><div style="width:23%;height:100%;background:#30d158;border-radius:2px"></div></div><div style="position:absolute;left:7px;right:7px;top:31px;font-size:9px;display:flex;justify-content:space-between"><span style="color:#aeaeb2">MEM</span><b>61%</b></div><div style="position:absolute;left:7px;right:7px;top:44px;height:3px;background:#2c2c2e;border-radius:2px"><div style="width:61%;height:100%;background:#30d158;border-radius:2px"></div></div></div>
+<div class="blk"></div>
+<div class="blk" style="display:flex;align-items:center;justify-content:center"><svg width="46" height="46" viewBox="0 0 46 46"><path d="M10.3 35.7 A18 18 0 1 1 35.7 35.7" fill="none" stroke="#2c2c2e" stroke-width="4" stroke-linecap="round"/><path d="M10.3 35.7 A18 18 0 0 1 14.6 8.1" fill="none" stroke="#0a84ff" stroke-width="4" stroke-linecap="round"/><text x="23" y="27" text-anchor="middle" fill="#fff" font-size="11" font-weight="600" font-family="-apple-system">45%</text></svg></div>
+</div>
+<div class="knobs">
+<div class="kcol"><div class="knob"></div><div class="klabel">Brightness</div></div>
+<div class="kcol"><div class="knob"></div><div class="klabel">—</div></div>
+<div class="kcol"><div class="knob"></div><div class="klabel">—</div></div>
+<div class="kcol"><div class="knob"></div><div class="klabel">Volume</div></div>
+</div></div>`;
+const INSP = `<div class="ititle">Key 3 · top row</div>
+<div class="row"><span class="k">Action</span><span class="popup" style="flex:1;justify-content:space-between">Open App <span class="chev">▲<br>▼</span></span></div>
+<div class="row"><span class="k">App</span><span style="display:flex;align-items:center;gap:7px;flex:1"><span style="width:18px;height:18px;border-radius:4px;background:#fff;box-shadow:0 0 0 .5px #c7c7cc;display:inline-block;border-top:5px solid #ffd60a"></span>Notes</span><span class="btn">Choose…</span></div>
+<div class="row"><span class="k">Icon</span><div class="segc"><span class="on">App</span><span>Image</span><span>Text</span><span>Library</span></div></div>
+<div class="preview"><div class="key">${NOTES}</div><small>The app's own icon,<br>exactly as the deck shows it.</small></div>
+<div class="divider"></div>
+<div class="testrow"><span class="btn">▶&nbsp;Test</span><span class="testnote">Runs it now, the same way<br>a key press does.</span></div>
+<div class="clear">Clear Key</div>`;
+document.querySelectorAll('.n4svg').forEach(e => e.outerHTML = N4SVG);
+document.querySelectorAll('.n3svg').forEach(e => e.outerHTML = N3SVG);
+document.querySelectorAll('.deckslot').forEach(e => e.outerHTML = DECK);
+const STRIP = DECK.slice(DECK.indexOf('<div class="strip">'), DECK.indexOf('<div class="knobs">'));
+document.querySelectorAll('.stripdemo').forEach(e => {
+  const seamless = e.classList.contains('seamless');
+  const html = STRIP.replace('<div class="strip">', '<div class="strip' + (seamless ? ' seamless' : '') + '" style="margin:6px 4px 4px">')
+                    .replace('<div class="blk">', '<div class="blk sel">');
+  e.outerHTML = '<div style="background:linear-gradient(162deg,#303033,#161618);padding:16px 18px;border-radius:14px;display:inline-block">' + html + '</div>';
+});
+document.querySelectorAll('.inspslot').forEach(e => e.innerHTML = INSP);
+</script>
+</body>
+</html>

@@ -137,6 +137,7 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   (`StreamDeckController --post-reload` posts it), then redraws every slot in place — no clear, so nothing blinks;
   a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged
 - `--config <path>` loads that file instead of searching (development); the same security checks apply
+- `--show-lock-photo` keeps the N4's lock photo up while unlocked (development: lining up the panel rectangles)
 - Logs to stdout/file for debugging
 - Graceful shutdown on SIGTERM/SIGINT
 

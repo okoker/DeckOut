@@ -12,6 +12,13 @@ public final class Daemon {
     private var keepaliveTimer: Timer?
     private let lockMonitor = LockMonitor()
 
+    /// Development (`--show-lock-photo`): keep the N4's lock photo up while unlocked, e.g. to line up
+    /// the panel rectangles. Keys and knobs work as usual; live readings pause.
+    public var showLockPhotoAlways = false
+
+    /// Live readings pause while the lock photo or the locked layout is up.
+    private var livePaused: Bool { lockMonitor.locked || showLockPhotoAlways }
+
     // Live strip blocks: each source runs only while a connected deck shows its block.
     private let volumeWatcher = VolumeWatcher()
     private var volumeReading: (percent: Int?, muted: Bool)?
@@ -91,7 +98,7 @@ public final class Daemon {
 
     /// The layout, or — while the Mac is locked — the N4's lock photo if one is set.
     private func showCurrent(_ connection: DeckConnection) {
-        if lockMonitor.locked, drawLockPhoto(connection) { return }
+        if livePaused, drawLockPhoto(connection) { return }
         drawAll(connection)
     }
 
@@ -130,7 +137,7 @@ public final class Daemon {
             if locked {
                 _ = drawLockPhoto(connection)
             } else {
-                drawAll(connection)
+                showCurrent(connection)
             }
         }
     }
@@ -166,7 +173,7 @@ public final class Daemon {
 
     /// Runs the measurements something on screen needs and stops the rest.
     private func updateLiveSources() {
-        let shown = lockMonitor.locked ? [] : liveTypesShown()
+        let shown = livePaused ? [] : liveTypesShown()
         if shown.contains(.volume) {
             volumeWatcher.start()
         } else {
@@ -281,7 +288,7 @@ public final class Daemon {
 
     /// Redraws only the slots showing `type`, on every deck that shows it.
     private func redrawLive(_ type: StripBlockType) {
-        guard !lockMonitor.locked, let jpeg = liveImage(type) else { return }   // never over the lock photo
+        guard !livePaused, let jpeg = liveImage(type) else { return }   // never over the lock photo
         for connection in decks.connections {
             let slots = LayoutPlan.slots(model: connection.model, config: config)
                 .filter { $0.value == .strip(type) }.keys.sorted()

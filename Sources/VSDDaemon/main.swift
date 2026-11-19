@@ -8,6 +8,7 @@ setvbuf(stdout, nil, _IOLBF, 0)
 // MARK: - Arguments
 //   --config <path>   use this config file instead of searching for one (development)
 //   --post-reload     ask a running daemon to re-read its config, then exit
+//   --show-lock-photo keep the N4's lock photo up while unlocked (development: lining up the panel)
 
 let arguments = CommandLine.arguments
 
@@ -141,6 +142,7 @@ guard let initialConfig = loadAndPrintConfig() else {
 // MARK: - Start
 
 let daemon = Daemon(config: initialConfig)
+daemon.showLockPhotoAlways = arguments.contains("--show-lock-photo")
 daemon.start()
 
 /// Re-read the config through the same security checks; on any failure keep the previous one.

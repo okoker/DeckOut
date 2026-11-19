@@ -83,3 +83,13 @@ The first launch after a replacement can still be killed once (KI-008); launchd 
 
 ## Config Key Mapping
 Decoded inputs (`DeckInput` in `DeckModel.swift`) carry the JSON config key directly (`lcd_1`, `btn_1`, `small_1`), so they are looked up in the config as-is. Each deck model decodes with its own event map: the N3 and the N4 reuse codes with different meanings (e.g. `0x50` is the N3 big knob, the N4 knob 2).
+
+## MiraBox N4 — Differences From the N3
+Full map and behaviour: `n4.md`. What catches you out:
+- **USB-C power:** on the dock's USB-C port the N4 gets no power after being unplugged for more than a few seconds — dark, and
+  absent from the USB tree. A USB-A port (A-to-C cable) powers it every time (KI-009).
+- **Redraw in place:** a `CLE` blinks the whole N4, so after start-up every slot is redrawn without one. The N3
+  shows a changed icon without a `CLE` too (checked 19/11/2026), so both decks redraw in place.
+- **Swipe:** `0x39`, with no direction. Some swipes arrive as `0x38` (touch outside the blocks); that code is ignored.
+- **Knob press:** one report, no release. Strip taps likewise.
+- **Brightness:** `LIG` uses the full 0–100 range; 0 is dim, not off.

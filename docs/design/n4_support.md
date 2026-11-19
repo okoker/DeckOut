@@ -1,7 +1,8 @@
 # MiraBox Stream Dock N4 — Support Design
 
-Status: design, approved by the owner 19/11/2026; build in progress on `feat/n4-support`. Protocol verified on the
-unit 18–19/11/2026; mechanisms researched at source level and builder-checked 19/11/2026.
+**✅ BUILT 19/11/2026 → `docs/reference/n4.md`** (how it works now). This design stays as the record of why.
+Approved by the owner 19/11/2026. Protocol verified on the unit 18–19/11/2026; mechanisms researched at source level
+and builder-checked 19/11/2026.
 Background: `docs/ideas/config_app_and_new_deck.md`. N3 protocol and macOS quirks: `docs/reference/device_quirks.md`.
 
 ## Intent

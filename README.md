@@ -30,7 +30,8 @@ image blocks, and four push-knobs. Keys, knobs, strip taps and swipe all map to 
 icons. Strip blocks can also be live: internet latency (with a rising / falling arrow, red when there's no reply),
 CPU and memory load, and system volume. While the Mac is locked the N4 can show a photo across its keys and strip,
 and its keys do nothing. Both decks can be plugged in at once, each with its own layout (see
-[Config reference](#config-reference)).
+[Config reference](#config-reference)). Connect the N4 to a USB-A port: on a USB-C port it may not power up after a
+replug (`docs/KNOWN_ISSUES.md`, KI-009).
 
 ### Physical layout
 

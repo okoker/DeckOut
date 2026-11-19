@@ -118,8 +118,14 @@ deck. Full example: `config.example.json`.
 | Action | Description |
 |--------|-------------|
 | `shell:<command>` | Execute shell command |
-| `key:<shortcut>` | Simulate keyboard shortcut (e.g. `cmd+shift+4`) |
-| `system_volume` | Adjust macOS system volume by ±step per tick |
+| `key:<shortcut>` | Simulate keyboard shortcut (e.g. `cmd+shift+4`); needs Accessibility |
+| `app:<path>` | Open an app: an absolute path ending `.app` |
+| `url:<URL>` | Open a web address (any `http`/`https` URL with a host, path and query included) in the default browser |
+| `open:<path>` | Open a file or folder (absolute path) with its default app |
+| `script:<path>` | Run a program or script (absolute path) directly, no shell: the path goes to the program as given |
+| `shortcut:<name>` | Run one of Apple's Shortcuts (`/usr/bin/shortcuts run <name>`) |
+| `media_play_pause` / `media_next` / `media_previous` | The Mac's media keys, so they control whatever is playing; need Accessibility |
+| `system_volume` | Adjust macOS system volume by ±step per tick (on a key, knob press, tap or swipe: by its `step`) |
 | `system_mute_toggle` | Toggle system mute (daemon tracks state, syncs with actual) |
 | `zr7_volume` | Adjust ZR7Player volume by ±step per tick (interface TBD) |
 | `zr7_mute_toggle` | Toggle ZR7Player mute (interface TBD) |
@@ -127,14 +133,19 @@ deck. Full example: `config.example.json`.
 | `display_brightness_cycle` | Cycle brightness target: All → per-display → All (30 s auto-revert) |
 | `none` | No action |
 
-**How commands run** (`shell:` today; every program the daemon starts):
+A bad payload (`app:` without `.app`, a relative `open:`/`script:` path, a `url:` that isn't http(s), an empty
+`shortcut:`) or an unknown action logs a warning when pressed and does nothing. `key:` and media actions log one warning
+at load when Accessibility isn't granted.
+
+**How commands run** (`shell:`, `script:`, `shortcut:`; every program the daemon starts):
 - With the user's own shell environment: the login shell (`/bin/zsh` unless the user database says otherwise) is
   started as login + interactive, its environment read between two random markers, and kept. Read at start-up and on
   reloads from outside (`SIGHUP`, `--post-reload`, one read per merged burst); not on the config app's own saves.
   If the shell hangs, waits for input or prints no markers, it is cut off after 10 s and the daemon falls back to its
   own environment with `/opt/homebrew/bin` and `/usr/local/bin` added to PATH (a later failed read keeps the last good
   environment). The log says `Shell environment: resolved` or `fell back (<why>)`.
-- `shell:` runs `/bin/zsh -c <command>`, stdin `/dev/null`, at most 30 s: then the command's whole process group gets
+- `shell:` runs `/bin/zsh -c <command>`; `script:` runs the file itself (it must be executable); `shortcut:` runs
+  `/usr/bin/shortcuts run <name>`. Each with stdin `/dev/null`, at most 30 s: then the command's whole process group gets
   SIGTERM, and SIGKILL 1 s later. Children start with default signal handling and only stdin/stdout/stderr inherited.
 - stdout and stderr are each capped at 64 KB. A press logs a failure, stderr and a non-zero exit; stdout is not
   logged (the config app's Test button shows it).
@@ -200,7 +211,8 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   key, strip tap or swipe — the lock notification can fire when a screen saver merely starts
 - **While locked:** keys, strip taps and swipes do nothing. Knobs run only the built-in actions (`system_volume`,
   `system_mute_toggle`, `zr7_volume`, `zr7_mute_toggle`, `display_brightness`, `display_brightness_cycle`);
-  `shell:` and `key:` never run from any control. Live strip readings pause
+  `shell:`, `key:`, `app:`, `url:`, `open:`, `script:`, `shortcut:` and the media keys never run from any control.
+  Live strip readings pause
 - **N4 with `lock_photo`:** on lock the photo is drawn across all 14 slots (scaled to fill the deck's face, then
   zoomed and moved by its framing, each slot cut at its measured position); on unlock the layout is redrawn. Without a photo, every deck keeps its
   layout, inert

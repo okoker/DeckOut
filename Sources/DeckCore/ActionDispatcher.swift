@@ -1,3 +1,4 @@
+import AppKit
 import ApplicationServices
 import Foundation
 import CoreGraphics
@@ -57,7 +58,7 @@ public final class ActionDispatcher {
         self.brightnessControl = brightness
         self.environment = environment
 
-        // Warn once if key: actions are configured but Input Monitoring is not granted
+        // Warn once if key: or media actions are configured but Accessibility (needed to post events) is not granted
         var actions: [String] = []
         if let n3 = config.n3 {
             actions += n3.buttons.values.map(\.action)
@@ -69,31 +70,79 @@ public final class ActionDispatcher {
             actions += n4.strip.values.compactMap(\.action)
             actions += [n4.swipe?.action].compactMap { $0 }
         }
-        let hasKeyActions = actions.contains { $0.hasPrefix("key:") }
-        if hasKeyActions && !AXIsProcessTrusted() {
-            print("WARNING: key: actions configured but Input Monitoring not granted. Keyboard shortcuts will silently fail. Grant access in System Settings → Privacy & Security → Input Monitoring.")
+        let needsAccessibility = actions.contains { $0.hasPrefix("key:") || MediaKey(rawValue: $0) != nil }
+        if needsAccessibility && !AXIsProcessTrusted() {
+            print("WARNING: key: or media actions configured but Accessibility is not granted. Keyboard shortcuts and media keys will silently fail. Grant access in System Settings → Privacy & Security → Accessibility.")
         }
     }
 
     // MARK: - Action execution
 
     /// Runs one action. `completion` gets what a command printed, or an error, for the config app's Test button;
-    /// it may run on any queue. Commands run off the main thread; everything else runs here, at once.
+    /// it may run on any queue. Programs run off the main thread; everything else runs here, at once.
+    /// Call on the main thread.
     func execute(_ resolved: ResolvedAction, completion: ((ActionResult) -> Void)? = nil) {
-        let action = resolved.action
-        if action.hasPrefix("shell:") {
-            let cmd = String(action.dropFirst("shell:".count))
-            shellQueue.async { [environment] in
-                // zsh -c, as always; with the user's own environment (PATH from their shell, not launchd's).
-                let result = ProcessRunner.run(executable: "/bin/zsh", arguments: ["-c", cmd],
-                                               environment: environment.current)
-                Self.log(result, label: "Shell", command: cmd)
-                completion?(result)
+        let done = completion ?? { _ in }
+        switch ActionKind.parse(resolved.action) {
+        case .none:
+            done(ActionResult())
+        case .shell(let command):
+            // zsh -c, as always; with the user's own environment (PATH from their shell, not launchd's).
+            runProgram("/bin/zsh", ["-c", command], label: "Shell", describing: command, done)
+        case .script(let path):
+            runProgram(path, [], label: "Script", describing: path, done)
+        case .shortcut(let name):
+            runProgram("/usr/bin/shortcuts", ["run", name], label: "Shortcut", describing: name, done)
+        case .key(let shortcut):
+            done(ActionResult(error: simulateKeyShortcut(shortcut) ?? accessibilityProblem()))
+        case .media(let key):
+            MediaKeys.post(key)
+            done(ActionResult(error: accessibilityProblem()))
+        case .app(let path):
+            NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path),
+                                               configuration: NSWorkspace.OpenConfiguration()) { _, error in
+                let problem = error.map { "couldn't open \(path): \($0.localizedDescription)" }
+                if let problem { print("Warning: \(problem)") }
+                done(ActionResult(error: problem))
             }
-            return
+        case .url(let url):
+            done(ActionResult(error: open(url, describing: url.absoluteString)))
+        case .open(let path):
+            guard FileManager.default.fileExists(atPath: path) else {
+                print("Warning: no file or folder at \(path)")
+                done(ActionResult(error: "no file or folder at \(path)"))
+                return
+            }
+            done(ActionResult(error: open(URL(fileURLWithPath: path), describing: path)))
+        case .builtIn(let name):
+            done(ActionResult(error: runBuiltIn(name, step: resolved.step)))
+        case .invalid(let reason):
+            print("Warning: \(reason)")
+            done(ActionResult(error: reason))
         }
-        runNow(action: action, step: resolved.step)
-        completion?(ActionResult())
+    }
+
+    /// Runs a program off the main thread with the user's environment; arguments as an array, never a shell string.
+    private func runProgram(_ executable: String, _ arguments: [String], label: String, describing: String,
+                            _ done: @escaping (ActionResult) -> Void) {
+        shellQueue.async { [environment] in
+            let result = ProcessRunner.run(executable: executable, arguments: arguments, environment: environment.current)
+            Self.log(result, label: label, command: describing)
+            done(result)
+        }
+    }
+
+    private func open(_ url: URL, describing: String) -> String? {
+        guard NSWorkspace.shared.open(url) else {
+            print("Warning: couldn't open \(describing)")
+            return "couldn't open \(describing)"
+        }
+        return nil
+    }
+
+    /// Posting key and media events needs Accessibility; without it macOS drops them silently.
+    private func accessibilityProblem() -> String? {
+        AXIsProcessTrusted() ? nil : "needs Accessibility permission (System Settings → Privacy & Security → Accessibility)"
     }
 
     /// A press logs a failure, stderr and a non-zero exit. Stdout isn't logged: the Test button shows it.
@@ -110,26 +159,17 @@ public final class ActionDispatcher {
         }
     }
 
-    private func runNow(action: String, step: Int?) {
-        if action == "none" {
-            return
-        }
-
-        if action.hasPrefix("key:") {
-            let shortcut = String(action.dropFirst("key:".count))
-            simulateKeyShortcut(shortcut)
-            return
-        }
-
+    /// The volume, mute, ZR7 and monitor-brightness actions. Returns a problem for the Test button, or nil.
+    private func runBuiltIn(_ action: String, step: Int?) -> String? {
         if action == "system_volume" {
             let s = step ?? 0
             VolumeControl.adjust(step: s)
-            return
+            return nil
         }
 
         if action == "system_mute_toggle" {
             VolumeControl.toggleMute()
-            return
+            return nil
         }
 
         if action == "zr7_volume" {
@@ -137,45 +177,49 @@ public final class ActionDispatcher {
             let name = s >= 0 ? "com.zr7.volumeUp" : "com.zr7.volumeDown"
             DistributedNotificationCenter.default().postNotificationName(
                 .init(name), object: nil, deliverImmediately: true)
-            return
+            return nil
         }
 
         if action == "zr7_mute_toggle" {
             DistributedNotificationCenter.default().postNotificationName(
                 .init("com.zr7.muteToggle"), object: nil, deliverImmediately: true)
-            return
+            return nil
         }
 
         if action == "display_brightness" {
             guard let bc = brightnessControl else {
-                print(brightnessBuilding ? "Warning: display_brightness: monitors not ready yet"
-                                         : "Warning: display_brightness action but no displays configured")
-                return
+                let problem = brightnessBuilding ? "display_brightness: monitors not ready yet"
+                                                 : "display_brightness action but no displays configured"
+                print("Warning: \(problem)")
+                return problem
             }
             bc.adjust(step: step ?? 0)
-            return
+            return nil
         }
 
         if action == "display_brightness_cycle" {
             guard let bc = brightnessControl else {
-                print(brightnessBuilding ? "Warning: display_brightness_cycle: monitors not ready yet"
-                                         : "Warning: display_brightness_cycle action but no displays configured")
-                return
+                let problem = brightnessBuilding ? "display_brightness_cycle: monitors not ready yet"
+                                                 : "display_brightness_cycle action but no displays configured"
+                print("Warning: \(problem)")
+                return problem
             }
             bc.cycleMode()
-            return
+            return nil
         }
 
         print("Warning: unknown action '\(action)'")
+        return "unknown action '\(action)'"
     }
 
     // MARK: - Key shortcut simulation
 
-    private func simulateKeyShortcut(_ shortcut: String) {
+    /// Posts the shortcut. Returns what was wrong with it, or nil.
+    private func simulateKeyShortcut(_ shortcut: String) -> String? {
         let parts = shortcut.lowercased().split(separator: "+").map(String.init)
         guard !parts.isEmpty else {
             print("Warning: empty key shortcut")
-            return
+            return "empty key shortcut"
         }
 
         let keyName = parts.last!
@@ -183,7 +227,7 @@ public final class ActionDispatcher {
 
         guard let keyCode = Self.allKeyCodes[keyName] else {
             print("Warning: unknown key '\(keyName)' in shortcut '\(shortcut)'")
-            return
+            return "unknown key '\(keyName)' in shortcut '\(shortcut)'"
         }
 
         var flags: CGEventFlags = []
@@ -205,7 +249,7 @@ public final class ActionDispatcher {
         guard let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true),
               let keyUp   = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: false) else {
             print("Warning: could not create CGEvent for shortcut '\(shortcut)'")
-            return
+            return "could not create the key event for '\(shortcut)'"
         }
 
         keyDown.flags = flags
@@ -213,5 +257,6 @@ public final class ActionDispatcher {
 
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
+        return nil
     }
 }

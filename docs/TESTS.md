@@ -86,7 +86,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-079 | `ShellEnvironmentTests/readsTheEnvironmentBetweenMarkers` | The environment is read from between the markers, whatever the startup files print before it |
 | T-080 | `ShellEnvironmentTests/fallsBackOnHangInputOrNoMarkers` | A shell that hangs, reads input or prints no markers falls back within 3 s with a reason, and Homebrew's folders on PATH |
 | T-081 | `ShellEnvironmentTests/fallbackAddsHomebrewPaths` | The fallback PATH adds `/opt/homebrew/bin` and `/usr/local/bin` once each, after the existing entries |
+| T-082 | `ActionKindTests/parsesEveryKind` | Every action string maps to its kind; a `url:` keeps its path, query and fragment |
+| T-083 | `ActionKindTests/badPayloadsAreInvalid` | `app:` without a path or `.app`, non-http(s) or malformed `url:`, relative `open:`, empty `script:` / `shortcut:` and unknown actions are invalid, with a reason |
 | T-084 | `ActionResolverTests/pressesCarryTheirStep` | A key, knob press, strip tap and swipe pass their own signed `step` (else a volume key does nothing); a key without one passes none |
+| T-085 | `ActionResolverTests/newKindsNeverRunWhileLocked` | `app:`, `url:`, `open:`, `script:`, `shortcut:` and the media keys never run from a key, knob press or strip tap while locked; all run unlocked |
+| T-086 | `ActionDispatcherTests/scriptRunsAsGivenWithTheEnvironment` | A script whose path has spaces, quotes and `$` runs as given (no shell string) with the user's environment, and its output comes back |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

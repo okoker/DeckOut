@@ -117,3 +117,15 @@ private func sampleConfig() throws -> AppConfig {
     #expect(ActionResolver.resolve(.stripTap("1"), deck: .n4, config: c) == ResolvedAction(action: "system_volume", step: -5))
     #expect(ActionResolver.resolve(.swipe, deck: .n4, config: c) == ResolvedAction(action: "system_volume", step: -5))
 }
+
+@Test func newKindsNeverRunWhileLocked() {                          // T-085
+    let actions = ["app:/Applications/Notes.app", "url:https://example.com", "open:/tmp", "script:/tmp/run.sh",
+                   "shortcut:Show Hello", "media_play_pause", "media_next", "media_previous"]
+    let inputs: [DeckInput] = [.keyDown("key_1"), .knobDown("knob_1"), .stripTap("1")]
+    for action in actions {
+        for input in inputs {
+            #expect(!LockPolicy.allows(input, action: action, locked: true), "\(action) from \(input)")
+            #expect(LockPolicy.allows(input, action: action, locked: false), "\(action) from \(input)")
+        }
+    }
+}

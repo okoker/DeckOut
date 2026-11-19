@@ -71,11 +71,41 @@ enum Canvas {
     /// Loads an icon, trims its transparent padding and draws it fitted inside a black
     /// `width`×`height` tile with `margin` on every side, turned 180°.
     static func iconTile(path: String, width: Int, height: Int, margin: CGFloat = 4) -> Data? {
+        guard let icon = trimmedIcon(path: path) else { return nil }
+        return jpeg(width: width, height: height) { ctx in
+            ctx.draw(icon, in: iconRect(icon, width: width, height: height, margin: margin))
+        }
+    }
+
+    /// The same tile upright, as a person sees it on the deck (the config app's drawing).
+    static func iconTileImage(path: String, width: Int, height: Int, margin: CGFloat = 4) -> CGImage? {
+        guard let icon = trimmedIcon(path: path) else { return nil }
+        return image(width: width, height: height) { ctx in
+            ctx.draw(icon, in: iconRect(icon, width: width, height: height, margin: margin))
+        }
+    }
+
+    /// A `width`×`height` image on black, drawn upright (CG, y up).
+    static func image(width: Int, height: Int, draw: (CGContext) -> Void) -> CGImage? {
+        guard let ctx = CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        ctx.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        ctx.interpolationQuality = .high
+        draw(ctx)
+        return ctx.makeImage()
+    }
+
+    private static func trimmedIcon(path: String) -> CGImage? {
         guard let source = loadImage(path: path) else { return nil }
-        let icon = ImageLoader.trimTransparency(source) ?? source
+        return ImageLoader.trimTransparency(source) ?? source
+    }
+
+    private static func iconRect(_ icon: CGImage, width: Int, height: Int, margin: CGFloat) -> CGRect {
         let box = CGRect(x: 0, y: 0, width: width, height: height).insetBy(dx: margin, dy: margin)
-        let rect = aspectFit(CGSize(width: icon.width, height: icon.height), in: box)
-        return jpeg(width: width, height: height) { ctx in ctx.draw(icon, in: rect) }
+        return aspectFit(CGSize(width: icon.width, height: icon.height), in: box)
     }
 }
 

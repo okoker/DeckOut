@@ -118,6 +118,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-111 | `AgentLinkTests/restartsAnOlderAgentOnce` | An agent of another build (or one too old to report it) is asked to restart once; if the same build comes back, the app says so and doesn't loop |
 | T-112 | `AgentLinkTests/hearsStatusAndStrip`, `silentAgentIsReportedOnce` | The app's link hears status and live strip pushes, reconnects when the agent goes away, and reports an agent that doesn't answer (registering it again once) |
 | T-113 | `AppLocationTests/onlyFromApplications` | DeckOut runs only as `/Applications/DeckOut.app`: Downloads, a translocated copy, a subfolder, a renamed copy or a disk image are refused (the agent would point at a folder that goes away); the dev variant runs anywhere |
+| T-114 | `DeckFaceTests/n4MatchesMeasuredRects` | The app's N4 drawing puts every key and strip block at half its measured position (`LockPhoto.n4Rects`), inside the deck, with a person's name for each control |
+| T-115 | `DeckFaceTests/everyConfigKeyOnce` | Each deck's drawing has every config key exactly once (N3: 6 keys, 3 buttons, 3 knobs; N4: 10 keys, 4 strip blocks, 4 knobs) and no two controls overlap |
+| T-116 | `DeckFaceTests/previewIsUpright` | Key and picture previews come out upright at the deck's sizes (the deck's own copies are turned), and a live block's JPEG as drawn on the deck is turned back upright |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

@@ -36,7 +36,7 @@ struct TestRow: View {
                 }
             }
             if noAnswer {
-                FieldNote(text: "The deck controller didn't answer.", warning: true).padding(.leading, -68)
+                FieldNote(text: "The deck controller didn't answer.", warning: true).padding(.leading, -(FieldRow<EmptyView>.labelWidth + 10))
             }
             if let result { ResultView(result: result) }
         }

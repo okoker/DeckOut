@@ -23,15 +23,17 @@ struct IconRow: View {
                 .pickerStyle(.segmented)
                 .fixedSize()
             }
-            HStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
                 preview
-                Text(caption).font(.system(size: 11)).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if source == .image {
-                    Button("Choose…", action: chooseImage).controlSize(.small)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(caption).font(.system(size: 11)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if source == .image {
+                        Button("Choose…", action: chooseImage).controlSize(.small)
+                    }
                 }
             }
-            .padding(.leading, 68)
+            .padding(.leading, FieldRow<EmptyView>.labelWidth + 10)
         }
     }
 
@@ -47,8 +49,8 @@ struct IconRow: View {
 
     private var caption: String {
         switch source {
-        case .app: return "The app's own icon,\nexactly as the deck shows it."
-        case .image: return "Your image,\nexactly as the deck shows it."
+        case .app: return "The app's own icon, as the deck shows it."
+        case .image: return "Your image, as the deck shows it."
         case .none: return "A black screen."
         }
     }

@@ -2,9 +2,10 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// One labelled row of the editor, the label right-aligned in a 52 pt column (mockup).
+/// One labelled row of the editor, the label right-aligned in its own column (mockup).
 struct FieldRow<Content: View>: View {
     let label: String
+    static var labelWidth: CGFloat { 66 }
     @ViewBuilder let content: () -> Content
 
     init(_ label: String, @ViewBuilder content: @escaping () -> Content) {
@@ -16,7 +17,8 @@ struct FieldRow<Content: View>: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(label)
                 .foregroundStyle(.secondary)
-                .frame(width: 58, alignment: .trailing)
+                .frame(width: FieldRow.labelWidth, alignment: .trailing)
+                .lineLimit(1)
             content()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -34,7 +36,7 @@ struct FieldNote: View {
             .font(.system(size: 11))
             .foregroundStyle(warning ? Color(rgb: 0xFF453A) : .secondary)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.leading, 68)
+            .padding(.leading, FieldRow<EmptyView>.labelWidth + 10)
     }
 }
 

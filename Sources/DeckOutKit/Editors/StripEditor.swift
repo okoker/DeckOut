@@ -91,7 +91,7 @@ struct StripEditor: View {
             Image(decorative: image, scale: 1).resizable().interpolation(.high)
                 .frame(width: 88, height: 56)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .padding(.leading, 68)
+                .padding(.leading, FieldRow<EmptyView>.labelWidth + 10)
         }
     }
 }

@@ -14,6 +14,7 @@ public struct DeckOutApp: App {
                 .task {
                     #if DEBUG
                     WindowSnapshot.scheduleIfAsked(model: model)
+                    SelfTest.runIfAsked(model: model)
                     #endif
                     await model.launch()
                 }

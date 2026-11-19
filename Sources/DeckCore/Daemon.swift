@@ -52,9 +52,13 @@ public final class Daemon {
     private var brightnessBuilding = false
     private var brightnessGeneration = 0      // a build that finishes after a newer one started is dropped
 
-    public init(config: AppConfig) {
+    /// The user's shell environment, shared with every dispatcher; `refresh` is the owner's business.
+    private let environment: ShellEnvironment
+
+    public init(config: AppConfig, environment: ShellEnvironment) {
         self.config = config
-        self.dispatcher = ActionDispatcher(config: config, brightness: nil)
+        self.environment = environment
+        self.dispatcher = ActionDispatcher(config: config, brightness: nil, environment: environment)
     }
 
     /// True when the monitors to control differ (order included: it decides the cycle order). Nil and empty
@@ -98,7 +102,7 @@ public final class Daemon {
     }
 
     private func makeDispatcher() -> ActionDispatcher {
-        let dispatcher = ActionDispatcher(config: config, brightness: brightness)
+        let dispatcher = ActionDispatcher(config: config, brightness: brightness, environment: environment)
         dispatcher.brightnessBuilding = brightnessBuilding
         return dispatcher
     }

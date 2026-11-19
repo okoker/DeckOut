@@ -127,6 +127,18 @@ deck. Full example: `config.example.json`.
 | `display_brightness_cycle` | Cycle brightness target: All → per-display → All (30 s auto-revert) |
 | `none` | No action |
 
+**How commands run** (`shell:` today; every program the daemon starts):
+- With the user's own shell environment: the login shell (`/bin/zsh` unless the user database says otherwise) is
+  started as login + interactive, its environment read between two random markers, and kept. Read at start-up and on
+  reloads from outside (`SIGHUP`, `--post-reload`, one read per merged burst); not on the config app's own saves.
+  If the shell hangs, waits for input or prints no markers, it is cut off after 10 s and the daemon falls back to its
+  own environment with `/opt/homebrew/bin` and `/usr/local/bin` added to PATH (a later failed read keeps the last good
+  environment). The log says `Shell environment: resolved` or `fell back (<why>)`.
+- `shell:` runs `/bin/zsh -c <command>`, stdin `/dev/null`, at most 30 s: then the command's whole process group gets
+  SIGTERM, and SIGKILL 1 s later. Children start with default signal handling and only stdin/stdout/stderr inherited.
+- stdout and stderr are each capped at 64 KB. A press logs a failure, stderr and a non-zero exit; stdout is not
+  logged (the config app's Test button shows it).
+
 ## External Monitor Brightness (DDC/CI)
 
 macOS has no native support for controlling brightness on non-Apple external displays. The built-in brightness keys and Control Centre slider only work on the internal panel and Apple-branded monitors (e.g. Apple Studio Display, Pro Display XDR). Third-party displays — including high-end LG, Dell, and Samsung panels connected via USB-C or DisplayPort — are invisible to macOS brightness controls.

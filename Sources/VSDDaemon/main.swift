@@ -97,7 +97,22 @@ if let problem = startup.problem {
 
 // MARK: - Start
 
-let daemon = Daemon(config: startup.config)
+/// Commands run with the user's own shell environment, read at start and on reloads from outside (SIGHUP,
+/// `--post-reload`); until the first read finishes, PATH plus Homebrew's folders.
+let shellEnvironment = ShellEnvironment()
+
+func refreshEnvironment() {
+    shellEnvironment.refresh {
+        let status = shellEnvironment.status
+        DispatchQueue.main.async {
+            print(status.state == .resolved ? "Shell environment: resolved"
+                                            : "Shell environment: fell back (\(status.detail ?? "unknown"))")
+        }
+    }
+}
+
+let daemon = Daemon(config: startup.config, environment: shellEnvironment)
+refreshEnvironment()
 daemon.start()
 if arguments.contains("--show-lock-photo") { daemon.showLockPhoto(startup.config.n4?.lockPhoto) }
 
@@ -119,9 +134,17 @@ func reloadConfig() -> ReloadResult {
 /// A burst of reload requests (a save per slider step) becomes one reload.
 let reloadMerger = ReloadMerger { reloadConfig() }
 
+/// One environment read per merged reload, not one per request in the burst.
+var environmentRefreshPending = false
+
 func requestReload(reason: String) {
     print("Reload requested (\(reason))")
-    reloadMerger.request(nil)
+    environmentRefreshPending = true
+    reloadMerger.request { _ in
+        guard environmentRefreshPending else { return }
+        environmentRefreshPending = false
+        refreshEnvironment()
+    }
 }
 
 // MARK: - Signal handling

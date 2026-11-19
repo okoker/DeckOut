@@ -8,6 +8,7 @@ public final class ActionDispatcher {
 
     private let config: AppConfig
     private let shellQueue = DispatchQueue(label: "streamdeck.shell", qos: .utility)
+    private let environment: ShellEnvironment
 
     /// Owned by the `Daemon`, which keeps one across reloads and builds it off the main thread.
     /// Nil while it is being built (`brightnessBuilding`), or when no monitors are set up.
@@ -51,9 +52,10 @@ public final class ActionDispatcher {
 
     // MARK: - Init
 
-    init(config: AppConfig, brightness: BrightnessControl?) {
+    init(config: AppConfig, brightness: BrightnessControl?, environment: ShellEnvironment) {
         self.config = config
         self.brightnessControl = brightness
+        self.environment = environment
 
         // Warn once if key: actions are configured but Input Monitoring is not granted
         var actions: [String] = []
@@ -75,58 +77,41 @@ public final class ActionDispatcher {
 
     // MARK: - Action execution
 
-    func execute(_ resolved: ResolvedAction) {
-        execute(action: resolved.action, step: resolved.step)
-    }
-
-    private func execute(action: String, step: Int?) {
-        if action == "none" {
-            return
-        }
-
+    /// Runs one action. `completion` gets what a command printed, or an error, for the config app's Test button;
+    /// it may run on any queue. Commands run off the main thread; everything else runs here, at once.
+    func execute(_ resolved: ResolvedAction, completion: ((ActionResult) -> Void)? = nil) {
+        let action = resolved.action
         if action.hasPrefix("shell:") {
             let cmd = String(action.dropFirst("shell:".count))
-            shellQueue.async {
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-                process.arguments = ["-c", cmd]
-                let errPipe = Pipe()
-                process.standardError = errPipe
-                // Drain stderr on a dedicated queue to avoid pipe buffer deadlock.
-                let errQueue = DispatchQueue(label: "streamdeck.shell.stderr")
-                var errData = Data()
-                errPipe.fileHandleForReading.readabilityHandler = { handle in
-                    let chunk = handle.availableData
-                    errQueue.sync { errData.append(chunk) }
-                }
-                do {
-                    try process.run()
-                } catch {
-                    errPipe.fileHandleForReading.readabilityHandler = nil
-                    print("Shell launch failed: \(error)")
-                    return
-                }
-
-                // Kill after 30 s to prevent a hung command from blocking the queue
-                let timeout = DispatchWorkItem {
-                    if process.isRunning {
-                        print("Shell timeout (30s), killing: \(cmd)")
-                        process.terminate()
-                    }
-                }
-                DispatchQueue.global().asyncAfter(deadline: .now() + 30, execute: timeout)
-
-                process.waitUntilExit()
-                timeout.cancel()
-                errPipe.fileHandleForReading.readabilityHandler = nil
-                let finalErr = errQueue.sync { errData }
-                if let err = String(data: finalErr, encoding: .utf8), !err.isEmpty {
-                    print("Shell error: \(err.trimmingCharacters(in: .whitespacesAndNewlines))")
-                }
-                if process.terminationStatus != 0 {
-                    print("Shell exit \(process.terminationStatus): \(cmd)")
-                }
+            shellQueue.async { [environment] in
+                // zsh -c, as always; with the user's own environment (PATH from their shell, not launchd's).
+                let result = ProcessRunner.run(executable: "/bin/zsh", arguments: ["-c", cmd],
+                                               environment: environment.current)
+                Self.log(result, label: "Shell", command: cmd)
+                completion?(result)
             }
+            return
+        }
+        runNow(action: action, step: resolved.step)
+        completion?(ActionResult())
+    }
+
+    /// A press logs a failure, stderr and a non-zero exit. Stdout isn't logged: the Test button shows it.
+    static func log(_ result: ActionResult, label: String, command: String) {
+        if let error = result.error {
+            print("\(label) failed (\(error)): \(command)")
+        }
+        let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !stderr.isEmpty {
+            print("\(label) error: \(stderr)")
+        }
+        if let status = result.exitStatus, status != 0 {
+            print("\(label) exit \(status): \(command)")
+        }
+    }
+
+    private func runNow(action: String, step: Int?) {
+        if action == "none" {
             return
         }
 

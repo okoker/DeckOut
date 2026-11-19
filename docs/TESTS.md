@@ -81,6 +81,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-074 | `ConfigTests/lockPhotoReadsStringOrObject` | `lock_photo` reads as a path (zoom 1, centred) or as the framing object; zoom 0.5 or 11 makes the file invalid |
 | T-075 | `LockTests/framingZoomsAndMovesThePhoto` | Placement on the 800×464 face: aspect-fill, zoom about the centre, positive `offset_y` moves the photo down |
 | T-076 | `LockTests/framingNeverLeavesBlackEdges` | Tall and wide photos at any offset (±1, ±10) and zoom 1 or 3 still cover the whole face |
+| T-077 | `ProcessRunnerTests/capturesOutputAndExitStatus` | A command's stdout, stderr and exit status come back separately; 200 KB of output is capped at 64 KB with a truncation mark |
+| T-078 | `ProcessRunnerTests/timeoutAndMissingExecutableReportErrors` | A command past its timeout is stopped and reported as timed out within a second or two; a missing program reports an error and no exit status |
+| T-079 | `ShellEnvironmentTests/readsTheEnvironmentBetweenMarkers` | The environment is read from between the markers, whatever the startup files print before it |
+| T-080 | `ShellEnvironmentTests/fallsBackOnHangInputOrNoMarkers` | A shell that hangs, reads input or prints no markers falls back within 3 s with a reason, and Homebrew's folders on PATH |
+| T-081 | `ShellEnvironmentTests/fallbackAddsHomebrewPaths` | The fallback PATH adds `/opt/homebrew/bin` and `/usr/local/bin` once each, after the existing entries |
 | T-084 | `ActionResolverTests/pressesCarryTheirStep` | A key, knob press, strip tap and swipe pass their own signed `step` (else a volume key does nothing); a key without one passes none |
 
 ## On the device

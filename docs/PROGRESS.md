@@ -5,7 +5,7 @@ v2 daemon running as launchd service. All buttons, knobs, LCD icons, system volu
 Last run 02/11/2026: manual device test (no automated suite) — brightness knob cycles All → Left → Right → All, Right adjusts only the right screen; no daemon crash reports after the test.
 
 ## Active Work
-_(None)_
+- MiraBox N4 support on branch `feat/n4-support` — status in `docs/TODO.md`.
 
 ## Completed
 - launchd daemon installed (27/03/2026): ~/Library/Application Support/StreamDeckController/, ~/.config/vsd/config.json

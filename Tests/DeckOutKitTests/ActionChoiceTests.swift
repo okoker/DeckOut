@@ -51,3 +51,8 @@ import Testing
     #expect(ActionCheck.problem("app:Notes") != nil)
     #expect(ActionCheck.problem("none") == nil)
 }
+
+@Test func problemsReadPlainly() {   // T-125
+    #expect(ActionFields.plain("url: needs a full web address") == "Needs a full web address")
+    #expect(ActionFields.plain("unknown action 'x'") == "Unknown action 'x'")
+}

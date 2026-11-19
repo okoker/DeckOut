@@ -43,24 +43,20 @@ public struct MainWindow: View {
         case .plugIn: PlugInScreen()
         case .pickDeck: PickDeckScreen { model.show($0) }
         case .deck(let deck):
-            DeckStage(face: DeckFace.of(deck), images: model.images, captions: model.captions,
-                      selection: $model.selection, config: model.config)
+            DeckStage(model: model, face: DeckFace.of(deck))
         }
     }
 }
 
-/// The deck on its stage, and the inspector for the selected control.
+/// The deck on its stage, and the editor for the selected control.
 struct DeckStage: View {
+    @ObservedObject var model: AppModel
     let face: DeckFace
-    let images: [String: CGImage]
-    let captions: [String: String]
-    @Binding var selection: String?
-    let config: AppConfig?
 
     var body: some View {
         HStack(spacing: 0) {
             VStack(spacing: 14) {
-                DeckView(face: face, images: images, captions: captions, selection: $selection)
+                DeckView(face: face, images: model.images, captions: model.captions, selection: $model.selection)
                 Text("Click a key, strip block or knob to set it up")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
@@ -68,9 +64,9 @@ struct DeckStage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(StageBackground())
             .contentShape(Rectangle())
-            .onTapGesture { selection = nil }
+            .onTapGesture { model.selection = nil }
             Divider()
-            Inspector(face: face, selection: selection, config: config)
+            EditorPanel(model: model, face: face)
                 .frame(width: 300)
         }
     }
@@ -85,11 +81,6 @@ struct Inspector: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let id = selection, let control = face.control(id) {
-                Text(control.label.uppercased())
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(0.4)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 2)
                 ForEach(Array(rows(for: control).enumerated()), id: \.offset) { _, row in
                     InspectorRow(label: row.label, title: row.title, detail: row.detail)
                 }
@@ -103,9 +94,6 @@ struct Inspector: View {
             }
             Spacer()
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.background.secondary)
     }
 
     private struct Row {

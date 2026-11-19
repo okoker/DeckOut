@@ -131,6 +131,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-124 | `XPCTests/accessibilityRequestReachesTheAgent` | The app's "Allow…" reaches the agent (which asks macOS to list it under Accessibility) and hears whether it's allowed |
 | T-125 | `ActionChoiceTests/roundTripsEveryKind`, `menusFitTheControl`, `actionCheckSaysWhatsWrong` | Every action the app offers reads back from the config as what was picked (today's hand-written strings too); knob turns offer only volume and monitor brightness; ZR7 is on no menu; volume and brightness show as Up / Down on keys; the app shows the agent's own reason a string wouldn't run |
 | T-126 | `KeyNamesTests/recordsWhatTheDispatcherCanPost` | The shortcut recorder writes `cmd+shift+4`-style strings from one key table shared with the agent; a key the agent can't post (outside the table) is refused, so no shortcut is saved that silently does nothing |
+| T-127 | `IconFilesTests/appIconAndCopiedImageLandInIcons` | An app's own icon is rendered to a 256 px PNG in the config's `icons/` folder (folder 0700, file 0600), the same file for the same app; a chosen image is copied in byte for byte, so moving the original changes nothing |
+| T-128 | `IconFilesTests/editsReachTheLivePreset` | An edit lands in the live preset only (keys, buttons, strip blocks) or on the deck (knobs); a deck with no section gets one ("Default", brightness 75) on its first edit |
+| T-129 | `EditorSnapshotTests/editorsDraw` | The key editor draws for each kind of action in a real offscreen window, light and dark (PNGs for a look) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

@@ -25,30 +25,51 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var config: AppConfig?
     @Published public private(set) var configProblem: String?
     /// The deck on screen; nil on "Plug in your deck" and "Pick a deck".
-    @Published public private(set) var shown: DeckKind?
+    @Published public internal(set) var shown: DeckKind?
     @Published public var selection: String?
     /// Upright images of the shown deck's keys and picture blocks, rebuilt when the config changes.
     @Published public private(set) var staticImages: [String: CGImage] = [:]
     /// Upright images of the live strip blocks, rebuilt with each push.
     @Published public private(set) var liveImages: [String: CGImage] = [:]
     public let link: AgentLink?
+    /// The config the window edits; nil outside a DeckOut bundle.
+    public let store: ConfigStore?
     private let registrar: AgentRegistrar?
     private var watchers: Set<AnyCancellable> = []
+    /// Apple Shortcuts by name, for "Run a Shortcut" (read with `shortcuts list` when first needed).
+    @Published public var shortcutNames: [String]?
 
     public nonisolated static let notAnsweringText = "DeckOut's background part isn't answering."
 
-    public init(bundle: Bundle = .main) {
+    public convenience init(bundle: Bundle = .main) {
         let identity = AppIdentity(bundleID: bundle.bundleIdentifier)
-        self.identity = identity
-        appBuild = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev"
-        if let identity {
-            link = AgentLink(connect: AgentLink.machService(identity), appBuild: appBuild)
-            registrar = AgentRegistrar.forAgent(of: identity)
-        } else {
-            link = nil
-            registrar = nil
+        let appBuild = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev"
+        guard let identity else {
+            self.init(identity: nil, appBuild: appBuild, link: nil, store: nil, registrar: nil)
+            return
         }
+        let link = AgentLink(connect: AgentLink.machService(identity), appBuild: appBuild)
+        let store = ConfigStore(path: identity.configPath(home: FileManager.default.homeDirectoryForCurrentUser.path),
+                                reload: { [weak link] in link?.call({ $0.reload { _ in } }) })
+        self.init(identity: identity, appBuild: appBuild, link: link, store: store,
+                  registrar: AgentRegistrar.forAgent(of: identity))
+    }
+
+    /// The parts, given: the app's own (above), or a store alone for previews and tests (no agent).
+    init(identity: AppIdentity?, appBuild: String, link: AgentLink?, store: ConfigStore?, registrar: AgentRegistrar?) {
+        self.identity = identity
+        self.appBuild = appBuild
+        self.link = link
+        self.store = store
+        self.registrar = registrar
         link?.onNotAnswering = { [weak self] in await self?.registerAgain() }
+        store?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &watchers)
+        store?.$config.sink { [weak self] config in   // the store publishes on the main actor
+            guard let self, config != self.config else { return }
+            self.config = config
+            self.rebuildStaticImages()
+        }.store(in: &watchers)
+        store?.$problem.sink { [weak self] in self?.configProblem = $0 }.store(in: &watchers)
         link?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &watchers)
         // Every status push follows a reload or a deck coming or going: re-read the config, follow the decks.
         link?.$status.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
@@ -144,7 +165,7 @@ public final class AppModel: ObservableObject {
             log("location: \(problem)")
             return
         }
-        readConfig()
+        store?.load()
         let state = await registrar.ensureRegistered()
         registration = state
         log("registration: \(state)")
@@ -181,22 +202,12 @@ public final class AppModel: ObservableObject {
 
     // MARK: - Config and images
 
+    /// Picks up the file if it changed on disk (a hand edit, then a reload).
     private func readConfig() {
-        guard let identity else { return }
-        let path = identity.configPath(home: FileManager.default.homeDirectoryForCurrentUser.path)
-        switch ConfigFile.load(at: path) {
-        case .success(let loaded):
-            if loaded != config {
-                config = loaded
-                rebuildStaticImages()
-            }
-            configProblem = nil
-        case .failure(let error):
-            configProblem = error.description
-        }
+        store?.externalChange()
     }
 
-    private func rebuildStaticImages() {
+    func rebuildStaticImages() {
         guard let shown, let config else {
             staticImages = [:]
             return

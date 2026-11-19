@@ -25,10 +25,12 @@ import Testing
     let size = MainWindow.size
     let screens: [(String, AnyView)] = [
         ("stage", AnyView(VStack(spacing: 0) {
-            DeckStage(face: face, images: images, captions: captions, selection: .constant("key_3"), config: config)
+            HStack(spacing: 0) {
+                DeckView(face: face, images: images, captions: captions, selection: .constant("key_3"))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity).background(StageBackground())
+            }
             StatusBar(health: .good, text: "Deck controller running")
         })),
-        ("stage-n3", AnyView(DeckStage(face: DeckFace.of(.n3), images: [:], captions: [:], selection: .constant(nil), config: nil))),
         ("plug-in", AnyView(PlugInScreen())),
         ("pick", AnyView(PickDeckScreen { _ in })),
         ("move", AnyView(MoveToApplicationsScreen(message: AppLocation.problem(bundlePath: "/x/DeckOut.app", identity: .release)!))),

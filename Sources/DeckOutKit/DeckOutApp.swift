@@ -11,7 +11,12 @@ public struct DeckOutApp: App {
     public var body: some Scene {
         Window(model.identity?.appName ?? "DeckOut", id: "main") {
             MainWindow(model: model)
-                .task { await model.launch() }
+                .task {
+                    #if DEBUG
+                    WindowSnapshot.scheduleIfAsked(model: model)
+                    #endif
+                    await model.launch()
+                }
         }
         .windowResizability(.contentSize)
         .windowToolbarStyle(.unified(showsTitle: false))

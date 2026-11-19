@@ -70,47 +70,33 @@ public final class ActionDispatcher {
 
     // MARK: - Public dispatch
 
-    public func dispatch(event: DeckEvent) {
+    public func dispatch(event: DeckInput) {
         print("Event: \(event)")
         switch event {
 
-        // Button events
-        case .buttonPress(let id):
-            guard let buttonConfig = config.buttons[id.configKey] else {
-                print("Warning: no config for button \(id.configKey)")
+        case .keyDown(let key):
+            guard let buttonConfig = config.buttons[key] else {
+                print("Warning: no config for button \(key)")
                 return
             }
             execute(action: buttonConfig.action, step: nil)
 
-        case .buttonRelease:
-            return
-
-        // Knob rotation
-        case .knobRotateCW(let id):
-            guard let knobConfig = config.knobs[id.configKey] else {
-                print("Warning: no config for knob \(id.configKey)")
+        case .knobTurn(let knob, let sign):
+            guard let knobConfig = config.knobs[knob] else {
+                print("Warning: no config for knob \(knob)")
                 return
             }
             let step = knobConfig.rotate.step ?? 1
-            execute(action: knobConfig.rotate.action, step: +step)
+            execute(action: knobConfig.rotate.action, step: sign * step)
 
-        case .knobRotateCCW(let id):
-            guard let knobConfig = config.knobs[id.configKey] else {
-                print("Warning: no config for knob \(id.configKey)")
-                return
-            }
-            let step = knobConfig.rotate.step ?? 1
-            execute(action: knobConfig.rotate.action, step: -step)
-
-        // Knob press
-        case .knobPress(let id):
-            guard let knobConfig = config.knobs[id.configKey] else {
-                print("Warning: no config for knob \(id.configKey)")
+        case .knobDown(let knob):
+            guard let knobConfig = config.knobs[knob] else {
+                print("Warning: no config for knob \(knob)")
                 return
             }
             execute(action: knobConfig.press.action, step: nil)
 
-        case .knobRelease:
+        case .keyUp, .knobUp, .stripTap, .swipe:
             return
         }
     }

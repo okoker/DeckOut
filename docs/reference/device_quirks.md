@@ -82,4 +82,4 @@ launchctl kickstart -k gui/$(id -u)/com.streamdeck.controller
 The first launch after a replacement can still be killed once (KI-008); launchd relaunches ~10 s later and it runs. Judge success by `launchctl print gui/$(id -u)/com.streamdeck.controller` (pid, runs) after ~15 s, not by the first crash report in `~/Library/Logs/DiagnosticReports/`.
 
 ## Config Key Mapping
-JSON config uses underscored keys (lcd_1, btn_1, small_1) but Swift enum rawValues are camelCase (lcd1, btn1, small1). The `configKey` computed property on ButtonID/KnobID handles this mapping. Do not use `rawValue` for config lookups.
+Decoded inputs (`DeckInput` in `DeckModel.swift`) carry the JSON config key directly (`lcd_1`, `btn_1`, `small_1`), so they are looked up in the config as-is. Each deck model decodes with its own event map: the N3 and the N4 reuse codes with different meanings (e.g. `0x50` is the N3 big knob, the N4 knob 2).

@@ -15,7 +15,7 @@ public final class HIDDevice {
     private let reportBufferSize = 512
     private var config: DeckConfig
 
-    public var onEvent: ((DeckEvent) -> Void)?
+    public var onEvent: ((DeckInput) -> Void)?
 
     // MARK: - Init
 
@@ -42,10 +42,10 @@ public final class HIDDevice {
         // Build matching dictionary — all four keys must match
         let match: [[String: Any]] = [
             [
-                kIOHIDVendorIDKey as String:  Deck.vendorID,
-                kIOHIDProductIDKey as String: Deck.productID,
-                kIOHIDDeviceUsagePageKey as String: Deck.usagePage,
-                kIOHIDDeviceUsageKey as String: Deck.usage
+                kIOHIDVendorIDKey as String:  DeckModel.n3.vendorID,
+                kIOHIDProductIDKey as String: DeckModel.n3.productID,
+                kIOHIDDeviceUsagePageKey as String: DeckModel.n3.usagePage,
+                kIOHIDDeviceUsageKey as String: DeckModel.n3.usage
             ]
         ]
         IOHIDManagerSetDeviceMatchingMultiple(manager, match as CFArray)
@@ -181,7 +181,7 @@ public final class HIDDevice {
 
     fileprivate func handleInputReport(_ report: UnsafeMutablePointer<UInt8>, length: CFIndex) {
         let bytes = Array(UnsafeBufferPointer(start: report, count: Int(length)))
-        if let event = DeckEventParser.parse(data: bytes) {
+        if let event = DeckModel.n3.decode(bytes) {
             onEvent?(event)
         }
     }

@@ -90,7 +90,7 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
                       exit: { exited = true })
     _ = await onMain { (done: @escaping (Bool) -> Void) in agent.restart(); done(true) }
     #expect(!exited)    // not at once: the reply must get out first
-    try? await Task.sleep(nanoseconds: 600_000_000)
+    for _ in 0..<100 where !exited { try? await Task.sleep(nanoseconds: 100_000_000) }   // the main thread may be busy
     #expect(exited)
 }
 

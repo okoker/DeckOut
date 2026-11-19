@@ -60,3 +60,120 @@ extension N4Section {
 extension N3Section {
     var liveIndex: Int { presets.firstIndex { $0.name == activePreset } ?? 0 }
 }
+
+// MARK: - Presets and brightness
+
+extension AppConfig {
+
+    public func presetNames(_ deck: DeckKind) -> [String] {
+        deck == .n4 ? n4?.presets.map(\.name) ?? [] : n3?.presets.map(\.name) ?? []
+    }
+
+    /// The live preset's name (as the agent picks it: the named one, else the first).
+    public func livePreset(_ deck: DeckKind) -> String? {
+        deck == .n4 ? n4?.active.name : n3?.active.name
+    }
+
+    public mutating func makeLive(_ name: String, deck: DeckKind) {
+        guard presetNames(deck).contains(name) else { return }
+        edit(deck) { $0.activePreset = name } n3: { $0.activePreset = name }
+    }
+
+    /// A blank layout named "Preset N" (N one more than the presets there are, or the next free), made live.
+    public mutating func newPreset(deck: DeckKind) -> String {
+        ensureDeck(deck)
+        let name = freeName(in: presetNames(deck), from: presetNames(deck).count + 1) { "Preset \($0)" }
+        edit(deck) {
+            $0.presets.append(N4Preset(name: name, keys: [:], strip: [:]))
+            $0.activePreset = name
+        } n3: {
+            $0.presets.append(N3Preset(name: name, buttons: [:]))
+            $0.activePreset = name
+        }
+        return name
+    }
+
+    /// A copy of `name`'s layout called "<name> copy" (then "copy 2", …), made live. Returns its name.
+    @discardableResult
+    public mutating func duplicatePreset(_ name: String, deck: DeckKind) -> String? {
+        guard presetNames(deck).contains(name) else { return nil }
+        let copy = freeName(in: presetNames(deck), from: 1) { $0 == 1 ? "\(name) copy" : "\(name) copy \($0)" }
+        edit(deck) { section in
+            var preset = section.presets.first { $0.name == name }!
+            preset.name = copy
+            section.presets.append(preset)
+            section.activePreset = copy
+        } n3: { section in
+            var preset = section.presets.first { $0.name == name }!
+            preset.name = copy
+            section.presets.append(preset)
+            section.activePreset = copy
+        }
+        return copy
+    }
+
+    /// Renames, keeping it live if it was. False (nothing changed) for an empty name or one already taken.
+    @discardableResult
+    public mutating func renamePreset(_ name: String, to newName: String, deck: DeckKind) -> Bool {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let names = presetNames(deck)
+        guard names.contains(name), !trimmed.isEmpty, trimmed == name || !names.contains(trimmed) else { return false }
+        edit(deck) { section in
+            let index = section.presets.firstIndex { $0.name == name }!
+            section.presets[index].name = trimmed
+            if section.activePreset == name { section.activePreset = trimmed }
+        } n3: { section in
+            let index = section.presets.firstIndex { $0.name == name }!
+            section.presets[index].name = trimmed
+            if section.activePreset == name { section.activePreset = trimmed }
+        }
+        return true
+    }
+
+    /// Deletes a preset, never the last one; deleting the live one makes the first left live.
+    @discardableResult
+    public mutating func deletePreset(_ name: String, deck: DeckKind) -> Bool {
+        let names = presetNames(deck)
+        guard names.count > 1, names.contains(name) else { return false }
+        let wasLive = livePreset(deck) == name
+        edit(deck) { section in
+            section.presets.removeAll { $0.name == name }
+            if wasLive { section.activePreset = section.presets[0].name }
+        } n3: { section in
+            section.presets.removeAll { $0.name == name }
+            if wasLive { section.activePreset = section.presets[0].name }
+        }
+        return true
+    }
+
+    public func brightness(_ deck: DeckKind) -> Int {
+        (deck == .n4 ? n4?.brightness : n3?.brightness) ?? 75
+    }
+
+    public mutating func setBrightness(_ deck: DeckKind, _ value: Int) {
+        ensureDeck(deck)
+        let clamped = min(100, max(0, value))
+        edit(deck) { $0.brightness = clamped } n3: { $0.brightness = clamped }
+    }
+
+    // MARK: - Private
+
+    /// Gives the deck a section ("Default", brightness 75) if it has none yet.
+    public mutating func ensureDeck(_ deck: DeckKind) {
+        if deck == .n4, n4 == nil { n4 = Self.newN4 }
+        if deck == .n3, n3 == nil { n3 = Self.newN3 }
+    }
+
+    private mutating func edit(_ deck: DeckKind, n4 editN4: (inout N4Section) -> Void, n3 editN3: (inout N3Section) -> Void) {
+        switch deck {
+        case .n4: if var section = n4 { editN4(&section); n4 = section }
+        case .n3: if var section = n3 { editN3(&section); n3 = section }
+        }
+    }
+
+    private func freeName(in names: [String], from start: Int, _ make: (Int) -> String) -> String {
+        var n = start
+        while names.contains(make(n)) { n += 1 }
+        return make(n)
+    }
+}

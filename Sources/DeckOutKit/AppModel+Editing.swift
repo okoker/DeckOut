@@ -181,3 +181,67 @@ extension AppModel {
         objectWillChange.send()
     }
 }
+
+// MARK: - Presets, brightness
+
+extension AppModel {
+
+    public var presetNames: [String] {
+        guard let shown else { return [] }
+        let names = config?.presetNames(shown) ?? []
+        return names.isEmpty ? ["Default"] : names
+    }
+
+    public var livePreset: String {
+        shown.flatMap { config?.livePreset($0) } ?? "Default"
+    }
+
+    public func makeLive(_ name: String) {
+        guard let shown else { return }
+        store?.change("Switch Preset") { $0.makeLive(name, deck: shown) }
+    }
+
+    /// Returns the new preset's name (it is live).
+    public func newPreset() -> String? {
+        guard let shown else { return nil }
+        var made: String?
+        store?.change("New Preset") { made = $0.newPreset(deck: shown) }
+        return made
+    }
+
+    public func duplicateLivePreset() {
+        guard let shown else { return }
+        let live = livePreset
+        store?.change("Duplicate Preset") { config in
+            config.ensureDeck(shown)
+            config.duplicatePreset(live, deck: shown)
+        }
+    }
+
+    /// False when the name is empty or taken (nothing changes).
+    public func renameLivePreset(to name: String) -> Bool {
+        guard let shown else { return false }
+        let live = livePreset
+        var renamed = false
+        store?.change("Rename Preset") { config in
+            config.ensureDeck(shown)
+            renamed = config.renamePreset(live, to: name, deck: shown)
+        }
+        return renamed || name.trimmingCharacters(in: .whitespaces) == live
+    }
+
+    public func deleteLivePreset() {
+        guard let shown else { return }
+        let live = livePreset
+        store?.change("Delete Preset") { _ = $0.deletePreset(live, deck: shown) }
+    }
+
+    public var brightness: Int {
+        shown.map { config?.brightness($0) ?? 75 } ?? 75
+    }
+
+    public func setBrightness(_ value: Int) {
+        guard let shown else { return }
+        store?.change("Change Brightness", coalescing: true) { $0.setBrightness(shown, value) }
+    }
+}

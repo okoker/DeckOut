@@ -16,7 +16,8 @@ public struct MainWindow: View {
     public var body: some View {
         VStack(spacing: 0) {
             content
-            StatusBar(health: model.statusLine.health, text: model.statusLine.text)
+            StatusBar(health: model.statusLine.health, text: model.statusLine.text,
+                      hint: model.shown != nil ? "Changes apply at once · ⌘Z undoes" : nil)
         }
         .frame(width: Self.size.width, height: Self.size.height)
         .toolbar {
@@ -25,6 +26,14 @@ public struct MainWindow: View {
                     DeckButton(deck: deck, plugged: model.connectedDecks.contains(deck), shown: model.shown == deck) {
                         model.show(deck)
                     }
+                }
+                if model.shown != nil {
+                    PresetMenu(model: model).padding(.leading, 10)
+                }
+            }
+            ToolbarItemGroup(placement: .primaryAction) {
+                if model.shown != nil {
+                    BrightnessSlider(model: model)
                 }
             }
         }
@@ -77,6 +86,7 @@ struct DeckStage: View {
 struct StatusBar: View {
     let health: AppModel.Health
     let text: String
+    var hint: String? = nil
 
     var body: some View {
         HStack(spacing: 7) {
@@ -85,6 +95,7 @@ struct StatusBar: View {
                 .frame(width: 6, height: 6)
             Text(text).lineLimit(1).truncationMode(.middle)
             Spacer()
+            if let hint { Text(hint).lineLimit(1) }
         }
         .font(.system(size: 11.5))
         .foregroundStyle(.secondary)

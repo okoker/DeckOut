@@ -21,6 +21,7 @@ public final class ConfigStore: ObservableObject {
     private var undoStack: [(name: String, config: AppConfig)] = []
     private var redoStack: [(name: String, config: AppConfig)] = []
     private static let undoLimit = 200
+    private var lastCoalesced: Date?
 
     public init(path: String, reload: @escaping () -> Void) {
         self.path = path
@@ -56,8 +57,9 @@ public final class ConfigStore: ObservableObject {
     }
 
     /// Applies `edit` to the current config; if anything changed, saves it, asks for a reload, and makes it undoable
-    /// under `name` ("Change Action", shown in the Edit menu).
-    public func change(_ name: String, _ edit: (inout AppConfig) -> Void) {
+    /// under `name` ("Change Action", shown in the Edit menu). `coalescing`: a run of such changes with the same name,
+    /// each within a second of the last (a slider dragged), is one undo step.
+    public func change(_ name: String, coalescing: Bool = false, _ edit: (inout AppConfig) -> Void) {
         externalChange()
         guard problem == nil || ConfigFile.load(at: path).isMissing else {
             return                                  // the file on disk doesn't load: never save over it
@@ -67,8 +69,14 @@ public final class ConfigStore: ObservableObject {
         guard next != config else { return }
         let before = config
         guard save(next) else { return }
-        undoStack.append((name, before))
-        if undoStack.count > Self.undoLimit { undoStack.removeFirst() }
+        let now = Date()
+        let continues = coalescing && undoStack.last?.name == name && redoStack.isEmpty
+            && lastCoalesced.map { now.timeIntervalSince($0) < 1 } == true
+        if !continues {
+            undoStack.append((name, before))
+            if undoStack.count > Self.undoLimit { undoStack.removeFirst() }
+        }
+        lastCoalesced = coalescing ? now : nil
         redoStack.removeAll()
         updateNames()
     }

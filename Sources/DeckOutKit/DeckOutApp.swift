@@ -20,6 +20,9 @@ public struct DeckOutApp: App {
         }
         .windowResizability(.contentSize)
         .windowToolbarStyle(.unified(showsTitle: false))
+        .commands {
+            CommandGroup(replacing: .undoRedo) { UndoCommands(model: model) }
+        }
 
         #if DEBUG
         Window("Agent Status", id: "agent-status") {

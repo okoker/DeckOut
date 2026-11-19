@@ -71,6 +71,11 @@ public final class AgentLink: ObservableObject {
         open()
     }
 
+    /// Asks for the status again (e.g. while waiting for a permission to be granted).
+    public func refreshStatus() {
+        askStatus(generation)
+    }
+
     /// Start over on a new connection (after the agent was registered afresh), without waiting.
     public func reconnect() {
         nextRetry = retryDelay

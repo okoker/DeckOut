@@ -245,3 +245,23 @@ extension AppModel {
         store?.change("Change Brightness", coalescing: true) { $0.setBrightness(shown, value) }
     }
 }
+
+// MARK: - Accessibility
+
+extension AppModel {
+
+    /// The agent asks macOS to list it under Accessibility; the pane opens; the status is read again every 2 s for a
+    /// minute, so the banner goes as soon as it's allowed.
+    public func requestAccessibility() {
+        link?.call({ proxy in proxy.requestAccessibility { _ in } })
+        if let pane = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(pane)
+        }
+        for second in stride(from: 2, through: 60, by: 2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(second)) { [weak self] in
+                guard let self, self.link?.status?.accessibility == false else { return }
+                self.link?.refreshStatus()
+            }
+        }
+    }
+}

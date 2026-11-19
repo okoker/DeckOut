@@ -57,3 +57,9 @@ import Testing
     let model = try previewModel(config, deck: .n4, selection: nil)
     #expect(model.problems == ["key_2": "The script isn't there any more"])
 }
+
+@MainActor @Test func accessibilityNoteDraws() throws {   // T-129 (design check)
+    let note = AccessibilityNote {}.frame(width: 264).padding(18)
+    try Snapshot.windowPNG(note, size: CGSize(width: 300, height: 140), dark: false)
+        .write(to: snapshotFolder.appendingPathComponent("accessibility-light.png"))
+}

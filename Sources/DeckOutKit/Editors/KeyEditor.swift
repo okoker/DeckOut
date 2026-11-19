@@ -31,11 +31,36 @@ struct KeyEditor: View {
     }
 }
 
-/// Shortcuts and media keys need the deck controller allowed under Accessibility (Task 8 fills this in).
+/// Shortcuts and media keys need the deck controller allowed under Accessibility. The app asks when such an action
+/// is set up: Allow… has the controller ask macOS to list it, opens the pane, and checks again until it's allowed.
+/// The controller never asks on its own: a prompt from a windowless process goes unseen.
 struct AccessibilityBanner: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        EmptyView()
+        if model.link?.status?.accessibility == false {
+            AccessibilityNote { model.requestAccessibility() }
+        }
+    }
+}
+
+struct AccessibilityNote: View {
+    let allow: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Keyboard shortcuts and media keys need DeckOut allowed under Accessibility.",
+                  systemImage: "hand.raised.fill")
+                .font(.system(size: 11.5))
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Click Allow, then turn on DeckOutAgent in the list that opens.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Allow…", action: allow).controlSize(.small)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color(rgb: 0xFF9F0A).opacity(0.13)))
     }
 }

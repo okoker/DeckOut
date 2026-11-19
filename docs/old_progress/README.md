@@ -4,3 +4,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 
 - 01 — Core build (27/03/2026): core daemon, LCD icons, ZR7 volume, SIGHUP reload → `01_core_build.md`
 - 02 — launchd install (27/03/2026): daemon runs as a launchd service → `02_launchd_install.md`
+- 03 — CoreAudio volume and early fixes (27/03/2026): system volume via CoreAudio; report ID, config key and run loop fixes → `03_volume_and_fixes.md`

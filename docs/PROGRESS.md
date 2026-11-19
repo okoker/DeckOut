@@ -1,58 +1,59 @@
 # Progress
 
-## Session Handover — 19/11/2026 (night)
+## Session Handover — 19/11/2026 (late night, owner away)
 
-**Next session: write DeckOut plan 2, the app shell** (superpowers:writing-plans), from `docs/design/config_app.md`
-phase 2 and "After this plan" in `docs/superpowers/plans/2026-11-19-deckout-1-background.md`. Before relying on
-`SMAppService`, read Karabiner-Elements and Copilot for Xcode at source (both cited in the design).
+**Autonomous run to UAT** (owner, 19/11/2026): build DeckOut through phase 6 while the owner is away, then UAT.
+Standing go for live test sessions (stop the installed daemon → register the dev agent on a copy of the config →
+test → unregister → start the installed daemon again and check it). Commits on local branches, not pushed or merged
+until UAT. No signing. Downloads allowed: m1ddc source, Phosphor icons. Plans and ledgers:
+`docs/superpowers/plans/2026-11-19-deckout-{2,3}-*.md`, `.superpowers/sdd/<plan>/progress.md`.
 
-### What was done
-- Plan 1 built on `deckout-1-background` (`323a6ff`…`f219806`), fast-forward merged, branch deleted, **pushed** (GitHub
-  main = `f219806`, the 22 N4 commits too; no release tag); device session done (run line below). Its release build is
-  **installed** as the daemon (22:24, PID 33804): log clean, both decks, monitors ready in 344 ms off the main thread.
+### Where it stands
+- Plan 2 (the app shell) built on `deckout-2-app-shell`: 127 tests, two test sessions, fresh review fixed (I1, I2);
+  minors are BL-006–BL-010. Plan 3 (editing) is drafted and next, on `deckout-3-editing`.
+- The installed daemon is the plan 1 build, running; the dev app is `~/Applications/DeckOut Dev.app`, unregistered.
 
-### Uncommitted state
-- `docs/BACKLOG.md` BL-005; `docs/TODO.md` line now points at plan 2; `docs/PROGRESS.md` this handover + the plan 1
-  run line. The owner hasn't said whether to commit them. `.DS_Store` is the owner's — leave it.
-
-### Decisions made (not yet in docs)
-- Plan 2 sets the XPC code-signing requirement before any agent plist passes `--mach-service`, dev builds included:
-  until then `test` lets any process running as the owner use `key:` / media with the daemon's Accessibility grant.
-- Plan 1 review minors, recorded only here: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call);
-  M2 `ConfigFile.save` doesn't parse-check what it writes (plan 3 needs it); M3 `showLockPhoto` isn't merged and
-  re-reads the photo per call (plan 4's drag); M6 `--show-lock-photo` ignores reloads; M8 each reload logs the whole
-  config (log growth under app saves); M9 `Agent.version` is read lazily, so read it at launch for plan 2's version
-  check; M10 unverified: `NSXPCListener(machServiceName:)` with a name the job doesn't own may crash-loop under
-  KeepAlive; M11 unverified: a `.zshrc` touching Documents / Desktop / iCloud prompts in the daemon's name.
-- Older findings, still recorded only here: `Daemon` / `DeckManager` have no teardown (IOKit callbacks hold an
-  unretained pointer), needed before the app embeds a `Daemon`; the volume tile shows "0%" on outputs with no volume
-  control; knob inputs skip the lock recheck (≤5 s window); a deck reconnecting at the lock screen shows its layout
-  ≤5 s before the photo; an unplug mid-redraw logs up to 15 warnings.
-
-### Environment state
-- Rollback in `~/Library/Application Support/StreamDeckController/`: `.n4` (N4 build), `.prev` (v1.0.0, pairs with
-  `config.json.prev`). Live config unchanged (loads as preset "Default"). Test Shortcut "Show Notification" can go.
-
-### What's next
-1. Write plan 2 in a fresh session, then build it natively as plan 1 was.
-2. Owner, before plan 2's first signed build: check in Keychain Access which authority issued the Developer ID
-   certificate (the original Sub-CA can't sign after 01/02/2027: make one from G2). Every signing act needs a go.
-3. Open with the owner: commit the uncommitted docs; a PROGRESS "Completed" entry for plan 1; a release or not;
-   a key press on each deck to confirm the install.
+### Recorded only here (still open)
+- Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M2 `ConfigFile.save`
+  doesn't parse-check what it writes (plan 3 Task 1); M3 `showLockPhoto` isn't merged and re-reads the photo per call
+  (plan 4's drag); M6 `--show-lock-photo` ignores reloads; M8 each reload logs the whole config (plan 3 Task 2); M10
+  `NSXPCListener(machServiceName:)` with a name the job doesn't own may crash-loop under KeepAlive (unverified; the
+  plist and the argument come from one Makefile variable); M11 unverified: a `.zshrc` touching Documents / Desktop /
+  iCloud prompts in the daemon's name.
+- Older: `Daemon` / `DeckManager` have no teardown (only matters if the app ever embeds a `Daemon`; it doesn't); the
+  volume tile shows "0%" on outputs with no volume control; knob inputs skip the lock recheck (≤5 s window); a deck
+  reconnecting at the lock screen shows its layout ≤5 s before the photo; an unplug mid-redraw logs up to 15 warnings.
+- Signing: before the first signed build the owner checks which authority issued the Developer ID certificate. Not
+  urgent: only builds after 01/02/2027 would need a G2 certificate, and the team id (what the checks use) stays.
 
 ## Current Status
-One launchd daemon drives the TreasLin N3 and the MiraBox N4 (DeckOut plan 1 build, pushed and installed 19/11/2026):
-buttons, knobs, LCD icons, the N4's live strip and lock photo, system volume, ZR7 volume and monitor brightness all
-working; presets, lock-photo framing and the new action kinds are in, set by hand until the config app exists.
-Last run 19/11/2026: `swift test` 60/60 (T-001–T-060; T-059 new in Task 11, T-060 from the final review), watched; device checks on both decks
-(every control, reload, live strip, lock, both decks together, two 10-min performance windows), then a key on each
-deck, the internet tile and a lock / unlock on the installed daemon.
+One launchd daemon drives the TreasLin N3 and the MiraBox N4 (DeckOut plan 1 build, installed 19/11/2026). The DeckOut
+app shell (plan 2) is built on a local branch: it registers its agent, checks signatures both ways, and shows the
+plugged-in deck as it is, live strip included; editing comes with plan 3.
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
+19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- None. Next: DeckOut plan 2, the app shell (`docs/TODO.md`). Backlog: BL-002–BL-005.
+- DeckOut plan 3, editing (`docs/superpowers/plans/2026-11-19-deckout-3-editing.md`), then plans 4–6, then UAT.
+  Backlog: BL-002–BL-010.
 
 ## Completed
+
+### 19/11/2026 — DeckOut is an app: it runs the deck controller and shows your deck as it is
+- **Reference:** `docs/reference/app.md` (new); design `docs/design/config_app.md` (phase 2); plan
+  `docs/superpowers/plans/2026-11-19-deckout-2-app-shell.md`; T-095–T-118; KI-008 (rewritten); BL-006–BL-010.
+- **For a person:** DeckOut.app holds the deck controller, renamed DeckOutAgent, and starts it at login through
+  macOS's Login Items; no Terminal. Open the app and it shows the deck that's plugged in, drawn as it looks, with the
+  live strip moving; both plugged in, it asks which; none, it asks you to plug one in. It says when it's in the wrong
+  folder, switched off in Login Items, or can't reach the controller. Only DeckOut's own app can talk to the
+  controller. Nothing is editable yet (plan 3).
+- **Decision (owner, 19/11/2026):** build through phase 6 unattended, with test sessions on this Mac and local
+  commits; UAT at the end. (CL calls, in the plan:) ad hoc builds pin the app's exact binary; the app restarts an
+  agent of another build once; the dev variant has its own config and logs and installs to `~/Applications`.
+- **Checked:** `swift test` 127/127; two test sessions on this Mac (run line above). Session 2 found KI-008 again
+  with the new agent: a replaced, unregistered agent was killed on its first start and launchd lost the job; the
+  app now unregisters and registers it afresh when it doesn't answer. A fresh reviewer found two important issues
+  (a refused agent never reported; a vanished one still shown as running), both fixed test-first.
 
 ### 19/11/2026 — The daemon is ready for the DeckOut app: presets, photo framing, new actions, no reload stall
 - **Reference:** design `docs/design/config_app.md` (phases 0–1; plan 1 built); `docs/REQUIREMENTS.md` (Configuration,
@@ -84,8 +85,6 @@ deck, the internet tile and a lock / unlock on the installed daemon.
   average — owner told); memory 19 MB vs 17 MB. The Mac never system-slept (display sleep only), so a real sleep's
   USB power loss is covered only by the unplug checks.
 
-- Volume control via CoreAudio `kAudioDevicePropertyVolumeScalar` (27/03/2026) — replaced NSEvent media keys, which need Accessibility and break on every reinstall
-- Bug fixes (27/03/2026): sendPacket report ID stripping, configKey mapping, CFRunLoop requirement
 - Brightness knob fixes (02/11/2026): mode cycle stuck on Left — `refreshDisplays()` reset the mode to All on every press (regression from the 02/04/2026 hot-plug refresh); daemon crash ~2.5 s after the HUD closed — NSWindow over-release, fixed with `isReleasedWhenClosed = false`. Checked by hand 02/11/2026: the knob cycles All → Left → Right → All, Right adjusts only the right screen; no crash reports after the test.
 
 ## History

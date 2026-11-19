@@ -92,3 +92,32 @@ private func quadrantPhoto(width: Int, height: Int) -> CGImage {
         #expect(CGRect(origin: .zero, size: LockPhoto.canvas).contains(rect))
     }
 }
+
+// MARK: - Framing
+
+@Test func framingZoomsAndMovesThePhoto() {                         // T-075
+    let photo = CGSize(width: 100, height: 400)
+    func framing(zoom: Double = 1, x: Double = 0, y: Double = 0) -> LockPhotoConfig {
+        LockPhotoConfig(path: "/p.jpg", zoom: zoom, offsetX: x, offsetY: y)
+    }
+    #expect(LockPhoto.placement(photo: photo, framing: framing()) == CGRect(x: 0, y: -1368, width: 800, height: 3200))
+    #expect(LockPhoto.placement(photo: photo, framing: framing(y: 0.5)).minY == -1136)   // moved down
+    let zoomed = LockPhoto.placement(photo: photo, framing: framing(zoom: 2))
+    #expect(zoomed.width == 1600)
+    #expect(zoomed.minX == -400)                                                          // centred
+}
+
+@Test func framingNeverLeavesBlackEdges() {                         // T-076
+    for photo in [CGSize(width: 100, height: 400), CGSize(width: 400, height: 100)] {
+        for zoom in [1.0, 3.0] {
+            for offset in [-10.0, -1, 1, 10] {
+                for (x, y) in [(offset, 0.0), (0.0, offset), (offset, offset)] {
+                    let rect = LockPhoto.placement(photo: photo, framing: LockPhotoConfig(path: "/p.jpg", zoom: zoom,
+                                                                                         offsetX: x, offsetY: y))
+                    #expect(rect.minX <= 0 && rect.minY <= 0 && rect.maxX >= 800 && rect.maxY >= 464,
+                            "\(photo) zoom \(zoom) offset \(x), \(y): \(rect)")
+                }
+            }
+        }
+    }
+}

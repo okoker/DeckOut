@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 
 /// A photo shown across the N4 while the Mac is locked. The keys and the strip are windows onto one
-/// picture: the photo is scaled to fill the deck's face (centre-cropped), each slot's rectangle is cut
+/// picture: the photo is scaled to fill the deck's face, then zoomed and moved as its framing says, each slot's rectangle is cut
 /// out at its position and turned 180°, and the pieces are sent like icons. Nothing is stored on the deck.
 enum LockPhoto {
     /// The deck's face in key-image pixels: the bounding box of the 14 screens.
@@ -41,15 +41,32 @@ enum LockPhoto {
         return image
     }
 
-    /// The photo cut into one piece per rectangle, each turned 180° for the deck.
-    static func slices(_ photo: CGImage, rects: [UInt8: CGRect]) -> [UInt8: CGImage] {
+    /// Where the photo sits on the face, top-left origin, as the user sees it: aspect-fill, then `zoom` about the
+    /// centre, then the offsets (fractions of the face), then clamped so the photo covers the whole face.
+    static func placement(photo: CGSize, framing: LockPhotoConfig) -> CGRect {
+        let fill = aspectFill(photo, in: CGRect(origin: .zero, size: canvas))
+        let zoom = CGFloat(framing.zoom.isFinite ? max(1, framing.zoom) : 1)
+        // max(): rounding in the fill must never leave a sliver of the face uncovered.
+        let w = max(fill.width * zoom, canvas.width), h = max(fill.height * zoom, canvas.height)
+        let dx = CGFloat(framing.offsetX.isFinite ? framing.offsetX : 0) * canvas.width
+        let dy = CGFloat(framing.offsetY.isFinite ? framing.offsetY : 0) * canvas.height
+        let x = min(0, max(canvas.width - w, (canvas.width - w) / 2 + dx))
+        let y = min(0, max(canvas.height - h, (canvas.height - h) / 2 + dy))
+        return CGRect(x: x, y: y, width: w, height: h)
+    }
+
+    /// The photo cut into one piece per rectangle, each turned 180° for the deck. No framing: filled and centred.
+    static func slices(_ photo: CGImage, rects: [UInt8: CGRect], framing: LockPhotoConfig? = nil) -> [UInt8: CGImage] {
         let width = Int(canvas.width), height = Int(canvas.height)
         guard let ctx = CGContext(
             data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
             space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else { return [:] }
         ctx.interpolationQuality = .high
-        ctx.draw(photo, in: aspectFill(CGSize(width: photo.width, height: photo.height), in: CGRect(origin: .zero, size: canvas)))
+        let rect = placement(photo: CGSize(width: photo.width, height: photo.height),
+                             framing: framing ?? LockPhotoConfig(path: ""))
+        // CG draws with y up: flip the top-left placement.
+        ctx.draw(photo, in: CGRect(x: rect.minX, y: canvas.height - rect.maxY, width: rect.width, height: rect.height))
         guard let panel = ctx.makeImage() else { return [:] }
 
         var result: [UInt8: CGImage] = [:]
@@ -61,10 +78,10 @@ enum LockPhoto {
         return result
     }
 
-    /// Every slice as a JPEG, ready to send.
-    static func jpegSlices(path: String, rects: [UInt8: CGRect] = n4Rects) -> [UInt8: Data] {
-        guard let photo = load(path: path) else { return [:] }
-        return slices(photo, rects: rects).compactMapValues { Canvas.encodeJPEG($0) }
+    /// Every slice of the framed photo as a JPEG, ready to send.
+    static func jpegSlices(_ framing: LockPhotoConfig, rects: [UInt8: CGRect] = n4Rects) -> [UInt8: Data] {
+        guard let photo = load(path: framing.path) else { return [:] }
+        return slices(photo, rects: rects, framing: framing).compactMapValues { Canvas.encodeJPEG($0) }
     }
 
     // MARK: - Private

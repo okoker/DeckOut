@@ -75,7 +75,7 @@ func printConfig(_ config: AppConfig) {
             print("    \(name): \(block.type.rawValue)\(tap)")
         }
         print("  Swipe:             \(n4.swipe?.action ?? "none")")
-        print("  Lock photo:        \(n4.lockPhoto ?? "none")")
+        print("  Lock photo:        \(n4.lockPhoto.map { "\($0.path) (zoom \($0.zoom), offset \($0.offsetX), \($0.offsetY))" } ?? "none")")
     }
     if let displays = config.displays, !displays.isEmpty {
         print("  Displays configured: \(displays.count)")
@@ -98,8 +98,8 @@ if let problem = startup.problem {
 // MARK: - Start
 
 let daemon = Daemon(config: startup.config)
-daemon.showLockPhotoAlways = arguments.contains("--show-lock-photo")
 daemon.start()
+if arguments.contains("--show-lock-photo") { daemon.showLockPhoto(startup.config.n4?.lockPhoto) }
 
 /// Re-read the config through the same security checks; on any failure keep the previous one.
 func reloadConfig() -> ReloadResult {

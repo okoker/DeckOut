@@ -12,12 +12,12 @@ public final class Daemon {
     private var keepaliveTimer: Timer?
     private let lockMonitor = LockMonitor()
 
-    /// Development (`--show-lock-photo`): keep the N4's lock photo up while unlocked, e.g. to line up
-    /// the panel rectangles. Keys and knobs work as usual; live readings pause.
-    public var showLockPhotoAlways = false
+    /// A lock photo framing shown on the N4 while unlocked: the config app's photo mode, or `--show-lock-photo`.
+    /// Keys and knobs work as usual; live readings pause.
+    private var lockPhotoPreview: LockPhotoConfig?
 
     /// Live readings pause while the lock photo or the locked layout is up.
-    private var livePaused: Bool { lockMonitor.locked || showLockPhotoAlways }
+    private var livePaused: Bool { lockMonitor.locked || lockPhotoPreview != nil }
 
     // Live strip blocks: each source runs only while a connected deck shows its block.
     private let volumeWatcher = VolumeWatcher()
@@ -199,13 +199,23 @@ public final class Daemon {
         }
     }
 
-    /// Draws the lock photo across an N4's keys and strip. False (nothing drawn) for another deck,
-    /// with no `lock_photo` set, or when the photo can't be read.
+    /// Shows `framing` on the N4 until called with nil, which goes back to the layout (or, while locked, to the
+    /// configured lock photo). Live readings pause meanwhile.
+    public func showLockPhoto(_ framing: LockPhotoConfig?) {
+        lockPhotoPreview = framing
+        updateLiveSources()
+        for connection in decks.connections where connection.model.kind == .n4 {
+            showCurrent(connection)
+        }
+    }
+
+    /// Draws the lock photo across an N4's keys and strip: the preview framing if one is up, else the config's.
+    /// False (nothing drawn) for another deck, with no photo set, or when the photo can't be read.
     @discardableResult
     private func drawLockPhoto(_ connection: DeckConnection) -> Bool {
-        guard connection.model.kind == .n4, let path = config.n4?.lockPhoto else { return false }
+        guard connection.model.kind == .n4, let framing = lockPhotoPreview ?? config.n4?.lockPhoto else { return false }
         let started = Date()
-        let slices = LockPhoto.jpegSlices(path: path)
+        let slices = LockPhoto.jpegSlices(framing)
         guard !slices.isEmpty else { return false }
         for (slot, jpeg) in slices.sorted(by: { $0.key < $1.key }) {
             connection.draw(slot: slot, jpeg: jpeg)

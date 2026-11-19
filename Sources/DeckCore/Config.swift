@@ -197,12 +197,12 @@ public struct N4Section: Codable, Equatable {
     public var brightness: Int
     public var knobs: [String: KnobConfig]
     public var swipe: ActionConfig?
-    public var lockPhoto: String?
+    public var lockPhoto: LockPhotoConfig?
     public var presets: [N4Preset]
     /// The live preset's name. If no preset has it, the first preset is live.
     public var activePreset: String
 
-    public init(brightness: Int, knobs: [String: KnobConfig], swipe: ActionConfig?, lockPhoto: String?,
+    public init(brightness: Int, knobs: [String: KnobConfig], swipe: ActionConfig?, lockPhoto: LockPhotoConfig?,
                 presets: [N4Preset], activePreset: String) {
         self.brightness = brightness
         self.knobs = knobs
@@ -231,7 +231,7 @@ public struct N4Section: Codable, Equatable {
         brightness = try c.decode(Int.self, forKey: .brightness)
         knobs = try c.decodeIfPresent([String: KnobConfig].self, forKey: .knobs) ?? [:]
         swipe = try c.decodeIfPresent(ActionConfig.self, forKey: .swipe)
-        lockPhoto = try c.decodeIfPresent(String.self, forKey: .lockPhoto)
+        lockPhoto = try c.decodeIfPresent(LockPhotoConfig.self, forKey: .lockPhoto)
         if let presets = try c.decodeIfPresent([N4Preset].self, forKey: .presets) {
             try checkPresetNames(presets.map(\.name), in: c, key: .presets)
             self.presets = presets
@@ -252,6 +252,53 @@ public struct N4Section: Codable, Equatable {
         try c.encodeIfPresent(lockPhoto, forKey: .lockPhoto)
         try c.encode(presets, forKey: .presets)
         try c.encode(activePreset, forKey: .activePreset)
+    }
+}
+
+// MARK: - Lock photo
+
+/// The N4's lock photo and how it sits on the deck's face (800×464 key-image pixels). The photo first fills the
+/// face (aspect-fill, centred), then is scaled by `zoom` about the centre and moved by the offsets, fractions of the
+/// face (`offset_y` 0.5 moves it down by half the face's height, as the user sees it). Placement then clamps it so
+/// it always covers the face: no black edges.
+///
+/// JSON: a path string (zoom 1, centred), or `{ "path", "zoom", "offset_x", "offset_y" }`; always written as the
+/// object. A zoom outside 1…10 makes the file invalid.
+public struct LockPhotoConfig: Codable, Equatable {
+    public var path: String
+    public var zoom: Double
+    public var offsetX: Double
+    public var offsetY: Double
+
+    public init(path: String, zoom: Double = 1, offsetX: Double = 0, offsetY: Double = 0) {
+        self.path = path
+        self.zoom = zoom
+        self.offsetX = offsetX
+        self.offsetY = offsetY
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case path, zoom
+        case offsetX = "offset_x"
+        case offsetY = "offset_y"
+    }
+
+    public init(from decoder: Decoder) throws {
+        if let single = try? decoder.singleValueContainer(), let path = try? single.decode(String.self) {
+            self.init(path: path)
+            return
+        }
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let zoom = try c.decodeIfPresent(Double.self, forKey: .zoom) ?? 1
+        let offsetX = try c.decodeIfPresent(Double.self, forKey: .offsetX) ?? 0
+        let offsetY = try c.decodeIfPresent(Double.self, forKey: .offsetY) ?? 0
+        guard (1...10).contains(zoom) else {
+            throw DecodingError.dataCorruptedError(forKey: .zoom, in: c, debugDescription: "zoom must be between 1 and 10")
+        }
+        guard offsetX.isFinite, offsetY.isFinite else {
+            throw DecodingError.dataCorruptedError(forKey: .offsetX, in: c, debugDescription: "offsets must be numbers")
+        }
+        self.init(path: try c.decode(String.self, forKey: .path), zoom: zoom, offsetX: offsetX, offsetY: offsetY)
     }
 }
 

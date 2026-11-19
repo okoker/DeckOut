@@ -58,7 +58,7 @@ private func parse(_ json: String) throws -> AppConfig {
     #expect(n4.strip["3"]?.type == .empty)
     #expect(n4.strip["4"]?.type == .volume)
     #expect(n4.swipe?.action == "key:cmd+tab")
-    #expect(n4.lockPhoto == "/tmp/photo.jpg")
+    #expect(n4.lockPhoto?.path == "/tmp/photo.jpg")
 }
 
 @Test func defaultsApply() throws {
@@ -253,5 +253,22 @@ private let presetsConfig = """
     for key in ["host", "arrow_ms", "timeout_s"] {
         #expect(strip["3"]?[key] == nil, "\(key)")
         #expect(strip["1"]?[key] != nil, "\(key)")
+    }
+}
+
+// MARK: - Lock photo framing
+
+@Test func lockPhotoReadsStringOrObject() throws {                  // T-074
+    func n4(_ lockPhoto: String) throws -> N4Section? {
+        try parse(#"{ "decks": { "n4": { "brightness": 50, "lock_photo": "# + lockPhoto + " } } }").n4
+    }
+    #expect(try n4(#""/p.jpg""#)?.lockPhoto == LockPhotoConfig(path: "/p.jpg", zoom: 1, offsetX: 0, offsetY: 0))
+    #expect(try n4(#"{ "path": "/q.jpg", "zoom": 2.5, "offset_x": -0.25, "offset_y": 0.2 }"#)?.lockPhoto
+            == LockPhotoConfig(path: "/q.jpg", zoom: 2.5, offsetX: -0.25, offsetY: 0.2))
+    #expect(try n4(#"{ "path": "/q.jpg" }"#)?.lockPhoto == LockPhotoConfig(path: "/q.jpg", zoom: 1, offsetX: 0, offsetY: 0))
+    for zoom in ["0.5", "11"] {
+        #expect(throws: (any Error).self, "zoom \(zoom)") {
+            try n4(#"{ "path": "/q.jpg", "zoom": "# + zoom + " }")
+        }
     }
 }

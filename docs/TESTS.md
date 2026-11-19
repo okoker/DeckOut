@@ -78,6 +78,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-071 | `ConfigFileTests/securityProblemsAreReported` | A symlink, a world-writable file and a missing file are each refused with a reason; a 0600 file passes |
 | T-072 | `ConfigFileTests/startupWithoutAUsableConfigRunsBlank` | A missing, unparseable or world-writable config at start gives no decks set up and a reason, never an exit (launchd would crash-loop) |
 | T-073 | `ConfigFileTests/resolvePathPrefersFlagThenExistingThenDefault` | `--config` wins; then the first existing of `~/.config/vsd/config.json` and the executable's folder; neither gives the home path; `--config` alone is an error |
+| T-074 | `ConfigTests/lockPhotoReadsStringOrObject` | `lock_photo` reads as a path (zoom 1, centred) or as the framing object; zoom 0.5 or 11 makes the file invalid |
+| T-075 | `LockTests/framingZoomsAndMovesThePhoto` | Placement on the 800×464 face: aspect-fill, zoom about the centre, positive `offset_y` moves the photo down |
+| T-076 | `LockTests/framingNeverLeavesBlackEdges` | Tall and wide photos at any offset (±1, ±10) and zoom 1 or 3 still cover the whole face |
 | T-084 | `ActionResolverTests/pressesCarryTheirStep` | A key, knob press, strip tap and swipe pass their own signed `step` (else a volume key does nothing); a key without one passes none |
 
 ## On the device

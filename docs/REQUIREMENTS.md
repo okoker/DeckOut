@@ -69,7 +69,7 @@ deck. Full example: `config.example.json`.
       "brightness": 50,
       "knobs": { "knob_1": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } },
       "swipe": { "action": "none" },
-      "lock_photo": "/path/to/photo.jpg",
+      "lock_photo": { "path": "/path/to/photo.jpg", "zoom": 1.5, "offset_x": 0, "offset_y": 0.2 },
       "presets": [
         { "name": "Work",
           "keys":  { "key_1": { "action": "shell:open -a Notes", "icon": "/path/to/icon.icns" },
@@ -102,6 +102,9 @@ deck. Full example: `config.example.json`.
   `load`, `volume`, `picture` (shows `icon`), `empty`. A tap runs the block's `action`. An unknown type makes the whole
   file invalid.
 - **`swipe.action`:** one action for a swipe on the strip. **`lock_photo`:** shown across the N4 while the Mac is locked.
+  Either a path (filled and centred) or `{ "path", "zoom", "offset_x", "offset_y" }`: `zoom` 1–10 on top of the fill
+  (outside that range the file is invalid), offsets as fractions of the 800×464 face (positive `offset_y` moves the
+  photo down). The photo always covers the face: an offset that would show an edge is clamped. Written as the object.
 - **Older files still load:** a deck section without `presets` reads as one preset named "Default", made from its
   `buttons` (N3, then required) or `keys` + `strip` (N4). A file with no `decks` key is read as the N3 section —
   top-level `brightness`, `buttons`, `knobs` (the v1.0.0 layout). When `decks` is present, top-level
@@ -174,7 +177,8 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - `--config <path>` loads that file instead of searching (development); the same security checks apply.
   `--config` without a path exits with an error (a bad invocation, not a missing config)
 - Starts with the decks blank, logging why, when the config is missing or unusable (see Configuration)
-- `--show-lock-photo` keeps the N4's lock photo up while unlocked (development: lining up the panel rectangles)
+- `--show-lock-photo` keeps the N4's lock photo, as framed at start, up while unlocked (development: lining up the
+  panel rectangles). The same preview is switchable at run time for the config app's photo mode
 - Logs to stdout/file for debugging
 - Graceful shutdown on SIGTERM/SIGINT
 
@@ -185,8 +189,8 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - **While locked:** keys, strip taps and swipes do nothing. Knobs run only the built-in actions (`system_volume`,
   `system_mute_toggle`, `zr7_volume`, `zr7_mute_toggle`, `display_brightness`, `display_brightness_cycle`);
   `shell:` and `key:` never run from any control. Live strip readings pause
-- **N4 with `lock_photo`:** on lock the photo is drawn across all 14 slots (scaled to fill the deck's face,
-  each slot cut at its measured position); on unlock the layout is redrawn. Without a photo, every deck keeps its
+- **N4 with `lock_photo`:** on lock the photo is drawn across all 14 slots (scaled to fill the deck's face, then
+  zoomed and moved by its framing, each slot cut at its measured position); on unlock the layout is redrawn. Without a photo, every deck keeps its
   layout, inert
 - Keep the photo in `~/.config/vsd/`: macOS asks before a background program reads Desktop, Documents, Downloads
   or iCloud Drive, and an unsigned daemon loses that permission on every rebuild

@@ -16,6 +16,9 @@ Idea, noted 02/11/2026. Trigger: the arrival of a second, more capable stream de
 - Device-specific (new deck likely needs its own): `Protocol.swift`, `HIDDevice.swift` (CRT packets, init order, keepalive), `ImageLoader.swift` (85x85 JPEG, rotation, LCD offsets).
 - Likely reusable: `Config.swift`, `ActionDispatcher.swift`, `VolumeControl.swift`, `BrightnessControl.swift`, `BrightnessHUD.swift`.
 
+## Settings the app must expose
+- Deck brightness, per deck, 0–100, default 75 (owner, 19/11/2026). On the N4 the whole range is usable: each step up to 100 is visibly brighter, and 0 is dim, not off.
+
 ## Open questions
 - Which deck, and is its protocol documented or does it need reverse-engineering like the N3?
 - One app, or a background daemon plus a separate settings app?

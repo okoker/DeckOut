@@ -267,8 +267,10 @@ Verified on the unit: start-up `DIS` → `LIG` → `STP` → `CLE`; images via `
 `STP`; `CONNECT` keepalive every 5 s; input frames start `ACK\0\0OK\0\0`, event code at byte 9, state at byte 10
 (no report-ID byte on macOS).
 
+Brightness (verified 19/11/2026): the full `LIG` range 0–100 works on the N4. Each step up to 100 is visibly
+brighter, and 0 is dim, not off. The sibling AKP05E stock firmware caps `LIG` at 60; the N4 does not.
+
 Not tested on the unit:
-- Brightness range. The sibling AKP05E stock firmware caps `LIG` at 60.
 - Watchdog. On the AKP05E, `DIS` starts a 20 s watchdog and the dock resets itself if the host sends nothing for
   ~15 s. The 5 s keepalive covers it either way.
 

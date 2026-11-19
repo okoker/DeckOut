@@ -35,8 +35,18 @@ Maps verified on the unit (18/11/2026); details in `docs/design/n4_support.md`.
 - macOS requires CFRunLoop running for IOKit HID input delivery
 
 ## Configuration
-One JSON file: `~/.config/vsd/config.json`, or `config.json` next to the executable. Read at start-up and re-read on
-`SIGHUP` or the reload notification (`--post-reload`); a reload that fails the security checks or doesn't parse keeps the previous config.
+One JSON file: `--config <path>`, else the first that exists of `~/.config/vsd/config.json` and `config.json` next to
+the executable, else `~/.config/vsd/config.json`. Read at start-up and re-read on `SIGHUP` or the reload notification
+(`--post-reload`); a reload that fails the security checks or doesn't parse keeps the previous config.
+- **Security checks on every read:** the file must not be a symlink, must be owned by the user and not writable by
+  group or others.
+- **No usable config at start-up** (missing, refused or not parseable): the daemon still runs, with no decks set up
+  (they stay blank), and logs why ("No config yet at <path>", "Config refused: …", "Config doesn't load: …"). A later
+  reload that loads replaces the blank config. It never exits for want of a config: under launchd's `KeepAlive` that
+  would crash-loop.
+- **Saving (for the config app):** written atomically (a temp file in the same folder, then `rename`) at mode 0600,
+  creating the folder at 0700 if needed. The first save over an existing file copies it to
+  `config.json.before-app` once, so a rollback to the v1.0.0 daemon (which can't read presets) has the old file.
 
 ### Structure
 Shared settings at the top; one section per deck under `decks`. Each deck holds its presets (the keys, and on the
@@ -161,7 +171,9 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged.
   Requests within 0.15 s of the first merge into one reload. The monitor control is built off the main thread at
   start, and again only when `displays` changes; until it is ready, brightness actions log "monitors not ready yet"
-- `--config <path>` loads that file instead of searching (development); the same security checks apply
+- `--config <path>` loads that file instead of searching (development); the same security checks apply.
+  `--config` without a path exits with an error (a bad invocation, not a missing config)
+- Starts with the decks blank, logging why, when the config is missing or unusable (see Configuration)
 - `--show-lock-photo` keeps the N4's lock photo up while unlocked (development: lining up the panel rectangles)
 - Logs to stdout/file for debugging
 - Graceful shutdown on SIGTERM/SIGINT

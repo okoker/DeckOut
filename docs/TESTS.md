@@ -73,6 +73,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-066 | `ConfigTests/unknownActivePresetFallsBackToFirst` | An `active_preset` that names no preset falls back to the first preset, never blank keys |
 | T-067 | `ConfigTests/duplicateOrEmptyPresetNamesAreRefused` | Two presets with one name, an empty name, or no presets make the file invalid (the live preset is picked by name) |
 | T-068 | `ConfigTests/encodedFileUsesTheDecksFormat` | Writing an old file gives the `decks` form with presets and no top-level `buttons` / `brightness`; non-internet blocks don't carry the internet settings |
+| T-069 | `ConfigFileTests/saveWritesAtomicallyWithMode600` (+ `saveCreatesAMissingFolderPrivately`) | A save leaves the file at mode 0600, passing the load-time checks and reading back equal, with no temp file left; a missing folder is created at 0700 |
+| T-070 | `ConfigFileTests/firstSaveKeepsABackupOnce` | The first save over an existing file keeps it as `config.json.before-app` (0600); later saves never overwrite that backup; no file, no backup |
+| T-071 | `ConfigFileTests/securityProblemsAreReported` | A symlink, a world-writable file and a missing file are each refused with a reason; a 0600 file passes |
+| T-072 | `ConfigFileTests/startupWithoutAUsableConfigRunsBlank` | A missing, unparseable or world-writable config at start gives no decks set up and a reason, never an exit (launchd would crash-loop) |
+| T-073 | `ConfigFileTests/resolvePathPrefersFlagThenExistingThenDefault` | `--config` wins; then the first existing of `~/.config/vsd/config.json` and the executable's folder; neither gives the home path; `--config` alone is an error |
 | T-084 | `ActionResolverTests/pressesCarryTheirStep` | A key, knob press, strip tap and swipe pass their own signed `step` (else a volume key does nothing); a key without one passes none |
 
 ## On the device

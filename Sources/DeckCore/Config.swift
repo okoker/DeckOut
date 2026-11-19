@@ -40,20 +40,6 @@ public struct AppConfig: Equatable {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(self)
     }
-
-    /// Read and parse the file at `path`. Prints the reason and returns nil on failure.
-    public static func load(from path: String) -> AppConfig? {
-        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else {
-            print("Error: config file not found at \(path)")
-            return nil
-        }
-        do {
-            return try parse(data)
-        } catch {
-            print("Error: failed to parse config at \(path): \(error)")
-            return nil
-        }
-    }
 }
 
 extension AppConfig: Codable {

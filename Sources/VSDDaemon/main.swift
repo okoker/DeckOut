@@ -25,64 +25,10 @@ let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
 let execDir = URL(fileURLWithPath: arguments[0])
     .deletingLastPathComponent().path
 
-let candidates = [
-    homeDir + "/.config/vsd/config.json",
-    execDir + "/config.json"
-]
-
-let configPath: String
-if let flag = arguments.firstIndex(of: "--config") {
-    guard flag + 1 < arguments.count else {
-        print("Error: --config needs a path")
-        exit(1)
-    }
-    configPath = arguments[flag + 1]
-} else if let found = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) {
-    configPath = found
-} else {
-    print("Error: config.json not found")
-    print("Searched:")
-    candidates.forEach { print("  \($0)") }
+guard let configPath = ConfigFile.resolvePath(arguments: arguments, home: homeDir, execDir: execDir) else {
+    print("Error: --config needs a path")
     exit(1)
 }
-
-// MARK: - Security checks
-
-/// Validate config file security. Returns true if safe to load.
-/// On startup (exitOnFail=true), exits the process on failure.
-/// On SIGHUP reload (exitOnFail=false), returns false and keeps old config.
-func validateConfigSecurity(_ path: String, exitOnFail: Bool) -> Bool {
-    // Reject symlinks — lstat doesn't follow them, unlike stat/attributesOfItem
-    var st = stat()
-    guard lstat(path, &st) == 0 else {
-        print("SECURITY: cannot stat config at \(path)")
-        if exitOnFail { exit(1) }
-        return false
-    }
-    if (st.st_mode & S_IFMT) == S_IFLNK {
-        print("SECURITY: config is a symlink — refusing to load. Use a regular file.")
-        if exitOnFail { exit(1) }
-        return false
-    }
-
-    // Check ownership matches current user
-    if st.st_uid != getuid() {
-        print("SECURITY: config owned by uid \(st.st_uid), expected \(getuid()) — refusing to load.")
-        if exitOnFail { exit(1) }
-        return false
-    }
-
-    // Reject group/world-writable
-    let posix = st.st_mode & 0o777
-    if posix & 0o022 != 0 {
-        print("SECURITY: config is group/world-writable (mode \(String(posix, radix: 8))) — refusing to load. Run: chmod 600 \(path)")
-        if exitOnFail { exit(1) }
-        return false
-    }
-
-    return true
-}
-
 
 // MARK: - Load configuration
 
@@ -108,8 +54,7 @@ func printPreset(active: String, live: String, count: Int) {
     print("  Preset: \(live) (\(count) preset\(count == 1 ? "" : "s"))")
 }
 
-func loadAndPrintConfig() -> AppConfig? {
-    guard let config = AppConfig.load(from: configPath) else { return nil }
+func printConfig(_ config: AppConfig) {
     print("Config loaded from: \(configPath)")
     if let n3 = config.n3 {
         print(" N3:")
@@ -138,35 +83,37 @@ func loadAndPrintConfig() -> AppConfig? {
             print("    \(d.name): serial=\(d.serial)")
         }
     }
-    return config
 }
 
-_ = validateConfigSecurity(configPath, exitOnFail: true)
-
-guard let initialConfig = loadAndPrintConfig() else {
-    print("Fatal: could not load config at startup")
-    exit(1)
+// Without a usable config the daemon still runs, with the decks blank, and says why: under launchd's KeepAlive,
+// exiting would restart it into the same failure forever. A reload that loads replaces the blank config.
+let startup = ConfigFile.startupConfig(at: configPath)
+if let problem = startup.problem {
+    print(problem)
+    print("Starting with no decks set up (they stay blank) until a reload loads a config.")
+} else {
+    printConfig(startup.config)
 }
+
 // MARK: - Start
 
-let daemon = Daemon(config: initialConfig)
+let daemon = Daemon(config: startup.config)
 daemon.showLockPhotoAlways = arguments.contains("--show-lock-photo")
 daemon.start()
 
 /// Re-read the config through the same security checks; on any failure keep the previous one.
 func reloadConfig() -> ReloadResult {
     print("\nReloading config...")
-    guard validateConfigSecurity(configPath, exitOnFail: false) else {
-        print("Config reload blocked by security check — keeping previous config.")
-        return ReloadResult(loaded: false, problem: "blocked by the security check")
+    switch ConfigFile.load(at: configPath) {
+    case .success(let newConfig):
+        printConfig(newConfig)
+        daemon.reload(newConfig)
+        print("Config reloaded.")
+        return ReloadResult(loaded: true, problem: nil)
+    case .failure(let error):
+        print("\(error.description) — keeping previous config.")
+        return ReloadResult(loaded: false, problem: error.description)
     }
-    guard let newConfig = loadAndPrintConfig() else {
-        print("Config reload failed — keeping previous config.")
-        return ReloadResult(loaded: false, problem: "could not load the config")
-    }
-    daemon.reload(newConfig)
-    print("Config reloaded.")
-    return ReloadResult(loaded: true, problem: nil)
 }
 
 /// A burst of reload requests (a save per slider step) becomes one reload.

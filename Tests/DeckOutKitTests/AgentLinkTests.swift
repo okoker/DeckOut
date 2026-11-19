@@ -144,3 +144,59 @@ final class MuteAgent: NSObject, AgentXPC {
     func restart(reply: @escaping () -> Void) {}
     func liveStrip(reply: @escaping (Data) -> Void) {}
 }
+
+/// Refuses every connection, like an agent that can't check its peer, or a Mach service that isn't there.
+final class RefusingServer: NSObject, NSXPCListenerDelegate, @unchecked Sendable {
+    let listener = NSXPCListener.anonymous()
+    private(set) var connects = 0
+    override init() {
+        super.init()
+        listener.delegate = self
+        listener.resume()
+    }
+    func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool { false }
+    func connect() -> NSXPCConnection {
+        connects += 1
+        return NSXPCConnection(listenerEndpoint: listener.endpoint)
+    }
+}
+
+@MainActor @Test func refusedLinkIsReportedAndBacksOff() async {   // T-112 (review I1)
+    // Each connection fails at once, so no single one ever times out: the link still says so, once, and doesn't
+    // hammer the agent once a second (or faster) forever.
+    let server = RefusingServer()
+    var hooks = 0
+    let link = AgentLink(connect: server.connect, appBuild: "x", retryDelay: 0.05, answerTimeout: 0.3)
+    link.onNotAnswering = { hooks += 1 }
+    link.start()
+    #expect(await until { link.state == .notAnswering })
+    try? await Task.sleep(nanoseconds: 1_500_000_000)
+    #expect(hooks == 1)
+    #expect(server.connects < 12, "backs off: \(server.connects) connects in ~2 s")
+    #expect(link.state == .notAnswering)
+}
+
+@MainActor @Test func droppedAgentIsNotShownAsRunning() async {   // T-112 (review I2)
+    // Connected, then the agent goes and doesn't come back: after a short grace (a restart takes a moment) the
+    // link forgets the old status, so the window stops drawing decks from it.
+    let server = StubServer(agent: StubAgent(build: "same"))
+    var refuse = false
+    let refusing = RefusingServer()
+    let link = AgentLink(connect: { refuse ? refusing.connect() : server.connect() }, appBuild: "same",
+                         retryDelay: 0.05, answerTimeout: 5, dropGrace: 0.2)
+    link.start()
+    #expect(await until { link.state == .connected })
+    refuse = true
+    for connection in server.serverSide { connection.invalidate() }
+    #expect(await until { link.state == .connecting })
+    #expect(link.status != nil)          // within the grace: a restart shouldn't flash the screen
+    #expect(await until { link.status == nil })
+}
+
+@Test func statusLineFollowsTheLink() {   // T-118 (review I2)
+    let running = AppModel.statusLine(screen: .deck(.n4), linkState: .connected, status: nil, configProblem: nil)
+    #expect(running.health == .good)
+    let reconnecting = AppModel.statusLine(screen: .deck(.n4), linkState: .connecting, status: nil, configProblem: nil)
+    #expect(reconnecting.health == .busy)
+    #expect(reconnecting.text == "Reconnecting to the deck controller…")
+}

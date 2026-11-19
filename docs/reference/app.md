@@ -39,9 +39,13 @@ the job definition it registered: a changed plist needs a new label.
    Try Again.
 3. **Link** (`AgentLink`): an XPC connection to the agent's Mach service, checked against its signature (by team when
    signed, by identifier when ad hoc). Asks `status` and `liveStrip`, hears `statusChanged` and `liveStripChanged`,
-   reconnects 1 s after the agent goes away. No answer in 10 s → "not answering": the app unregisters and registers
-   the agent afresh once (KI-008), then starts its link over. Another build → `restart` once per launch; still another
-   build → the status line says so.
+   reconnects when the agent goes away, waiting 1 s, then twice as long after each failed try, up to 30 s. While it
+   reconnects the status line says "Reconnecting to the deck controller…"; after 3 s without an answer the last status
+   is dropped, so the window stops drawing decks from it. No answer within 10 s of starting or of the drop (one
+   deadline for the link, so an agent that refuses every connection at once counts too) → "not answering": the app
+   unregisters and registers the agent afresh once (KI-008), then starts its link over. Another build → `restart`
+   once per launch; still another build → the status line says so. When the app becomes active while the link is
+   down, it looks at the registration again (switched off in Login Items → "Allow DeckOut in Login Items").
 4. The config is re-read from disk on every status push (they follow reloads and decks coming and going).
 
 ## Window
@@ -52,8 +56,9 @@ the job definition it registered: a changed plist needs a new label.
   your deck (none plugged in); pick a deck (both plugged in at launch); the deck. The deck on screen stays while
   plugged in; unplugged, the other one shows, else "Plug in your deck" (T-118).
 - **The deck:** drawn from `DeckFace` (the N4 at half its measured key-image pixels; the N3 by eye from the photo),
-  showing each key's icon and the strip's picture blocks as the deck shows them (`DeckPreview`, the same drawing code),
-  and the live blocks from the images the agent draws. Knobs carry a caption of what turning them does. A click
+  showing each key's icon and the strip's picture blocks as the deck shows them (`DeckPreview`: the N4's own drawing
+  code; the N3 preview fits a non-square icon where the deck stretches it, BL-007), and the live blocks from the
+  images the agent draws. Knobs carry a caption of what turning them does. A click
   selects a control (red ring); a click on the stage clears it.
 - **Inspector:** what the selected control does, read-only (plan 3 makes it the editor).
 - **Status line:** "Deck controller running" (green), starting (amber), or the problem: switched off, not running,

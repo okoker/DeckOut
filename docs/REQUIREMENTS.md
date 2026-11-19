@@ -263,7 +263,6 @@ How it works: `docs/reference/app.md`. Contracts:
 
 ## Non-Goals (for now)
 - No CLI config tool
-- No CLI config tool
 - Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController` for a hand install) or `DeckOutAgent --post-reload`
 - No switching presets from the deck itself: the live preset is the config's `active_preset`
 - No Windows/Linux support

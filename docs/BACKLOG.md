@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-006
+Next free ID: BL-011
 
 ---
 
@@ -41,3 +41,19 @@ Next free ID: BL-006
   the main thread, so a press during a reload waits for it. Redraw only the screens whose content changed (compare
   each deck's layout plan before and after). Matters once the config app reloads on every edit (plan 3): most edits
   change one key. `Daemon.reload`, `Daemon.drawAll`, `LayoutPlan` (19/11/2026)
+- BL-006 [P2] [security] The agent adds a connection to the clients it pushes status to as soon as it accepts it,
+  before XPC has checked the first message against the code-signing requirement, so a refused peer can receive one
+  status or live-strip push before it is cut off (no calls run). Add a client on its first checked call instead
+  (`NSXPCConnection.current()` inside `status`). `AgentXPC.swift` (plan 2 review, 19/11/2026)
+- BL-007 [P2] [bug] The app's N3 key preview letterboxes a non-square icon, while the deck's N3 pipeline
+  (`ImageLoader.loadAsJPEG`) stretches it into the square, so the drawing differs from the deck for such icons. Draw
+  the N3 preview the deck's way. `DeckFace.swift` (`DeckPreview.keyImage`), `ImageLoader.swift` (plan 2 review)
+- BL-008 [P2] [bug] The app draws the config file on disk, not the one the agent loaded: after a hand edit without a
+  reload, the drawing shows icons the deck doesn't. Plan 3's save-then-reload covers the app's own edits; for hand
+  edits, show the agent's config (or its file's state) instead. `AppModel.swift` (plan 2 review)
+- BL-009 [P2] [debt] The agent JSON-encodes the whole live strip (~40 KB) on every live redraw, once per strip slot in
+  `drawAll`, even when no app is connected. Skip when there are no clients; push once per redraw. `AgentXPC.swift`,
+  `Daemon.swift` (plan 2 review)
+- BL-010 [P2] [debt] The app's registration work (the not-answering hook, Try Again, the re-check when the app becomes
+  active) can interleave unregister / register calls. Serialise them (one task at a time). `AppModel.swift` (plan 2
+  review)

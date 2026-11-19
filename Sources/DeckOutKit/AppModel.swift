@@ -151,13 +151,15 @@ public final class AppModel: ObservableObject {
         if state == .enabled { link.start() }
     }
 
-    /// After the person comes back from System Settings: try again.
+    /// The app became active (back from System Settings, say): if the agent isn't registered and answering, look
+    /// again. Switched off in Login Items while the window was open shows up here as needing approval.
     public func recheckRegistration() async {
-        guard let registrar, registration == .needsApproval || isFailed(registration) else { return }
+        guard let registrar, registration != nil, link?.state != .connected else { return }
         let state = await registrar.ensureRegistered()
+        let was = registration
         registration = state
         log("registration recheck: \(state)")
-        if state == .enabled { link?.start() }
+        if state == .enabled, was != .enabled { link?.start() }
     }
 
     public func tryAgain() async {
@@ -228,9 +230,15 @@ public final class AppModel: ObservableObject {
 
     // MARK: - Status line
 
-    public enum Health { case good, busy, problem }
+    public enum Health: Sendable { case good, busy, problem }
 
     public var statusLine: (health: Health, text: String) {
+        Self.statusLine(screen: screen, linkState: link?.state ?? .connecting, status: link?.status,
+                        configProblem: configProblem)
+    }
+
+    public nonisolated static func statusLine(screen: Screen, linkState: AgentLink.State, status: AgentStatus?,
+                                              configProblem: String?) -> (health: Health, text: String) {
         switch screen {
         case .moveToApplications: return (.problem, "Not in Applications")
         case .needsApproval: return (.problem, "Deck controller switched off in Login Items")
@@ -238,13 +246,14 @@ public final class AppModel: ObservableObject {
         case .starting: return (.busy, "Starting the deck controller…")
         default: break
         }
-        if case .versionMismatch(let agent, let app) = link?.state {
+        if linkState == .connecting { return (.busy, "Reconnecting to the deck controller…") }
+        if case .versionMismatch(let agent, let app) = linkState {
             return (.problem, "Deck controller is build \(agent), the app is \(app): quit and open DeckOut again")
         }
-        if let configProblem = link?.status?.configProblem ?? configProblem {
+        if let configProblem = status?.configProblem ?? configProblem {
             return (.problem, configProblem)
         }
-        if let environment = link?.status?.environment, environment.state == .fellBack {
+        if let environment = status?.environment, environment.state == .fellBack {
             return (.busy, "Deck controller running · your shell's settings didn't load (\(environment.detail ?? "unknown"))")
         }
         return (.good, "Deck controller running")

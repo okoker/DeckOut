@@ -69,6 +69,8 @@ public final class Daemon {
 
     /// Called after a deck connects or is removed.
     var onDecksChanged: (() -> Void)?
+    /// Called with each image drawn on a live strip block (the config app shows them in its drawing).
+    var onLiveImage: ((StripBlockType, Data) -> Void)?
 
     /// The decks plugged in now.
     var connectedKinds: [DeckKind] { decks.connections.map { $0.model.kind } }
@@ -194,7 +196,10 @@ public final class Daemon {
         if model.clearsBeforeRedraw { connection.clearAll() }
         for (slot, content) in plan.sorted(by: { $0.key < $1.key }) {
             var jpeg: Data?
-            if case .strip(let type) = content { jpeg = liveImage(type) }
+            if case .strip(let type) = content {
+                jpeg = liveImage(type)
+                if let jpeg { onLiveImage?(type, jpeg) }
+            }
             connection.draw(slot: slot, jpeg: jpeg ?? LayoutPlan.render(content, slot: slot, model: model))
         }
         connection.commit()
@@ -375,6 +380,7 @@ public final class Daemon {
     /// Redraws only the slots showing `type`, on every deck that shows it.
     private func redrawLive(_ type: StripBlockType) {
         guard !livePaused, let jpeg = liveImage(type) else { return }   // never over the lock photo
+        onLiveImage?(type, jpeg)
         for connection in decks.connections {
             let slots = LayoutPlan.slots(model: connection.model, config: config)
                 .filter { $0.value == .strip(type) }.keys.sorted()

@@ -48,3 +48,48 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
     #expect(kept.configProblem == failed.problem)
     #expect(changes == 2)
 }
+
+@Test func liveImagesKeyedByBlock() async throws {                   // T-106
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-live-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    let path = folder.appendingPathComponent("config.json").path
+    func config(active: String) -> AppConfig {
+        AppConfig(n4: N4Section(
+            brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+            presets: [N4Preset(name: "Work", keys: [:], strip: ["1": StripBlockConfig(type: .internet),
+                                                                  "3": StripBlockConfig(type: .internet),
+                                                                  "4": StripBlockConfig(type: .volume)]),
+                      N4Preset(name: "Music", keys: [:], strip: ["3": StripBlockConfig(type: .load)])],
+            activePreset: active))
+    }
+    try ConfigFile.save(config(active: "Work"), to: path)
+    nonisolated(unsafe) let agent = Agent(configPath: path, environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]))
+    nonisolated(unsafe) var pushes = 0
+    agent.onLiveStripChange = { pushes += 1 }
+
+    let internet = Data([0xFF, 0xD8, 0x01]), volume = Data([0xFF, 0xD8, 0x04])
+    let strip = await onMain { done in
+        agent.receiveLiveImage(.internet, internet)
+        agent.receiveLiveImage(.volume, volume)
+        done(agent.liveStrip())
+    }
+    #expect(strip.images == ["1": internet, "3": internet, "4": volume])
+    #expect(pushes == 2)
+
+    // Another preset goes live: only its live blocks keep an image (none yet for its load block).
+    try ConfigFile.save(config(active: "Music"), to: path)
+    let _: ReloadResult = await onMain { done in agent.reload(completion: done) }
+    let after = await onMain { done in done(agent.liveStrip()) }
+    #expect(after.images.isEmpty)
+}
+
+@Test func restartExitsAfterTheReply() async {                       // T-104
+    let path = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-none-\(UUID().uuidString).json").path
+    nonisolated(unsafe) var exited = false
+    let agent = Agent(configPath: path, environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]),
+                      exit: { exited = true })
+    await onMain { (done: @escaping (Bool) -> Void) in agent.restart(); done(true) }
+    #expect(!exited)    // not at once: the reply must get out first
+    try? await Task.sleep(nanoseconds: 600_000_000)
+    #expect(exited)
+}

@@ -211,8 +211,10 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   without the flag there is no listener). Calls: `status` (version, connected decks, live presets, config problem,
   shell environment), `reload`, `test` (run one action as a press would, minus the lock check; replies with exit
   status, stdout, stderr or the error), `showLockPhoto` (a framing, or nil for the layout; the preview ends by itself
-  when the connection that set it goes, e.g. the app quits or crashes in photo mode), `refreshEnvironment`; the
-  app hears `statusChanged` on deck connect / remove, reloads and environment reads. Payloads are JSON of DeckCore's
+  when the connection that set it goes, e.g. the app quits or crashes in photo mode), `refreshEnvironment`,
+  `restart` (replies, then exits 0.3 s later; launchd's KeepAlive starts the binary now in the bundle) and
+  `liveStrip` (the images the N4's live strip blocks show, keyed by block, as drawn); the app hears `statusChanged`
+  on deck connect / remove, reloads and environment reads, and `liveStripChanged` with each new live block image. Payloads are JSON of DeckCore's
   types; a request that doesn't decode gets the error "bad request". Only DeckOut's own app may connect, checked by
   XPC before any call runs: signed with a Developer ID, a peer with the agent's own team id and the app's bundle id;
   ad hoc (development), the exact app binary in the agent's bundle, pinned by its code hash read from disk at each

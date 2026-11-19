@@ -22,6 +22,16 @@ public struct AgentStatus: Codable, Equatable {
     }
 }
 
+/// The images the N4's live strip blocks show now, keyed by block (`"1"`–`"4"`), as drawn on the deck (JPEG,
+/// turned 180°). The app turns them upright for its drawing.
+public struct LiveStrip: Codable, Equatable {
+    public var images: [String: Data]
+
+    public init(images: [String: Data]) {
+        self.images = images
+    }
+}
+
 /// One action to run as a press would, from the config app's Test button.
 public struct TestRequest: Codable, Equatable {
     public var action: String
@@ -43,8 +53,13 @@ public protocol AgentControl: AnyObject {
     /// Show this lock photo framing on the N4, or nil to go back to the layout.
     func showLockPhoto(_ framing: LockPhotoConfig?)
     func refreshEnvironment(completion: @escaping (EnvironmentStatus) -> Void)
+    /// Exit soon, after the reply has gone; launchd's KeepAlive starts the binary now in the bundle.
+    func restart()
+    func liveStrip() -> LiveStrip
     /// Fires on deck connect and remove, after each reload, and after each environment read.
     var onStatusChange: (() -> Void)? { get set }
+    /// Fires when a live strip block got a new image.
+    var onLiveStripChange: (() -> Void)? { get set }
 }
 
 /// The background part: the config file, the decks, the user's shell environment and reloads.
@@ -58,6 +73,10 @@ public final class Agent: AgentControl {
     private var environmentRefreshPending = false
     private var monitorRebuildPending = false
     public var onStatusChange: (() -> Void)?
+    public var onLiveStripChange: (() -> Void)?
+    /// The latest image of each live block type; `liveStrip()` maps them onto the live preset's blocks.
+    private var liveImages: [StripBlockType: Data] = [:]
+    private let exitProcess: () -> Void
     /// Read once, at launch: a new app copied over the bundle must not change what this running agent reports.
     public let version: String
     public let build: String
@@ -69,8 +88,10 @@ public final class Agent: AgentControl {
     /// KeepAlive, exiting would restart it into the same failure forever. A reload that loads replaces it.
     public init(configPath: String, environment: ShellEnvironment = .init(),
                 version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev",
-                build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev") {
+                build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev",
+                exit: @escaping () -> Void = { Darwin.exit(0) }) {
         self.configPath = configPath
+        self.exitProcess = exit
         self.environment = environment
         self.version = version
         self.build = build
@@ -90,6 +111,7 @@ public final class Agent: AgentControl {
     /// (`--show-lock-photo`).
     public func start(showLockPhoto: Bool) {
         daemon.onDecksChanged = { [weak self] in self?.onStatusChange?() }
+        daemon.onLiveImage = { [weak self] type, jpeg in self?.receiveLiveImage(type, jpeg) }
         refreshEnvironment { _ in }
         daemon.start()
         if showLockPhoto { daemon.showLockPhoto(config.n4?.lockPhoto) }
@@ -140,6 +162,25 @@ public final class Agent: AgentControl {
                 self.onStatusChange?()
             }
         }
+    }
+
+    public func restart() {
+        print("Restart requested by the app")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [exitProcess] in exitProcess() }
+    }
+
+    public func liveStrip() -> LiveStrip {
+        var images: [String: Data] = [:]
+        for (block, settings) in config.n4?.strip ?? [:] {
+            if let image = liveImages[settings.type] { images[block] = image }
+        }
+        return LiveStrip(images: images)
+    }
+
+    /// A live block type was drawn with a new image (from the Daemon, on the main thread).
+    func receiveLiveImage(_ type: StripBlockType, _ jpeg: Data) {
+        liveImages[type] = jpeg
+        onLiveStripChange?()
     }
 
     // MARK: - Reload

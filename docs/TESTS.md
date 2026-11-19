@@ -108,6 +108,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-101 | `CodeSigningTests/cdhashPinsOneBinary`, `readsOwnSignature` | A code-hash requirement passes for the exact binary and fails for any other hash (on `/bin/ls`); the running process can read its own identifier and hash |
 | T-102 | `XPCTests/refusesAPeerThatDoesNotMatch` | A process that isn't our app is refused before any call runs (a `key:` test never reaches the agent); no requirement means every connection is refused. Fails if `setCodeSigningRequirement` is removed (checked 19/11/2026) |
 | T-103 | `XPCTests/acceptsAPeerThatMatches` | A peer that meets the requirement gets its replies |
+| T-104 | `XPCTests/restartRepliesThenExits`, `AgentTests/restartExitsAfterTheReply` | `restart` replies first and exits only afterwards (0.3 s), so the app hears the answer before KeepAlive starts the new binary |
+| T-105 | `XPCTests/liveStripPushedToClients` | The live strip's images reach the app on request and are pushed when a block gets a new one |
+| T-106 | `AgentTests/liveImagesKeyedByBlock` | A live image goes to every block of its type in the live preset; switching preset drops blocks that aren't live there |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

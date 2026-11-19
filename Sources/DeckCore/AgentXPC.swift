@@ -13,12 +13,18 @@ import Foundation
     func showLockPhoto(_ framing: Data?, reply: @escaping () -> Void)
     /// Read the shell environment again. Reply: `EnvironmentStatus`.
     func refreshEnvironment(reply: @escaping (Data) -> Void)
+    /// Exit after replying; launchd starts the binary now in the bundle (the app was updated).
+    func restart(reply: @escaping () -> Void)
+    /// Reply: `LiveStrip`.
+    func liveStrip(reply: @escaping (Data) -> Void)
 }
 
 /// What the background part tells the app without being asked.
 @objc public protocol AgentClientXPC {
     /// `AgentStatus`, sent on deck connect and remove, after each reload and after each environment read.
     func statusChanged(_ status: Data)
+    /// `LiveStrip`, sent when a live strip block gets a new image.
+    func liveStripChanged(_ strip: Data)
 }
 
 /// The XPC listener's delegate and exported object. Each connection must meet the peer requirement (our own app,
@@ -39,6 +45,7 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
         self.peerRequirement = peerRequirement
         super.init()
         control.onStatusChange = { [weak self] in self?.pushStatus() }
+        control.onLiveStripChange = { [weak self] in self?.pushLiveStrip() }
     }
 
     public func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
@@ -108,7 +115,26 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
         DispatchQueue.main.async { [control] in control.refreshEnvironment { reply(Self.encode($0)) } }
     }
 
+    public func restart(reply: @escaping () -> Void) {
+        DispatchQueue.main.async { [control] in
+            reply()
+            control.restart()
+        }
+    }
+
+    public func liveStrip(reply: @escaping (Data) -> Void) {
+        DispatchQueue.main.async { [control] in reply(Self.encode(control.liveStrip())) }
+    }
+
     // MARK: - Private
+
+    /// On the main thread (where `onLiveStripChange` fires).
+    private func pushLiveStrip() {
+        let strip = Self.encode(control.liveStrip())
+        for client in clients {
+            (client.remoteObjectProxyWithErrorHandler { _ in } as? AgentClientXPC)?.liveStripChanged(strip)
+        }
+    }
 
     /// On the main thread (where `onStatusChange` fires).
     private func pushStatus() {

@@ -14,6 +14,10 @@ private final class StubControl: AgentControl, @unchecked Sendable {
     var lockPhotos: [LockPhotoConfig?] = []
     var heardLockPhoto: ((LockPhotoConfig?) -> Void)?
     var onStatusChange: (() -> Void)?
+    var onLiveStripChange: (() -> Void)?
+    let liveStripValue = LiveStrip(images: ["1": Data([0xFF, 0xD8, 1]), "4": Data([0xFF, 0xD8, 4])])
+    var restarted = false
+    var heardRestart: (() -> Void)?
 
     func status() -> AgentStatus { statusValue }
     func reload(completion: @escaping (ReloadResult) -> Void) { completion(reloadValue) }
@@ -26,11 +30,18 @@ private final class StubControl: AgentControl, @unchecked Sendable {
         heardLockPhoto?(framing)
     }
     func refreshEnvironment(completion: @escaping (EnvironmentStatus) -> Void) { completion(statusValue.environment) }
+    func restart() {
+        restarted = true
+        heardRestart?()
+    }
+    func liveStrip() -> LiveStrip { liveStripValue }
 }
 
 private final class ClientSpy: NSObject, AgentClientXPC, @unchecked Sendable {
     var heard: ((Data) -> Void)?
+    var heardStrip: ((Data) -> Void)?
     func statusChanged(_ status: Data) { heard?(status) }
+    func liveStripChanged(_ strip: Data) { heardStrip?(strip) }
 }
 
 /// One listener + client pair. Keep it alive for the length of the test.
@@ -166,4 +177,26 @@ private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
     let harness = Harness(peerRequirement: { me })
     let status: Data? = await harness.call { proxy, reply in proxy.status(reply: reply) }
     #expect(decode(AgentStatus.self, status) == harness.stub.statusValue)
+}
+
+@Test func restartRepliesThenExits() async {                         // T-104
+    let harness = Harness()
+    let replied: Bool? = await harness.call { proxy, reply in proxy.restart { reply(true) } }
+    #expect(replied == true)
+    let restarted: Bool? = await harness.call { (_: AgentXPC, reply: @escaping (Bool) -> Void) in
+        if harness.stub.restarted { reply(true) } else { harness.stub.heardRestart = { reply(true) } }
+    }
+    #expect(restarted == true)
+}
+
+@Test func liveStripPushedToClients() async {                        // T-105
+    let spy = ClientSpy()
+    let harness = Harness(exporting: spy)
+    let asked: Data? = await harness.call { proxy, reply in proxy.liveStrip(reply: reply) }   // connects the client
+    #expect(decode(LiveStrip.self, asked) == harness.stub.liveStripValue)
+    let pushed: Data? = await harness.call { (_: AgentXPC, reply: @escaping (Data) -> Void) in
+        spy.heardStrip = reply
+        DispatchQueue.main.async { harness.stub.onLiveStripChange?() }
+    }
+    #expect(decode(LiveStrip.self, pushed) == harness.stub.liveStripValue)
 }

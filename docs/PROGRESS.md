@@ -1,14 +1,14 @@
 # Progress
 
 ## Current Status
-One launchd daemon drives the TreasLin N3 and the MiraBox N4 (installed 19/11/2026 from `feat/n4-support`): buttons,
+One launchd daemon drives the TreasLin N3 and the MiraBox N4 (merged to main and installed 19/11/2026): buttons,
 knobs, LCD icons, the N4's live strip and lock photo, system volume, ZR7 volume and monitor brightness all working.
 Last run 19/11/2026: `swift test` 60/60 (T-001–T-060; T-059 new in Task 11, T-060 from the final review), watched; device checks on both decks
 (every control, reload, live strip, lock, both decks together, two 10-min performance windows), then a key on each
 deck, the internet tile and a lock / unlock on the installed daemon.
 
 ## Active Work
-- N4 support: whole-branch review, then merge on the owner's word (`docs/TODO.md`).
+- None. Follow-ups from the N4 review: `docs/BACKLOG.md` BL-001–BL-004.
 
 ## Completed
 

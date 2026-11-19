@@ -5,6 +5,8 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
+Next free ID: BL-005
+
 ---
 
 ### Fixed (01/04/2026)
@@ -25,4 +27,17 @@ Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]
 
 ### Open
 
-_(No items)_
+- BL-001 [P1] [bug] A reload blocks the main thread for ~0.5 s while `BrightnessControl` is rebuilt and runs `m1ddc`
+  (display list + one read per monitor) synchronously; a monitor whose DDC read never returns would hang the daemon.
+  Reuse the brightness control when `displays` is unchanged, run `m1ddc` off main, and merge bursts of reloads into
+  one. Must land before the config app, which reloads on every save. `Daemon.reload`, `BrightnessControl.swift` (19/11/2026)
+- BL-002 [P2] [feature] No handling for the Mac waking from system sleep. If a deck keeps power through sleep but resets
+  without re-enumerating, its keys could show the deck's own logo until the next lock / unlock, reload or replug. On
+  `NSWorkspace.didWakeNotification`: re-run the start-up sequence, redraw, recheck the lock. Untested here — this Mac
+  never system-sleeps. `Daemon.swift` (19/11/2026)
+- BL-003 [P1] [bug] `BrightnessControl` reads 0 for a monitor at start-up and reload and then trusts its cache, so the
+  first brightness turn can set a monitor to ~5 %. REQUIREMENTS says brightness is read on first interaction after
+  idle. Pre-existing (v1.0.0). `BrightnessControl.swift` (19/11/2026)
+- BL-004 [P2] [bug] The N4's internet tile sometimes shows red ("no reply") for its first reading after the daemon
+  starts (2 of ~7 starts), never afterwards. Log which step failed (lookup, `sendto`, timeout, `recv`) with `errno`,
+  and show "–" rather than red for a new probe's first reading. `LatencyProbe.swift`, `Daemon.swift` (19/11/2026)

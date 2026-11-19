@@ -1,7 +1,8 @@
 import AppKit
+import DeckCore
 
 #if DEBUG
-/// Debug builds: `--snapshot <png> [--dark] [--select <control>] [--after <seconds>]` draws the real main window,
+/// Debug builds: `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--after <seconds>]` draws the real main window,
 /// title bar and toolbar included, to a PNG and quits. For design checks and test sessions without a screen
 /// recording permission: a window may draw itself.
 @MainActor
@@ -14,6 +15,9 @@ enum WindowSnapshot {
         }
         if arguments.contains("--dark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
         let after = value("--after").flatMap(Double.init) ?? 4
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, after - 1.5)) {
+            if let deck = value("--deck").flatMap(DeckKind.init(rawValue:)) { model.show(deck) }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + max(0, after - 1)) {
             if let id = value("--select") { model.selection = id }
         }

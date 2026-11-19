@@ -261,6 +261,10 @@ How it works: `docs/reference/app.md`. Contracts:
 - Talks to the agent only over XPC, each side checking the other's code signature; restarts an agent of another
   build once per launch
 - The app's "running" indicator comes from the agent's `status`, never from `SMAppService.status`
+- Every control of both decks is set from the app: keys, N3 buttons, knobs (turn + press) and strip blocks (what
+  they show + tap); presets (switch, new, duplicate, rename, delete) and brightness from the toolbar. Knob turns offer
+  only stepped actions. The app asks for Accessibility when a shortcut or media key is set up; the agent never asks
+  on its own
 - Every change in the app is saved whole and atomically, then the agent is asked to reload; undo puts back the whole
   previous config. A config that wouldn't load back is never written. A hand edit made while the app is open is built
   on, not overwritten; a hand edit that doesn't load is never saved over

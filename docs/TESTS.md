@@ -111,6 +111,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-104 | `XPCTests/restartRepliesThenExits`, `AgentTests/restartExitsAfterTheReply` | `restart` replies first and exits only afterwards (0.3 s), so the app hears the answer before KeepAlive starts the new binary |
 | T-105 | `XPCTests/liveStripPushedToClients` | The live strip's images reach the app on request and are pushed when a block gets a new one |
 | T-106 | `AgentTests/liveImagesKeyedByBlock` | A live image goes to every block of its type in the live preset; switching preset drops blocks that aren't live there |
+| T-107 | `scripts/check-bundle.sh` (build check, run by `make app`) | An assembled DeckOut.app: Info.plist (bundle id, executable, macOS 15, build), the agent plist (label = Mach service = `--mach-service` argument, `BundleProgram`, KeepAlive), the helper signed as the agent label and the app as its bundle id, a strict signature check, arm64 only, nothing loose in the bundle root |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

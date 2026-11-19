@@ -7,3 +7,4 @@ docs/superpowers/
 config.json
 *.jpg
 !docs/assets/streamdeck.jpg
+build/

@@ -219,7 +219,12 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   passes the flag until the signing checks exist
 - `--show-lock-photo` keeps the N4's lock photo, as framed at start, up while unlocked (development: lining up the
   panel rectangles). The same preview is switchable at run time for the config app's photo mode
-- Logs to stdout/file for debugging
+- Logs to stdout (a hand install's plist sends it to `~/Library/Logs/StreamDeckController.log`). Inside DeckOut,
+  started by launchd with `--mach-service`, it writes `~/Library/Logs/DeckOut/agent.log` (dev variant:
+  `~/Library/Logs/DeckOut Dev/agent.log`), moved to `agent.log.1` at start when over 5 MB
+- Inside DeckOut the config is `~/.config/vsd/config.json` (dev variant: `~/.config/vsd-dev/config.json`), unless
+  `--config` names another; a hand install searches as above
+- `status` also reports the build (`CFBundleVersion`) the agent started with; version and build are read at launch
 - Graceful shutdown on SIGTERM/SIGINT
 
 ## Lock Behaviour (all decks unless stated)

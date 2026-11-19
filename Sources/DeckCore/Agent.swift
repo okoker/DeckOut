@@ -3,14 +3,18 @@ import Foundation
 /// What the background part reports to the config app.
 public struct AgentStatus: Codable, Equatable {
     public var version: String
+    /// The build (`CFBundleVersion`, a build timestamp) the agent started with. Nil from an agent older than this
+    /// field. The app restarts an agent whose build isn't its own.
+    public var build: String?
     public var decks: [String]                    // connected decks, "n3" / "n4", sorted
     public var activePresets: [String: String]    // deck → live preset
     public var configProblem: String?             // why the config file didn't load, if it didn't
     public var environment: EnvironmentStatus
 
-    public init(version: String, decks: [String], activePresets: [String: String], configProblem: String?,
-                environment: EnvironmentStatus) {
+    public init(version: String, build: String? = nil, decks: [String], activePresets: [String: String],
+                configProblem: String?, environment: EnvironmentStatus) {
         self.version = version
+        self.build = build
         self.decks = decks
         self.activePresets = activePresets
         self.configProblem = configProblem
@@ -54,17 +58,22 @@ public final class Agent: AgentControl {
     private var environmentRefreshPending = false
     private var monitorRebuildPending = false
     public var onStatusChange: (() -> Void)?
+    /// Read once, at launch: a new app copied over the bundle must not change what this running agent reports.
+    public let version: String
+    public let build: String
 
     /// A burst of reload requests (a save per slider step) becomes one reload.
     private lazy var merger = ReloadMerger { [unowned self] in self.reloadNow() }
 
-    public static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
-
     /// Reads the config. Without a usable one the decks stay blank and the problem is reported: under launchd's
     /// KeepAlive, exiting would restart it into the same failure forever. A reload that loads replaces it.
-    public init(configPath: String, environment: ShellEnvironment = .init()) {
+    public init(configPath: String, environment: ShellEnvironment = .init(),
+                version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev",
+                build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev") {
         self.configPath = configPath
         self.environment = environment
+        self.version = version
+        self.build = build
         let startup = ConfigFile.startupConfig(at: configPath)
         if let problem = startup.problem {
             print(problem)
@@ -104,7 +113,7 @@ public final class Agent: AgentControl {
         var presets: [String: String] = [:]
         if let n3 = config.n3 { presets[DeckKind.n3.rawValue] = n3.active.name }
         if let n4 = config.n4 { presets[DeckKind.n4.rawValue] = n4.active.name }
-        return AgentStatus(version: Self.version, decks: daemon.connectedKinds.map(\.rawValue).sorted(),
+        return AgentStatus(version: version, build: build, decks: daemon.connectedKinds.map(\.rawValue).sorted(),
                            activePresets: presets, configProblem: configProblem, environment: environment.status)
     }
 

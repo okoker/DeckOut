@@ -99,6 +99,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-092 | `ActionDispatcherTests/programsDontWaitForEachOther` | A quick command finishes at once while a slow one is still running (a Test run or a slow key never holds up the next press) |
 | T-093 | `ReloadTests/outsideReloadRebuildsTheMonitorControl` | A reload from outside rebuilds the monitor control (finds monitors plugged in since start); an app save with the same `displays` reuses it |
 | T-094 | `XPCTests/previewEndsWhenItsClientGoes` | When the connection that put up the lock photo preview goes away, the preview is taken down (the N4 doesn't stay on the photo after the app quits) |
+| T-095 | `IdentityTests/derivesNamesFromBundleID` | Release and dev DeckOut derive their agent label, plist name, config file and log folder from the bundle id; the dev variant never shares the live config |
+| T-096 | `IdentityTests/unknownBundleIsNotDeckOut` | Only the two DeckOut bundle ids count as DeckOut: a hand install (`com.streamdeck.controller`) or no bundle keeps today's behaviour |
+| T-097 | `AgentLaunchTests/configPathOrder` | `--config` wins; inside DeckOut the identity's config path (even before it exists); a hand install searches today's candidates |
+| T-098 | `AgentLaunchTests/logRollsOverLimit` | The agent's log moves to `.1` at start when over the limit, so it never grows without end across restarts |
+| T-099 | `AgentLaunchTests/statusCarriesBuildFromLaunch` | `status` reports the version and build read at launch (a new app copied over the bundle doesn't change them); an older agent's status without `build` still decodes |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

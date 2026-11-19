@@ -20,13 +20,28 @@ if arguments.contains("--post-reload") {
     exit(0)
 }
 
-// MARK: - Config path resolution
+// MARK: - Identity, log, config path
 
 let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
 let execDir = URL(fileURLWithPath: arguments[0])
     .deletingLastPathComponent().path
+// Inside DeckOut.app (a helper in Contents/MacOS, so Bundle.main is the app): DeckOut's names and paths.
+let identity = AppIdentity.current
 
-guard let configPath = ConfigFile.resolvePath(arguments: arguments, home: homeDir, execDir: execDir) else {
+// Started by launchd from the app's agent plist: log to DeckOut's log file (the plist can't name a per-user path).
+if let identity, arguments.contains("--mach-service") {
+    let log = identity.logFolder(home: homeDir) + "/agent.log"
+    AgentLaunch.rollLog(at: log)
+    do {
+        try AgentLaunch.redirectOutput(to: log)
+    } catch {
+        print("Warning: can't write the log at \(log): \(error)")
+    }
+    print("\n\(Date()) \(identity.appName) agent starting (pid \(getpid()))")
+}
+
+guard let configPath = AgentLaunch.configPath(arguments: arguments, identity: identity, home: homeDir,
+                                              execDir: execDir) else {
     print("Error: --config needs a path")
     exit(1)
 }

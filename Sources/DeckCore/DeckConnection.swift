@@ -33,7 +33,7 @@ final class DeckConnection {
         send(CRTCommand.makeLIG(UInt8(clamping: brightness)))
     }
 
-    /// Clears every slot. Only the N3's reload still uses this (until in-place redraw lands).
+    /// Clears every slot. After start-up only for a model with `clearsBeforeRedraw`.
     func clearAll() {
         send(CRTCommand.makeCLE())
     }

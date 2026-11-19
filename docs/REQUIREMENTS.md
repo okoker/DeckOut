@@ -134,7 +134,8 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - On knob rotate: applies ±step for each tick
 - On knob press: executes the knob's press action
 - Reloads the config on `SIGHUP` or the distributed notification `com.streamdeck.controller.reload`
-  (`StreamDeckController --post-reload` posts it)
+  (`StreamDeckController --post-reload` posts it), then redraws every slot in place — no clear, so nothing blinks;
+  a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged
 - `--config <path>` loads that file instead of searching (development); the same security checks apply
 - Logs to stdout/file for debugging
 - Graceful shutdown on SIGTERM/SIGINT

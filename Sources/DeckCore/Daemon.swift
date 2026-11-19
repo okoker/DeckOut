@@ -25,15 +25,14 @@ public final class Daemon {
         }
     }
 
-    /// Switch to a new, already validated config and redraw every connected deck.
+    /// Switch to a new, already validated config and redraw every connected deck in place.
     public func reload(_ newConfig: AppConfig) {
         config = newConfig
         dispatcher.shutdown()
         dispatcher = ActionDispatcher(config: newConfig)
         for connection in decks.connections {
             connection.setBrightness(brightness(for: connection.model.kind))
-            if connection.model.kind == .n3 { connection.clearAll() }   // N3 reload as in v1.0.0
-            drawLayout(connection)
+            drawAll(connection)
         }
     }
 
@@ -41,7 +40,7 @@ public final class Daemon {
 
     private func connected(_ connection: DeckConnection) {
         connection.start(brightness: brightness(for: connection.model.kind))
-        drawLayout(connection)
+        drawAll(connection)
     }
 
     private func brightness(for kind: DeckKind) -> Int {
@@ -51,43 +50,19 @@ public final class Daemon {
         }
     }
 
-    /// Draws every slot the deck shows, then one commit.
-    private func drawLayout(_ connection: DeckConnection) {
+    /// Draws every slot of the deck's layout plan in place (a black image where nothing is set),
+    /// then one commit. No clear, unless the model needs one.
+    func drawAll(_ connection: DeckConnection) {
         let started = Date()
         let model = connection.model
-        var drawn = 0
-        switch model.kind {
-        case .n3:
-            // As in v1.0.0: only keys with an icon are drawn (the deck was cleared first).
-            for (key, slot) in model.keySlots.sorted(by: { $0.value < $1.value }) {
-                guard let path = config.n3?.buttons[key]?.icon else { continue }
-                guard let jpeg = ImageLoader.loadAsJPEG(path: path) else {
-                    print("Warning: failed to load icon for \(key): \(path)")
-                    continue
-                }
-                connection.draw(slot: slot, jpeg: jpeg)
-                drawn += 1
-            }
-        case .n4:
-            let keyBlank = StripRenderer.blank(w: IconImage.n4Size, h: IconImage.n4Size)
-            for (key, slot) in model.keySlots.sorted(by: { $0.value < $1.value }) {
-                let jpeg = config.n4?.keys[key]?.icon.flatMap { IconImage.renderN4(path: $0) } ?? keyBlank
-                connection.draw(slot: slot, jpeg: jpeg)
-                drawn += 1
-            }
-            for (block, slot) in model.stripSlots.sorted(by: { $0.value < $1.value }) {
-                let blockConfig = config.n4?.strip[block]
-                var jpeg: Data?
-                if blockConfig?.type == .picture, let path = blockConfig?.icon {
-                    jpeg = StripRenderer.picture(path: path)
-                }
-                connection.draw(slot: slot, jpeg: jpeg ?? StripRenderer.blank())
-                drawn += 1
-            }
+        let plan = LayoutPlan.slots(model: model, config: config)
+        if model.clearsBeforeRedraw { connection.clearAll() }
+        for (slot, content) in plan.sorted(by: { $0.key < $1.key }) {
+            connection.draw(slot: slot, jpeg: LayoutPlan.render(content, slot: slot, model: model))
         }
         connection.commit()
         let ms = Int(Date().timeIntervalSince(started) * 1000)
-        print("Drew \(drawn) slots on \(model.kind.rawValue) in \(ms) ms")
+        print("Drew \(plan.count) slots on \(model.kind.rawValue) in \(ms) ms")
     }
 
     // MARK: - Input

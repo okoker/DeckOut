@@ -35,6 +35,13 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-028 | `RenderTests/stripBlankIsBlackAtSize` | A blank strip block is a black 176×112 JPEG |
 | T-029 | `RenderTests/stripPictureIs176x112AndTurned180` | A `picture` block is 176×112 and turned 180° |
 | T-030 | `RenderTests/stripPictureMissingFileIsNil` | A missing picture gives no image (the caller draws black) |
+| T-031 | `LayoutPlanTests/n4PlanCoversAll14Slots` | A redraw covers exactly the N4's 14 image slots (1–4, 6–15) — none left stale, none invented |
+| T-032 | `LayoutPlanTests/n3PlanCoversSixSlots` | A redraw covers exactly the N3's 6 LCD slots |
+| T-033 | `LayoutPlanTests/keysShowTheirIconOrBlank` | A key shows its icon; a key with no icon, or not configured, is drawn black (in place, no clear) |
+| T-034 | `LayoutPlanTests/stripBlocksMapToTheirContent` | Live types stay live; `picture` shows its icon; `empty` and `picture` without an icon are black |
+| T-035 | `LayoutPlanTests/deckWithoutSectionIsAllBlank` | A connected deck with no config section is drawn all black |
+| T-036 | `LayoutPlanTests/rendererFallsBackToBlank` | A missing icon or picture still yields a black image of the slot's size, so every other slot draws |
+| T-037 | `LayoutPlanTests/n3IconsUseTheN3Pipeline` | N3 icons keep the v1.0.0 85×85 rendering; N4 keys render at 112×112 |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

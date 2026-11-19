@@ -26,6 +26,11 @@ public struct DeckModel {
     /// Config key → wire slot (the key byte in a `BAT` header).
     public let keySlots: [String: UInt8]
     public let stripSlots: [String: UInt8]
+    /// Side of a key image in pixels (keys are square). Strip blocks are 176×112.
+    let keyImageSize: Int
+    /// Clear every slot (`CLE`) before a redraw. Off: slots are redrawn in place — on the N4 a clear
+    /// blinks visibly (19/11/2026). The N3 is checked in Task 12.
+    let clearsBeforeRedraw: Bool
 
     // Event code (report byte 9) → control.
     private let keys: [UInt8: String]               // state 1 press, 0 release
@@ -61,6 +66,11 @@ public struct DeckModel {
         return nil
     }
 
+    /// Pixel size of the image a wire slot takes.
+    func imageSize(slot: UInt8) -> (width: Int, height: Int) {
+        stripSlots.values.contains(slot) ? (176, 112) : (keyImageSize, keyImageSize)
+    }
+
     // MARK: - Models
 
     /// TreasLin N3: 6 LCD keys, 3 side buttons, 3 knobs.
@@ -68,6 +78,8 @@ public struct DeckModel {
         kind: .n3, vendorID: 0x5548, productID: 0x1001,
         keySlots: ["lcd_1": 1, "lcd_2": 2, "lcd_3": 3, "lcd_4": 4, "lcd_5": 5, "lcd_6": 6],
         stripSlots: [:],
+        keyImageSize: 85,
+        clearsBeforeRedraw: false,
         keys: [
             0x01: "lcd_1", 0x02: "lcd_2", 0x03: "lcd_3", 0x04: "lcd_4", 0x05: "lcd_5", 0x06: "lcd_6",
             0x25: "btn_1", 0x30: "btn_2", 0x31: "btn_3",
@@ -91,6 +103,8 @@ public struct DeckModel {
             "key_6": 6, "key_7": 7, "key_8": 8, "key_9": 9, "key_10": 10,      // bottom row
         ],
         stripSlots: ["1": 1, "2": 2, "3": 3, "4": 4],
+        keyImageSize: 112,
+        clearsBeforeRedraw: false,
         keys: [
             0x01: "key_1", 0x02: "key_2", 0x03: "key_3", 0x04: "key_4", 0x05: "key_5",
             0x06: "key_6", 0x07: "key_7", 0x08: "key_8", 0x09: "key_9", 0x0A: "key_10",

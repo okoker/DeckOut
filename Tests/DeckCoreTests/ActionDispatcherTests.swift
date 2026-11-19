@@ -21,3 +21,17 @@ import Testing
     #expect(result.exitStatus == 0)
     #expect(result.error == nil)
 }
+
+@Test func programsDontWaitForEachOther() async {                   // T-092
+    // A slow Test run (or a slow key) must not hold up the next key press.
+    nonisolated(unsafe) let dispatcher = ActionDispatcher(config: .empty, brightness: nil,
+                                                          environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]))
+    let started = Date()
+    let fastFinished = await withCheckedContinuation { (done: CheckedContinuation<TimeInterval, Never>) in
+        dispatcher.execute(ResolvedAction(action: "shell:sleep 2", step: nil)) { _ in }
+        dispatcher.execute(ResolvedAction(action: "shell:echo fast", step: nil)) { _ in
+            done.resume(returning: Date().timeIntervalSince(started))
+        }
+    }
+    #expect(fastFinished < 1, "the quick command waited \(fastFinished) s behind the slow one")
+}

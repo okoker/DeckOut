@@ -52,6 +52,7 @@ public final class Agent: AgentControl {
     private var config: AppConfig
     private var configProblem: String?
     private var environmentRefreshPending = false
+    private var monitorRebuildPending = false
     public var onStatusChange: (() -> Void)?
 
     /// A burst of reload requests (a save per slider step) becomes one reload.
@@ -85,9 +86,11 @@ public final class Agent: AgentControl {
         if showLockPhoto { daemon.showLockPhoto(config.n4?.lockPhoto) }
     }
 
-    /// A reload from outside (SIGHUP, `--post-reload`): merged with others, then one environment read.
+    /// A reload from outside (SIGHUP, `--post-reload`): merged with others; it also looks for monitors again,
+    /// then reads the environment once.
     public func externalReload() {
         environmentRefreshPending = true
+        monitorRebuildPending = true
         merger.request { [weak self] _ in
             guard let self, self.environmentRefreshPending else { return }
             self.environmentRefreshPending = false
@@ -136,12 +139,14 @@ public final class Agent: AgentControl {
     private func reloadNow() -> ReloadResult {
         print("\nReloading config...")
         let result: ReloadResult
+        let rebuildMonitors = monitorRebuildPending
+        monitorRebuildPending = false
         switch ConfigFile.load(at: configPath) {
         case .success(let newConfig):
             Self.printConfig(newConfig, path: configPath)
             config = newConfig
             configProblem = nil
-            daemon.reload(newConfig)
+            daemon.reload(newConfig, rebuildMonitors: rebuildMonitors)
             print("Config reloaded.")
             result = ReloadResult(loaded: true, problem: nil)
         case .failure(let error):

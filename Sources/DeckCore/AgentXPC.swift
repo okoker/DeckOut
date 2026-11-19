@@ -28,6 +28,9 @@ import Foundation
 public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
     private let control: AgentControl
     private var clients: [NSXPCConnection] = []      // main thread only
+    /// The client whose lock photo preview is up; when it goes (the app quits or crashes in photo mode), the N4
+    /// goes back to its keys. Main thread only.
+    private var previewOwner: NSXPCConnection?
 
     public init(control: AgentControl) {
         self.control = control
@@ -40,7 +43,14 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
         connection.exportedObject = self
         connection.remoteObjectInterface = NSXPCInterface(with: AgentClientXPC.self)
         connection.invalidationHandler = { [weak self, weak connection] in
-            DispatchQueue.main.async { self?.clients.removeAll { $0 === connection } }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let owner = self.previewOwner, owner === connection {
+                    self.previewOwner = nil
+                    self.control.showLockPhoto(nil)
+                }
+                self.clients.removeAll { $0 === connection }
+            }
         }
         DispatchQueue.main.async { self.clients.append(connection) }
         connection.resume()
@@ -67,6 +77,7 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
     }
 
     public func showLockPhoto(_ framing: Data?, reply: @escaping () -> Void) {
+        let caller = NSXPCConnection.current()      // only valid here, before the hop to main
         var decoded: LockPhotoConfig?
         if let framing {
             guard let value = try? JSONDecoder().decode(LockPhotoConfig.self, from: framing) else {
@@ -76,8 +87,9 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
             }
             decoded = value
         }
-        DispatchQueue.main.async { [control] in
+        DispatchQueue.main.async { [self] in
             control.showLockPhoto(decoded)
+            previewOwner = decoded == nil ? nil : caller
             reply()
         }
     }

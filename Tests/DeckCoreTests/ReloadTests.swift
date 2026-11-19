@@ -24,3 +24,20 @@ import Testing
     #expect(Daemon.displaysChanged(nil, [a]))
     #expect(!Daemon.displaysChanged(nil, []))
 }
+
+@Test func outsideReloadRebuildsTheMonitorControl() async {         // T-093
+    // A monitor plugged in after start is found again on a reload from outside (`--post-reload`), as in v1.0.0;
+    // the app's own saves keep reusing the control. No displays here, so m1ddc never runs.
+    nonisolated(unsafe) let daemon = Daemon(config: .empty, environment: ShellEnvironment(fixed: [:]))
+    let builds: [Int] = await withCheckedContinuation { done in
+        DispatchQueue.main.async {
+            let before = daemon.brightnessGeneration
+            daemon.reload(.empty)
+            let afterSave = daemon.brightnessGeneration
+            daemon.reload(.empty, rebuildMonitors: true)
+            done.resume(returning: [before, afterSave, daemon.brightnessGeneration])
+        }
+    }
+    #expect(builds[1] == builds[0])
+    #expect(builds[2] == builds[0] + 1)
+}

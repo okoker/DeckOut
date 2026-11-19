@@ -50,7 +50,7 @@ public final class Daemon {
     /// main thread, and again only when `displays` changes.
     private var brightness: BrightnessControl?
     private var brightnessBuilding = false
-    private var brightnessGeneration = 0      // a build that finishes after a newer one started is dropped
+    private(set) var brightnessGeneration = 0      // a build that finishes after a newer one started is dropped
 
     /// The user's shell environment, shared with every dispatcher; `refresh` is the owner's business.
     private let environment: ShellEnvironment
@@ -98,13 +98,15 @@ public final class Daemon {
         }
     }
 
-    /// Switch to a new, already validated config and redraw every connected deck in place.
-    public func reload(_ newConfig: AppConfig) {
+    /// Switch to a new, already validated config and redraw every connected deck in place. The monitor control
+    /// is rebuilt when `displays` changed, or when `rebuildMonitors` asks (a reload from outside: it finds monitors
+    /// plugged in, or `m1ddc` installed, since start, as every reload did in v1.0.0).
+    public func reload(_ newConfig: AppConfig, rebuildMonitors: Bool = false) {
         let started = Date()
         let displaysChanged = Self.displaysChanged(config.displays, newConfig.displays)
         config = newConfig
         dispatcher = makeDispatcher()
-        if displaysChanged { rebuildBrightness(for: newConfig.displays) }
+        if displaysChanged || rebuildMonitors { rebuildBrightness(for: newConfig.displays) }
         for connection in decks.connections {
             connection.setBrightness(brightness(for: connection.model.kind))
             showCurrent(connection)
@@ -122,7 +124,8 @@ public final class Daemon {
     /// Shuts the old monitor control down and builds one for `displays` off the main thread. Until it is
     /// ready, brightness actions log "monitors not ready yet".
     private func rebuildBrightness(for displays: [DisplayConfig]?) {
-        brightness?.shutdown()
+        // Off main: shutdown waits on the control's queue, which a hung m1ddc call could hold.
+        if let old = brightness { DispatchQueue.global(qos: .utility).async { old.shutdown() } }
         brightness = nil
         brightnessGeneration += 1
         let generation = brightnessGeneration

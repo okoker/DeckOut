@@ -137,16 +137,19 @@ A bad payload (`app:` without `.app`, a relative `open:`/`script:` path, a `url:
 `shortcut:`) or an unknown action logs a warning when pressed and does nothing. `key:` and media actions log one warning
 at load when Accessibility isn't granted.
 
-**How commands run** (`shell:`, `script:`, `shortcut:`; every program the daemon starts):
+**How commands run** (`shell:`, `script:`, `shortcut:` and the environment read; `m1ddc` still runs through
+Foundation's `Process`):
 - With the user's own shell environment: the login shell (`/bin/zsh` unless the user database says otherwise) is
   started as login + interactive, its environment read between two random markers, and kept. Read at start-up and on
   reloads from outside (`SIGHUP`, `--post-reload`, one read per merged burst); not on the config app's own saves.
-  If the shell hangs, waits for input or prints no markers, it is cut off after 10 s and the daemon falls back to its
+  If the shell hangs, waits for input or prints no markers, it gets SIGTERM after 10 s (SIGKILL a second later; the
+  answer is in by about 12 s at worst) and the daemon falls back to its
   own environment with `/opt/homebrew/bin` and `/usr/local/bin` added to PATH (a later failed read keeps the last good
   environment). The log says `Shell environment: resolved` or `fell back (<why>)`.
 - `shell:` runs `/bin/zsh -c <command>`; `script:` runs the file itself (it must be executable); `shortcut:` runs
   `/usr/bin/shortcuts run <name>`. Each with stdin `/dev/null`, at most 30 s: then the command's whole process group gets
   SIGTERM, and SIGKILL 1 s later. Children start with default signal handling and only stdin/stdout/stderr inherited.
+  Commands run side by side: a slow one (or a Test run from the config app) never holds up the next press.
 - stdout and stderr are each capped at 64 KB. A press logs a failure, stderr and a non-zero exit; stdout is not
   logged (the config app's Test button shows it).
 
@@ -196,17 +199,22 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   (`StreamDeckController --post-reload` posts it), then redraws every slot in place — no clear, so nothing blinks;
   a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged.
   Requests within 0.15 s of the first merge into one reload. The monitor control is built off the main thread at
-  start, and again only when `displays` changes; until it is ready, brightness actions log "monitors not ready yet"
+  start, and again when `displays` changes or on a reload from outside (`SIGHUP`, `--post-reload`), which finds
+  monitors plugged in or `m1ddc` installed since start; the config app's own saves reuse it. Until it is ready,
+  brightness actions log "monitors not ready yet"
 - `--config <path>` loads that file instead of searching (development); the same security checks apply.
   `--config` without a path exits with an error (a bad invocation, not a missing config)
 - Starts with the decks blank, logging why, when the config is missing or unusable (see Configuration)
 - `--mach-service <name>` serves the config app over XPC on that launchd Mach service (the agent plist names it;
   without the flag there is no listener). Calls: `status` (version, connected decks, live presets, config problem,
   shell environment), `reload`, `test` (run one action as a press would, minus the lock check; replies with exit
-  status, stdout, stderr or the error), `showLockPhoto` (a framing, or nil for the layout), `refreshEnvironment`; the
+  status, stdout, stderr or the error), `showLockPhoto` (a framing, or nil for the layout; the preview ends by itself
+  when the connection that set it goes, e.g. the app quits or crashes in photo mode), `refreshEnvironment`; the
   app hears `statusChanged` on deck connect / remove, reloads and environment reads. Payloads are JSON of DeckCore's
-  types; a request that doesn't decode gets the error "bad request". Every connection is accepted until the app
-  bundle is signed (anything running as the user can already do what these calls do); code-signing checks come with it
+  types; a request that doesn't decode gets the error "bad request". Every connection is accepted: there are no
+  code-signing checks yet, so any process running as the user can make these calls, including `test` with `key:` and
+  media actions, which then use the daemon's Accessibility permission without anyone pressing a key. No agent plist
+  passes the flag until the signing checks exist
 - `--show-lock-photo` keeps the N4's lock photo, as framed at start, up while unlocked (development: lining up the
   panel rectangles). The same preview is switchable at run time for the config app's photo mode
 - Logs to stdout/file for debugging

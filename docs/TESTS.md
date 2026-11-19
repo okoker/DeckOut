@@ -96,6 +96,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-089 | `XPCTests/clientHearsStatusChanges` | A connected client is told the new status when the agent's status changes (decks plugged in or out) |
 | T-090 | `XPCTests/badRequestGetsAnError` | A `test` request that doesn't decode gets the error "bad request" and never reaches the agent |
 | T-091 | `AgentTests/agentReloadReportsAndClearsTheProblem` | With no config the agent runs blank and reports "No config yet"; a reload that loads clears the problem and shows the live presets; a reload of a broken file keeps the previous config and reports why |
+| T-092 | `ActionDispatcherTests/programsDontWaitForEachOther` | A quick command finishes at once while a slow one is still running (a Test run or a slow key never holds up the next press) |
+| T-093 | `ReloadTests/outsideReloadRebuildsTheMonitorControl` | A reload from outside rebuilds the monitor control (finds monitors plugged in since start); an app save with the same `displays` reuses it |
+| T-094 | `XPCTests/previewEndsWhenItsClientGoes` | When the connection that put up the lock photo preview goes away, the preview is taken down (the N4 doesn't stay on the photo after the app quits) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

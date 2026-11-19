@@ -8,7 +8,8 @@ public final class ActionDispatcher {
     // MARK: - Properties
 
     private let config: AppConfig
-    private let shellQueue = DispatchQueue(label: "streamdeck.shell", qos: .utility)
+    /// Concurrent: a slow command (or a Test run from the app) never holds up the next press.
+    private let shellQueue = DispatchQueue(label: "streamdeck.shell", qos: .utility, attributes: .concurrent)
     private let environment: ShellEnvironment
 
     /// Owned by the `Daemon`, which keeps one across reloads and builds it off the main thread.

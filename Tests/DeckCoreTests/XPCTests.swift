@@ -11,6 +11,8 @@ private final class StubControl: AgentControl, @unchecked Sendable {
     let reloadValue = ReloadResult(loaded: false, problem: "Config doesn't load: stub")
     let testValue = ActionResult(exitStatus: 0, stdout: "hi\n", stderr: "", error: nil)
     var received: [TestRequest] = []
+    var lockPhotos: [LockPhotoConfig?] = []
+    var heardLockPhoto: ((LockPhotoConfig?) -> Void)?
     var onStatusChange: (() -> Void)?
 
     func status() -> AgentStatus { statusValue }
@@ -19,7 +21,10 @@ private final class StubControl: AgentControl, @unchecked Sendable {
         received.append(request)
         completion(testValue)
     }
-    func showLockPhoto(_ framing: LockPhotoConfig?) {}
+    func showLockPhoto(_ framing: LockPhotoConfig?) {
+        lockPhotos.append(framing)
+        heardLockPhoto?(framing)
+    }
     func refreshEnvironment(completion: @escaping (EnvironmentStatus) -> Void) { completion(statusValue.environment) }
 }
 
@@ -119,4 +124,20 @@ private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
     let reply: Data? = await harness.call { proxy, reply in proxy.test(Data("x".utf8), reply: reply) }
     #expect(decode(ActionResult.self, reply)?.error == "bad request")
     #expect(harness.stub.received.isEmpty)
+}
+
+@Test func previewEndsWhenItsClientGoes() async throws {             // T-094
+    // The app quits or crashes in photo mode: the N4 goes back to its keys instead of keeping the photo.
+    let harness = Harness()
+    let framing = LockPhotoConfig(path: "/p.jpg", zoom: 2, offsetX: 0, offsetY: 0.1)
+    let body = try JSONEncoder().encode(framing)
+    let shown: Bool? = await harness.call { proxy, reply in proxy.showLockPhoto(body) { reply(true) } }
+    #expect(shown == true)
+    #expect(harness.stub.lockPhotos == [framing])
+    let cleared: LockPhotoConfig?? = await harness.call { (_: AgentXPC, reply: @escaping (LockPhotoConfig?) -> Void) in
+        harness.stub.heardLockPhoto = reply
+        harness.client.invalidate()
+    }
+    #expect(cleared == .some(nil))
+    #expect(harness.stub.lockPhotos == [framing, nil])
 }

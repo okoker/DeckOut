@@ -104,6 +104,10 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-097 | `AgentLaunchTests/configPathOrder` | `--config` wins; inside DeckOut the identity's config path (even before it exists); a hand install searches today's candidates |
 | T-098 | `AgentLaunchTests/logRollsOverLimit` | The agent's log moves to `.1` at start when over the limit, so it never grows without end across restarts |
 | T-099 | `AgentLaunchTests/statusCarriesBuildFromLaunch` | `status` reports the version and build read at launch (a new app copied over the bundle doesn't change them); an older agent's status without `build` still decodes |
+| T-100 | `CodeSigningTests/requirementForms` | The requirement strings: team id + identifier when signed, identifier + code hash when ad hoc, none (refuse) otherwise; nothing with a quote or non-hex gets into one; what the app asks of the agent |
+| T-101 | `CodeSigningTests/cdhashPinsOneBinary`, `readsOwnSignature` | A code-hash requirement passes for the exact binary and fails for any other hash (on `/bin/ls`); the running process can read its own identifier and hash |
+| T-102 | `XPCTests/refusesAPeerThatDoesNotMatch` | A process that isn't our app is refused before any call runs (a `key:` test never reaches the agent); no requirement means every connection is refused. Fails if `setCodeSigningRequirement` is removed (checked 19/11/2026) |
+| T-103 | `XPCTests/acceptsAPeerThatMatches` | A peer that meets the requirement gets its replies |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

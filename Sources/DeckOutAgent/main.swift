@@ -60,7 +60,13 @@ if let flag = arguments.firstIndex(of: "--mach-service") {
         exit(1)
     }
     let name = arguments[flag + 1]
-    let service = AgentService(control: agent)
+    // Only our own app may connect: refuse everything when this isn't running inside DeckOut.
+    let bundleURL = Bundle.main.bundleURL
+    let service = AgentService(control: agent, peerRequirement: {
+        guard let identity else { return nil }
+        return CodeSigning.appRequirement(bundleURL: bundleURL, identity: identity)
+    })
+    if identity == nil { print("XPC: not inside DeckOut.app, so no app can be checked; every connection is refused") }
     let listener = NSXPCListener(machServiceName: name)
     listener.delegate = service
     listener.resume()

@@ -21,24 +21,34 @@ import Foundation
     func statusChanged(_ status: Data)
 }
 
-/// The XPC listener's delegate and exported object. It accepts every connection (before signing, anything
-/// running as the user may connect, and gets nothing it couldn't already do as the user; code-signing checks come
-/// with the signed app bundle). It keeps each client until its connection is invalidated, and pushes status
-/// changes to all of them. Calls hop to the main thread before touching `control`.
+/// The XPC listener's delegate and exported object. Each connection must meet the peer requirement (our own app,
+/// `CodeSigning.appRequirement`), checked by XPC before any call runs. It keeps each client until its connection is
+/// invalidated, and pushes status changes to all of them. Calls hop to the main thread before touching `control`.
 public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
     private let control: AgentControl
+    /// Evaluated per connection (the app on disk may have been replaced since the last one). Returning nil refuses
+    /// the connection. A nil closure accepts every connection: in-process tests only.
+    private let peerRequirement: (() -> String?)?
     private var clients: [NSXPCConnection] = []      // main thread only
     /// The client whose lock photo preview is up; when it goes (the app quits or crashes in photo mode), the N4
     /// goes back to its keys. Main thread only.
     private var previewOwner: NSXPCConnection?
 
-    public init(control: AgentControl) {
+    public init(control: AgentControl, peerRequirement: (() -> String?)?) {
         self.control = control
+        self.peerRequirement = peerRequirement
         super.init()
         control.onStatusChange = { [weak self] in self?.pushStatus() }
     }
 
     public func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
+        if let peerRequirement {
+            guard let requirement = peerRequirement() else {
+                print("XPC: refused a connection from pid \(connection.processIdentifier): can't tell which app is ours")
+                return false
+            }
+            connection.setCodeSigningRequirement(requirement)
+        }
         connection.exportedInterface = NSXPCInterface(with: AgentXPC.self)
         connection.exportedObject = self
         connection.remoteObjectInterface = NSXPCInterface(with: AgentClientXPC.self)

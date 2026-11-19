@@ -213,10 +213,11 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   status, stdout, stderr or the error), `showLockPhoto` (a framing, or nil for the layout; the preview ends by itself
   when the connection that set it goes, e.g. the app quits or crashes in photo mode), `refreshEnvironment`; the
   app hears `statusChanged` on deck connect / remove, reloads and environment reads. Payloads are JSON of DeckCore's
-  types; a request that doesn't decode gets the error "bad request". Every connection is accepted: there are no
-  code-signing checks yet, so any process running as the user can make these calls, including `test` with `key:` and
-  media actions, which then use the daemon's Accessibility permission without anyone pressing a key. No agent plist
-  passes the flag until the signing checks exist
+  types; a request that doesn't decode gets the error "bad request". Only DeckOut's own app may connect, checked by
+  XPC before any call runs: signed with a Developer ID, a peer with the agent's own team id and the app's bundle id;
+  ad hoc (development), the exact app binary in the agent's bundle, pinned by its code hash read from disk at each
+  connection. Outside DeckOut.app, or when no requirement can be built, every connection is refused (the decks still
+  work). The app checks the agent the same way when signed, and by its identifier when ad hoc
 - `--show-lock-photo` keeps the N4's lock photo, as framed at start, up while unlocked (development: lining up the
   panel rectangles). The same preview is switchable at run time for the config app's photo mode
 - Logs to stdout (a hand install's plist sends it to `~/Library/Logs/StreamDeckController.log`). Inside DeckOut,

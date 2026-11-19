@@ -40,8 +40,8 @@ private final class Harness: @unchecked Sendable {
     let listener = NSXPCListener.anonymous()
     let client: NSXPCConnection
 
-    init(exporting spy: ClientSpy? = nil) {
-        service = AgentService(control: stub)
+    init(exporting spy: ClientSpy? = nil, peerRequirement: (() -> String?)? = nil) {
+        service = AgentService(control: stub, peerRequirement: peerRequirement)
         listener.delegate = service
         listener.resume()
         client = NSXPCConnection(listenerEndpoint: listener.endpoint)
@@ -59,11 +59,12 @@ private final class Harness: @unchecked Sendable {
     }
 
     /// Makes one call and waits for its reply; nil if the connection failed or nothing came within 2 s.
-    func call<T>(_ body: @escaping (AgentXPC, @escaping (T) -> Void) -> Void) async -> T? {
+    /// `expectingError`: a failed connection is the expected outcome, not a test failure.
+    func call<T>(expectingError: Bool = false, _ body: @escaping (AgentXPC, @escaping (T) -> Void) -> Void) async -> T? {
         await withCheckedContinuation { (done: CheckedContinuation<T?, Never>) in
             let once = Once(done)
             let proxy = client.remoteObjectProxyWithErrorHandler { error in
-                Issue.record("XPC error: \(error)")
+                if !expectingError { Issue.record("XPC error: \(error)") }
                 once.resume(nil)
             } as! AgentXPC
             body(proxy) { once.resume($0) }
@@ -140,4 +141,29 @@ private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
     }
     #expect(cleared == .some(nil))
     #expect(harness.stub.lockPhotos == [framing, nil])
+}
+
+@Test func refusesAPeerThatDoesNotMatch() async {                    // T-102
+    // Anything that isn't our app is refused before any call runs.
+    let harness = Harness(peerRequirement: { #"identifier "not.this.process""# })
+    let reply: Data? = await harness.call(expectingError: true) { proxy, reply in
+        proxy.test(Data("{\"action\":\"key:cmd+q\"}".utf8), reply: reply)
+    }
+    #expect(reply == nil)
+    #expect(harness.stub.received.isEmpty)
+
+    // No requirement can be built (e.g. the agent can't read the app): every connection is refused.
+    let closed = Harness(peerRequirement: { nil })
+    let none: Data? = await closed.call(expectingError: true) { proxy, reply in proxy.status(reply: reply) }
+    #expect(none == nil)
+}
+
+@Test func acceptsAPeerThatMatches() async throws {                  // T-103
+    // The client here is this test process: a requirement pinned to its own signature lets it in.
+    let identifier = try #require(CodeSigning.ownIdentifier())
+    let me = try #require(CodeSigning.requirement(peerIdentifier: identifier, teamID: nil,
+                                                  peerCDHash: CodeSigning.ownCDHash()))
+    let harness = Harness(peerRequirement: { me })
+    let status: Data? = await harness.call { proxy, reply in proxy.status(reply: reply) }
+    #expect(decode(AgentStatus.self, status) == harness.stub.statusValue)
 }

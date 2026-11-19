@@ -121,6 +121,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-114 | `DeckFaceTests/n4MatchesMeasuredRects` | The app's N4 drawing puts every key and strip block at half its measured position (`LockPhoto.n4Rects`), inside the deck, with a person's name for each control |
 | T-115 | `DeckFaceTests/everyConfigKeyOnce` | Each deck's drawing has every config key exactly once (N3: 6 keys, 3 buttons, 3 knobs; N4: 10 keys, 4 strip blocks, 4 knobs) and no two controls overlap |
 | T-116 | `DeckFaceTests/previewIsUpright` | Key and picture previews come out upright at the deck's sizes (the deck's own copies are turned), and a live block's JPEG as drawn on the deck is turned back upright |
+| T-117 | `DeckViewTests/drawsImagesAndRing` | The deck drawing shows a key's image on its screen, a red ring around the selected control only, and an empty screen as empty; writes light / dark PNGs of both decks to the temp folder for a look |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

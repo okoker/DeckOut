@@ -118,9 +118,9 @@ DistributedNotificationCenter.default().addObserver(
 NSApplication.shared.setActivationPolicy(.accessory)
 NSApp.finishLaunching()
 
-print("StreamDeckController running. SIGHUP or --post-reload to reload config, Ctrl+C to stop.")
+print("DeckOutAgent running. SIGHUP or --post-reload to reload config, Ctrl+C to stop.")
 
 // Block on the run loop — IOKit HID reports only arrive while this is running
 CFRunLoopRun()
 
-print("StreamDeckController stopped.")
+print("DeckOutAgent stopped.")

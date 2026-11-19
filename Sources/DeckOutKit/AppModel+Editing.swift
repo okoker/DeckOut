@@ -109,3 +109,75 @@ final class OnceBox<T>: @unchecked Sendable {
         pending?.resume(returning: value)
     }
 }
+
+// MARK: - Knobs and strip blocks
+
+extension AppModel {
+
+    public func knobChoices(_ id: String, on deck: DeckKind) -> (turn: ActionChoice, press: ActionChoice) {
+        let knob = config?.knob(deck, id)
+        return (ActionChoice(action: knob?.rotate.action ?? "none", step: knob?.rotate.step),
+                ActionChoice(action: knob?.press.action ?? "none", step: knob?.press.step))
+    }
+
+    public func setKnob(_ id: String, on deck: DeckKind, turn: ActionChoice? = nil, press: ActionChoice? = nil) {
+        store?.change("Change Knob") { config in
+            let current = config.knob(deck, id)
+            let rotate = turn.map { KnobAction(action: $0.action, step: $0.step) } ?? current?.rotate ?? KnobAction(action: "none")
+            let pressed = press.map { KnobAction(action: $0.action, step: $0.step) } ?? current?.press ?? KnobAction(action: "none")
+            config.setKnob(deck, id, rotate.action == "none" && pressed.action == "none"
+                           ? nil : KnobConfig(rotate: rotate, press: pressed))
+        }
+    }
+
+    public func clearKnob(_ id: String, on deck: DeckKind) {
+        store?.change("Clear Knob") { $0.setKnob(deck, id, nil) }
+    }
+
+    public func stripBlock(_ id: String) -> StripBlockConfig? { config?.stripBlock(id) }
+
+    /// What the block shows. Switching type keeps the tap; a picture keeps its image; the internet settings start
+    /// fresh unless it already was an internet block.
+    public func setStripType(_ type: StripBlockType, block id: String) {
+        store?.change("Change Strip Block") { config in
+            let old = config.stripBlock(id)
+            guard old?.type != type else { return }
+            if type == .empty, old?.action == nil {
+                config.setStripBlock(id, nil)
+                return
+            }
+            config.setStripBlock(id, StripBlockConfig(type: type, action: old?.action, step: old?.step,
+                                                      icon: type == .picture ? old?.icon : nil))
+        }
+    }
+
+    public func editStripBlock(_ id: String, _ name: String = "Change Strip Block", _ edit: @escaping (inout StripBlockConfig) -> Void) {
+        store?.change(name) { config in
+            var block = config.stripBlock(id) ?? StripBlockConfig(type: .empty)
+            edit(&block)
+            config.setStripBlock(id, block.type == .empty && block.action == nil ? nil : block)
+        }
+    }
+
+    public func setStripTap(_ choice: ActionChoice, block id: String) {
+        editStripBlock(id, "Change Tap") { block in
+            block.action = choice == .nothing ? nil : choice.action
+            block.step = choice.step
+        }
+    }
+
+    public func clearStripBlock(_ id: String) {
+        store?.change("Clear Strip Block") { $0.setStripBlock(id, nil) }
+    }
+
+    /// Controls on the deck on screen whose files are gone (or whose script can't run).
+    public var problems: [String: String] {
+        guard let shown, let config else { return [:] }
+        return MissingFiles.check(config, deck: shown)
+    }
+
+    public func makeExecutable(_ path: String) {
+        _ = MissingFiles.makeExecutable(path)
+        objectWillChange.send()
+    }
+}

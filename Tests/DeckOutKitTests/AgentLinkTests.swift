@@ -58,9 +58,10 @@ final class StubServer: NSObject, NSXPCListenerDelegate, @unchecked Sendable {
     }
 }
 
-/// Waits (polling the main actor) until `condition` holds; false after 3 s.
+/// Waits (polling the main actor) until `condition` holds; false after 10 s (long: snapshot tests keep the main
+/// thread busy for seconds in a full run).
 @MainActor func until(_ condition: @MainActor () -> Bool) async -> Bool {
-    for _ in 0..<300 {
+    for _ in 0..<1000 {
         if condition() { return true }
         try? await Task.sleep(nanoseconds: 10_000_000)
     }

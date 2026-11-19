@@ -74,7 +74,8 @@ private final class Harness: @unchecked Sendable {
         listener.invalidate()
     }
 
-    /// Makes one call and waits for its reply; nil if the connection failed or nothing came within 2 s.
+    /// Makes one call and waits for its reply; nil if the connection failed or nothing came within 10 s (long: the
+    /// replies hop to the main thread, which the app's snapshot tests keep busy for seconds in a full run).
     /// `expectingError`: a failed connection is the expected outcome, not a test failure.
     func call<T>(expectingError: Bool = false, _ body: @escaping (AgentXPC, @escaping (T) -> Void) -> Void) async -> T? {
         await withCheckedContinuation { (done: CheckedContinuation<T?, Never>) in
@@ -84,7 +85,7 @@ private final class Harness: @unchecked Sendable {
                 once.resume(nil)
             } as! AgentXPC
             body(proxy) { once.resume($0) }
-            DispatchQueue.global().asyncAfter(deadline: .now() + 2) { once.resume(nil) }
+            DispatchQueue.global().asyncAfter(deadline: .now() + 10) { once.resume(nil) }
         }
     }
 }

@@ -40,3 +40,20 @@ import Testing
         }
     }
 }
+
+@MainActor @Test func knobAndStripEditorsDraw() throws {   // T-129 (design check)
+    var config = AppConfig.empty
+    config.setKnob(.n4, "knob_4", KnobConfig(rotate: KnobAction(action: "system_volume", step: 2),
+                                             press: KnobAction(action: "system_mute_toggle")))
+    config.setStripBlock("1", StripBlockConfig(type: .internet, action: "url:https://example.com"))
+    config.setButton(.n4, "key_2", ButtonConfig(action: "script:/nonexistent/backup.sh"))
+    for (name, selection) in [("knob", "knob_4"), ("strip", "1"), ("missing", "key_2")] {
+        let model = try previewModel(config, deck: .n4, selection: selection)
+        for dark in [false, true] {
+            let png = try Snapshot.windowPNG(DeckStage(model: model, face: DeckFace.of(.n4)), size: MainWindow.size, dark: dark)
+            try png.write(to: snapshotFolder.appendingPathComponent("editor-\(name)-\(dark ? "dark" : "light").png"))
+        }
+    }
+    let model = try previewModel(config, deck: .n4, selection: nil)
+    #expect(model.problems == ["key_2": "The script isn't there any more"])
+}

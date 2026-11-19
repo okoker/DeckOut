@@ -15,6 +15,7 @@ struct KeyEditor: View {
                 ActionPicker(slot: .key, choice: choice) { model.setAction($0, button: control.id, on: deck) }
             }
             ActionFields(model: model, slot: .key, choice: choice) { model.setAction($0, button: control.id, on: deck) }
+            ProblemNote(model: model, id: control.id, choice: choice)
             if control.kind == .key {
                 IconRow(model: model, deck: deck, id: control.id, choice: choice, icon: button?.icon)
             }

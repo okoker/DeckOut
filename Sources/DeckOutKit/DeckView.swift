@@ -8,16 +8,20 @@ public struct DeckView: View {
     let face: DeckFace
     let images: [String: CGImage]
     let captions: [String: String]
+    /// Controls whose files are gone: a small red mark.
+    let marks: Set<String>
     @Binding var selection: String?
 
     public static let ringWidth: CGFloat = 3
     public static let ringGap: CGFloat = 5
     static let red = Color(rgb: 0xFF3B30)
 
-    public init(face: DeckFace, images: [String: CGImage], captions: [String: String], selection: Binding<String?>) {
+    public init(face: DeckFace, images: [String: CGImage], captions: [String: String], marks: Set<String> = [],
+                selection: Binding<String?>) {
         self.face = face
         self.images = images
         self.captions = captions
+        self.marks = marks
         _selection = selection
     }
 
@@ -44,6 +48,14 @@ public struct DeckView: View {
                     .lineLimit(1)
                     .frame(width: 96)
                     .position(x: knob.frame.midX, y: knob.frame.maxY + 12)
+            }
+            ForEach(face.controls.filter { marks.contains($0.id) }) { control in
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Self.red)
+                    .position(x: control.frame.maxX - 2, y: control.frame.minY + 2)
+                    .allowsHitTesting(false)
             }
             if let id = selection, let selected = face.control(id) {
                 ring(selected).allowsHitTesting(false)

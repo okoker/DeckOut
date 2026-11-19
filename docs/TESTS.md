@@ -133,7 +133,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-126 | `KeyNamesTests/recordsWhatTheDispatcherCanPost` | The shortcut recorder writes `cmd+shift+4`-style strings from one key table shared with the agent; a key the agent can't post (outside the table) is refused, so no shortcut is saved that silently does nothing |
 | T-127 | `IconFilesTests/appIconAndCopiedImageLandInIcons` | An app's own icon is rendered to a 256 px PNG in the config's `icons/` folder (folder 0700, file 0600), the same file for the same app; a chosen image is copied in byte for byte, so moving the original changes nothing |
 | T-128 | `IconFilesTests/editsReachTheLivePreset` | An edit lands in the live preset only (keys, buttons, strip blocks) or on the deck (knobs); a deck with no section gets one ("Default", brightness 75) on its first edit |
-| T-129 | `EditorSnapshotTests/editorsDraw` | The key editor draws for each kind of action in a real offscreen window, light and dark (PNGs for a look) |
+| T-129 | `EditorSnapshotTests/editorsDraw`, `knobAndStripEditorsDraw` | The key, knob and strip-block editors draw in a real offscreen window for each kind of action, light and dark (PNGs for a look); a key whose script is gone is the only one marked |
+| T-130 | `MissingFilesTests/findsWhatIsGone` | Keys, knob presses and strip taps whose app, file, folder, script, icon or picture is gone are found (and marked on the drawing); ones whose files are there aren't |
+| T-131 | `MissingFilesTests/scriptWarnings` | A script that isn't there or isn't executable is told apart; "Make Executable" adds only the owner's execute bit; a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS will ask (by path; nothing there is read) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

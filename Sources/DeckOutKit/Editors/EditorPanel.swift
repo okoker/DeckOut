@@ -13,8 +13,10 @@ struct EditorPanel: View {
                 switch control.kind {
                 case .key, .button:
                     KeyEditor(model: model, deck: face.deck, control: control)
-                case .knob, .stripBlock:
-                    Inspector(face: face, selection: id, config: model.config)   // Task 6 makes these editors
+                case .knob:
+                    KnobEditor(model: model, deck: face.deck, control: control)
+                case .stripBlock:
+                    StripEditor(model: model, control: control)
                 }
             } else {
                 Text("Nothing selected")

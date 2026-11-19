@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// Images for the N4 touch strip: four separate 176×112 JPEG blocks, each turned 180°.
@@ -65,6 +66,55 @@ enum StripRenderer {
             }
             Canvas.drawText("VOL", in: ctx, center: CGPoint(x: center.x, y: 12),
                             font: Canvas.font(size: 12, weight: .semibold), color: dimText)
+        } ?? blank()
+    }
+
+    // MARK: - Load
+
+    private static func color(_ c: LoadColour?) -> CGColor {
+        switch c {
+        case .green?: return Canvas.color(0x30D158)
+        case .amber?: return Canvas.color(0xFFB340)
+        case .red?:   return Canvas.color(0xFF453A)
+        case nil:     return textColor
+        }
+    }
+
+    /// CPU and memory side by side, each a number over a small level bar, coloured on its own
+    /// (CPU by its value, memory by macOS's pressure level). A missing figure shows "–".
+    static func load(cpu: Int?, mem: Int?, memLevel: PressureLevel?) -> Data {
+        let columns: [(label: String, value: Int?, colour: LoadColour?)] = [
+            ("CPU", cpu, cpu.map(LoadColour.cpu)),
+            ("MEM", mem, mem == nil ? nil : memLevel.map(LoadColour.memory)),
+        ]
+        return Canvas.jpeg(width: width, height: height) { ctx in
+            ctx.setFillColor(track)
+            ctx.fill(CGRect(x: 87, y: 14, width: 2, height: 84))     // divider
+            for (i, column) in columns.enumerated() {
+                let midX = CGFloat(44 + 88 * i)
+                let ink = color(column.colour)
+                if let value = column.value {
+                    Canvas.drawText([("\(value)", Canvas.font(size: 30, weight: .bold), ink),
+                                     ("%", Canvas.font(size: 14, weight: .semibold), dimText)],
+                                    in: ctx, center: CGPoint(x: midX, y: 68))
+                } else {
+                    Canvas.drawText("–", in: ctx, center: CGPoint(x: midX, y: 68),
+                                    font: Canvas.font(size: 30), color: dimText)
+                }
+                let bar = CGRect(x: midX - 30, y: 38, width: 60, height: 6)
+                ctx.setFillColor(track)
+                ctx.addPath(CGPath(roundedRect: bar, cornerWidth: 3, cornerHeight: 3, transform: nil))
+                ctx.fillPath()
+                if let value = column.value, value > 0 {
+                    let fill = CGRect(x: bar.minX, y: bar.minY, width: bar.width * CGFloat(min(value, 100)) / 100,
+                                      height: bar.height)
+                    ctx.setFillColor(ink)
+                    ctx.addPath(CGPath(roundedRect: fill, cornerWidth: 3, cornerHeight: 3, transform: nil))
+                    ctx.fillPath()
+                }
+                Canvas.drawText(column.label, in: ctx, center: CGPoint(x: midX, y: 18),
+                                font: Canvas.font(size: 12, weight: .semibold), color: dimText)
+            }
         } ?? blank()
     }
 }

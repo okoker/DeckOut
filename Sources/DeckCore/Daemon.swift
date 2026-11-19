@@ -14,6 +14,15 @@ public final class Daemon {
     // Live strip blocks: each source runs only while a connected deck shows its block.
     private let volumeWatcher = VolumeWatcher()
     private var volumeReading: (percent: Int?, muted: Bool)?
+    private var loadActive = false
+    private var cpuTicks: CPUTicks?
+    private var loadReading: LoadReading?
+
+    private struct LoadReading: Equatable {
+        let cpu: Int?
+        let mem: Int?
+        let memLevel: PressureLevel?
+    }
 
     public init(config: AppConfig) {
         self.config = config
@@ -31,7 +40,7 @@ public final class Daemon {
         }
         decks.start()
         keepaliveTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.decks.connections.forEach { $0.keepalive() }
+            self?.tick()
         }
     }
 
@@ -45,6 +54,12 @@ public final class Daemon {
             drawAll(connection)
         }
         updateLiveSources()
+    }
+
+    /// Every 5 s: keepalive to every deck, then the periodic live-block readings.
+    private func tick() {
+        decks.connections.forEach { $0.keepalive() }
+        if loadActive { sampleLoad() }
     }
 
     // MARK: - Decks
@@ -101,6 +116,36 @@ public final class Daemon {
             volumeWatcher.stop()
             volumeReading = nil
         }
+
+        if shown.contains(.load), !loadActive {
+            loadActive = true
+            cpuTicks = SystemLoad.readTicks()
+            loadReading = nil
+            // First CPU figure after 1 s rather than at the next 5 s tick.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                guard let self, self.loadActive else { return }
+                self.sampleLoad()
+                if let r = self.loadReading {
+                    print("Load block running: CPU \(r.cpu.map(String.init) ?? "–")%, memory \(r.mem.map(String.init) ?? "–")% (\(r.memLevel.map { "\($0)" } ?? "–"))")
+                }
+            }
+        } else if !shown.contains(.load), loadActive {
+            loadActive = false
+            cpuTicks = nil
+            loadReading = nil
+        }
+    }
+
+    /// One load reading; redraws the load blocks only when a figure changed.
+    private func sampleLoad() {
+        let ticks = SystemLoad.readTicks()
+        var cpu: Int?
+        if let previous = cpuTicks, let ticks { cpu = SystemLoad.cpuPercent(prev: previous, cur: ticks) }
+        cpuTicks = ticks
+        let reading = LoadReading(cpu: cpu, mem: SystemLoad.memoryPercent(), memLevel: SystemLoad.pressureLevel())
+        guard reading != loadReading else { return }
+        loadReading = reading
+        redrawLive(.load)
     }
 
     /// The image for a live block from its latest reading; nil until that block type is built.
@@ -109,7 +154,10 @@ public final class Daemon {
         case .volume:
             let reading = volumeReading ?? VolumeControl.current().map { (percent: Optional($0.percent), muted: $0.muted) }
             return StripRenderer.volume(percent: reading?.percent, muted: reading?.muted ?? false)
-        case .internet, .load, .picture, .empty:
+        case .load:
+            let r = loadReading ?? LoadReading(cpu: nil, mem: SystemLoad.memoryPercent(), memLevel: SystemLoad.pressureLevel())
+            return StripRenderer.load(cpu: r.cpu, mem: r.mem, memLevel: r.memLevel)
+        case .internet, .picture, .empty:
             return nil
         }
     }

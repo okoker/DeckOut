@@ -44,6 +44,13 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-037 | `LayoutPlanTests/n3IconsUseTheN3Pipeline` | N3 icons keep the v1.0.0 85×85 rendering; N4 keys render at 112×112 |
 | T-038 | `StripRendererTests/volumeRendersAllStates` | The volume block renders at 0 %, 45 %, 100 %, muted and with no output device; muted looks different |
 | T-039 | `StripRendererTests/volumeGaugeFillFollowsPercent` | The gauge arc fills with the level: lit past halfway at 100 %, unlit at 0 % |
+| T-040 | `SystemLoadTests/cpuPercentFromTickDeltas` | CPU % = (Δuser + Δsystem) / Δall ticks, with nice counted in the total only |
+| T-041 | `SystemLoadTests/cpuPercentNilWithoutElapsedTicks` | No elapsed ticks gives no figure ("–"), not a division by zero |
+| T-042 | `SystemLoadTests/cpuPercentSurvivesCounterWrap` | A 32-bit tick counter wrapping between readings still gives the right % |
+| T-043 | `SystemLoadTests/cpuColourBoundaries` | CPU colour: green below 50, amber 50–79, red from 80 |
+| T-044 | `SystemLoadTests/memoryColourFollowsPressureLevel` | Memory colour follows macOS's pressure level (1/2/4 → green/amber/red), not the % |
+| T-045 | `SystemLoadTests/systemReadingsWorkOnThisMac` | The host call and both sysctl names really read on this Mac (a typo would show "–" forever) |
+| T-046 | `SystemLoadTests/loadRendersWithMissingFigures` | The load block renders with either or both figures missing |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

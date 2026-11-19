@@ -60,3 +60,11 @@ enum ActionKind: Equatable {
         return .invalid("unknown action '\(action)'")
     }
 }
+
+/// What's wrong with an action string, for the config app: nil when it would run.
+public enum ActionCheck {
+    public static func problem(_ action: String) -> String? {
+        if case .invalid(let why) = ActionKind.parse(action) { return why }
+        return nil
+    }
+}

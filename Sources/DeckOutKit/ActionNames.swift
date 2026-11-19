@@ -6,28 +6,20 @@ public enum ActionNames {
 
     /// What an action does, and on what: ("Open App", "Notes").
     public static func summary(_ action: String) -> (title: String, detail: String?) {
-        func payload(_ prefix: String) -> String? {
-            action.hasPrefix(prefix) ? String(action.dropFirst(prefix.count)) : nil
-        }
-        if action == "none" { return ("Nothing", nil) }
-        if let command = payload("shell:") { return ("Run Command", command) }
-        if let keys = payload("key:") { return ("Keyboard Shortcut", shortcutSymbols(keys)) }
-        if let path = payload("app:") { return ("Open App", appName(path)) }
-        if let url = payload("url:") { return ("Open Website", url) }
-        if let path = payload("open:") { return ("Open File or Folder", (path as NSString).lastPathComponent) }
-        if let path = payload("script:") { return ("Run Script", (path as NSString).lastPathComponent) }
-        if let name = payload("shortcut:") { return ("Run a Shortcut", name) }
-        switch action {
-        case "media_play_pause": return ("Play / Pause", nil)
-        case "media_next": return ("Next Track", nil)
-        case "media_previous": return ("Previous Track", nil)
-        case "system_volume": return ("Volume", nil)
-        case "system_mute_toggle": return ("Mute", nil)
-        case "display_brightness": return ("Monitor Brightness", nil)
-        case "display_brightness_cycle": return ("Switch Monitor", "Which monitor the brightness knob sets")
-        case "zr7_volume": return ("ZR7 Volume", nil)
-        case "zr7_mute_toggle": return ("ZR7 Mute", nil)
-        default: return ("Unknown action", action)
+        let choice = ActionChoice(action: action, step: nil)
+        let title = choice.kind(in: .key).title
+        switch choice {
+        case .openApp(let path): return (title, appName(path))
+        case .openWebsite(let url): return (title, url)
+        case .openFile(let path), .runScript(let path): return (title, (path as NSString).lastPathComponent)
+        case .keyboardShortcut(let keys): return (title, shortcutSymbols(keys))
+        case .runShortcut(let name): return (title, name)
+        case .runCommand(let command): return (title, command)
+        case .volume: return ("Volume", nil)
+        case .monitorBrightness: return ("Monitor Brightness", nil)
+        case .switchMonitor: return (title, "Which monitor the brightness knob sets")
+        case .unknown(let raw): return ("Unknown action", raw)
+        default: return (title, nil)
         }
     }
 

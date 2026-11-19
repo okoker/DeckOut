@@ -129,6 +129,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-122 | `ConfigStoreTests/handEditIsPickedUp` | A hand edit made while the app is open is kept: the next change builds on it. A hand edit that doesn't load is never saved over, the app says why, and changes work again once it loads |
 | T-123 | `AgentTests/appReloadLogsOneLine` | A reload the app asks for logs one line ("Config reloaded (from the app): N4 Work"), not the whole config, so the log doesn't grow by a config per edit |
 | T-124 | `XPCTests/accessibilityRequestReachesTheAgent` | The app's "Allow…" reaches the agent (which asks macOS to list it under Accessibility) and hears whether it's allowed |
+| T-125 | `ActionChoiceTests/roundTripsEveryKind`, `menusFitTheControl`, `actionCheckSaysWhatsWrong` | Every action the app offers reads back from the config as what was picked (today's hand-written strings too); knob turns offer only volume and monitor brightness; ZR7 is on no menu; volume and brightness show as Up / Down on keys; the app shows the agent's own reason a string wouldn't run |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

@@ -18,6 +18,7 @@ Idea, noted 02/11/2026. Trigger: the arrival of a second, more capable stream de
 
 ## Settings the app must expose
 - Deck brightness, per deck, 0–100, default 75 (owner, 19/11/2026). On the N4 the whole range is usable: each step up to 100 is visibly brighter, and 0 is dim, not off.
+- Lock photo (owner, 19/11/2026): choose the image, then move and zoom it, with a preview of what each of the N4's 14 screens shows. Today the daemon takes a fixed centre crop, and the frames between keys hide part of the picture (e.g. eyes landing between the two key rows).
 
 ## Open questions
 - Which deck, and is its protocol documented or does it need reverse-engineering like the N3?

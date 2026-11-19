@@ -200,6 +200,13 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - `--config <path>` loads that file instead of searching (development); the same security checks apply.
   `--config` without a path exits with an error (a bad invocation, not a missing config)
 - Starts with the decks blank, logging why, when the config is missing or unusable (see Configuration)
+- `--mach-service <name>` serves the config app over XPC on that launchd Mach service (the agent plist names it;
+  without the flag there is no listener). Calls: `status` (version, connected decks, live presets, config problem,
+  shell environment), `reload`, `test` (run one action as a press would, minus the lock check; replies with exit
+  status, stdout, stderr or the error), `showLockPhoto` (a framing, or nil for the layout), `refreshEnvironment`; the
+  app hears `statusChanged` on deck connect / remove, reloads and environment reads. Payloads are JSON of DeckCore's
+  types; a request that doesn't decode gets the error "bad request". Every connection is accepted until the app
+  bundle is signed (anything running as the user can already do what these calls do); code-signing checks come with it
 - `--show-lock-photo` keeps the N4's lock photo, as framed at start, up while unlocked (development: lining up the
   panel rectangles). The same preview is switchable at run time for the config app's photo mode
 - Logs to stdout/file for debugging

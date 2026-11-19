@@ -91,6 +91,10 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-084 | `ActionResolverTests/pressesCarryTheirStep` | A key, knob press, strip tap and swipe pass their own signed `step` (else a volume key does nothing); a key without one passes none |
 | T-085 | `ActionResolverTests/newKindsNeverRunWhileLocked` | `app:`, `url:`, `open:`, `script:`, `shortcut:` and the media keys never run from a key, knob press or strip tap while locked; all run unlocked |
 | T-086 | `ActionDispatcherTests/scriptRunsAsGivenWithTheEnvironment` | A script whose path has spaces, quotes and `$` runs as given (no shell string) with the user's environment, and its output comes back |
+| T-087 | `XPCTests/statusAndReloadRoundTrip` | Over a real XPC connection, `status` and `reload` replies decode to what the agent returned |
+| T-088 | `XPCTests/testRequestReturnsTheActionResult` | A `test` request reaches the agent unchanged, and its `ActionResult` comes back to the client |
+| T-089 | `XPCTests/clientHearsStatusChanges` | A connected client is told the new status when the agent's status changes (decks plugged in or out) |
+| T-090 | `XPCTests/badRequestGetsAnError` | A `test` request that doesn't decode gets the error "bad request" and never reaches the agent |
 | T-091 | `AgentTests/agentReloadReportsAndClearsTheProblem` | With no config the agent runs blank and reports "No config yet"; a reload that loads clears the problem and shows the live presets; a reload of a broken file keeps the previous config and reports why |
 
 ## On the device

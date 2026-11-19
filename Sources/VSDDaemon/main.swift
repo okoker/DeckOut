@@ -9,6 +9,7 @@ setvbuf(stdout, nil, _IOLBF, 0)
 //   --config <path>   use this config file instead of searching for one (development)
 //   --post-reload     ask a running daemon to re-read its config, then exit
 //   --show-lock-photo keep the N4's lock photo up while unlocked (development: lining up the panel)
+//   --mach-service <name>  serve the config app over XPC on this launchd Mach service (the agent plist names it)
 
 let arguments = CommandLine.arguments
 
@@ -34,6 +35,24 @@ guard let configPath = ConfigFile.resolvePath(arguments: arguments, home: homeDi
 
 let agent = Agent(configPath: configPath)
 agent.start(showLockPhoto: arguments.contains("--show-lock-photo"))
+
+// XPC for the config app, only when launchd hands us a Mach service; without the flag, no listener.
+var agentService: AgentService?
+var xpcListener: NSXPCListener?
+if let flag = arguments.firstIndex(of: "--mach-service") {
+    guard flag + 1 < arguments.count else {
+        print("Error: --mach-service needs a name")
+        exit(1)
+    }
+    let name = arguments[flag + 1]
+    let service = AgentService(control: agent)
+    let listener = NSXPCListener(machServiceName: name)
+    listener.delegate = service
+    listener.resume()
+    agentService = service
+    xpcListener = listener
+    print("XPC service: \(name)")
+}
 
 func requestReload(reason: String) {
     print("Reload requested (\(reason))")

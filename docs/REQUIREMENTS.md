@@ -20,43 +20,47 @@ Lightweight macOS daemon (Swift) that communicates with a TreasLin N3 stream dec
 - macOS requires CFRunLoop running for IOKit HID input delivery
 
 ## Configuration
-Single JSON file (`config.json`) in the app's directory. Daemon reads on startup. Edit file and restart daemon to apply changes.
+One JSON file: `~/.config/vsd/config.json`, or `config.json` next to the executable. Read at start-up and re-read on
+`SIGHUP`; a reload that fails the security checks or doesn't parse keeps the previous config.
 
 ### Structure
+Shared settings at the top; one section per deck under `decks`. Full example: `config.example.json`.
 ```json
 {
-  "brightness": 50,
-  "buttons": {
-    "lcd_1": { "action": "shell:open -a Safari", "icon": "icons/safari.png" },
-    "lcd_2": { "action": "shell:open -a Terminal" },
-    "lcd_3": { "action": "key:cmd+shift+4" },
-    "lcd_4": { "action": "none" },
-    "lcd_5": { "action": "none" },
-    "lcd_6": { "action": "none" },
-    "btn_1": { "action": "shell:echo hello" },
-    "btn_2": { "action": "none" },
-    "btn_3": { "action": "none" }
-  },
-  "knobs": {
-    "big": {
-      "rotate": { "action": "system_volume", "step": 5 },
-      "press":  { "action": "system_mute_toggle" }
+  "displays": [ { "name": "Left", "serial": "AN_SERIAL_FROM_M1DDC" } ],
+  "decks": {
+    "n3": {
+      "brightness": 50,
+      "buttons": { "lcd_1": { "action": "shell:open -a Safari", "icon": "/Applications/Safari.app/Contents/Resources/AppIcon.icns" } },
+      "knobs": { "big": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } }
     },
-    "small_1": {
-      "rotate": { "action": "zr7_volume", "step": 3 },
-      "press":  { "action": "zr7_mute_toggle" }
-    },
-    "small_2": {
-      "rotate": { "action": "display_brightness", "step": 5 },
-      "press":  { "action": "display_brightness_cycle" }
+    "n4": {
+      "brightness": 50,
+      "keys":  { "key_1": { "action": "shell:open -a Notes", "icon": "/path/to/icon.icns" } },
+      "knobs": { "knob_1": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } },
+      "strip": {
+        "1": { "type": "internet", "host": "one.one.one.one", "arrow_ms": 2, "timeout_s": 3, "action": "shell:…" },
+        "2": { "type": "load", "action": "shell:open -a 'Activity Monitor'" },
+        "3": { "type": "empty" },
+        "4": { "type": "volume" }
+      },
+      "swipe": { "action": "none" },
+      "lock_photo": "/path/to/photo.jpg"
     }
-  },
-  "displays": [
-    { "name": "Left",  "serial": "AN_SERIAL_FROM_M1DDC" },
-    { "name": "Right", "serial": "AN_SERIAL_FROM_M1DDC" }
-  ]
+  }
 }
 ```
+- **N3:** buttons `lcd_1`–`lcd_6`, `btn_1`–`btn_3`; knobs `big`, `small_1`, `small_2`. `brightness`, `buttons` and
+  `knobs` are required.
+- **N4:** keys `key_1`–`key_5` (top row, left → right), `key_6`–`key_10` (bottom row); knobs `knob_1`–`knob_4` left →
+  right; strip blocks `"1"`–`"4"` left → right. `brightness` is required; `keys`, `knobs`, `strip`, `swipe` and
+  `lock_photo` may be left out.
+- **Strip block `type`:** `internet` (`host`, default `one.one.one.one`; `arrow_ms`, default 2; `timeout_s`, default 3),
+  `load`, `volume`, `picture` (shows `icon`), `empty`. A tap runs the block's `action`. An unknown type makes the whole
+  file invalid.
+- **`swipe.action`:** one action for a swipe on the strip. **`lock_photo`:** shown across the N4 while the Mac is locked.
+- **Old format still loads:** a file with no `decks` key is read as the N3 section — top-level `brightness`, `buttons`,
+  `knobs` (the v1.0.0 layout). When `decks` is present, top-level `brightness`/`buttons`/`knobs` are ignored.
 
 ## Actions
 

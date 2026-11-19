@@ -13,13 +13,13 @@ public final class HIDDevice {
     // IOHIDDeviceRegisterInputReportCallback registration (i.e. process lifetime).
     private let reportBuffer: UnsafeMutablePointer<UInt8>
     private let reportBufferSize = 512
-    private var config: DeckConfig
+    private var config: AppConfig
 
     public var onEvent: ((DeckInput) -> Void)?
 
     // MARK: - Init
 
-    public init(config: DeckConfig) {
+    public init(config: AppConfig) {
         self.config = config
         self.reportBuffer = .allocate(capacity: 512)
         self.reportBuffer.initialize(repeating: 0, count: 512)
@@ -28,7 +28,7 @@ public final class HIDDevice {
     // MARK: - Public API
 
     /// Hot-reload config: update action mappings and resend LCD icons
-    public func reloadConfig(_ newConfig: DeckConfig) {
+    public func reloadConfig(_ newConfig: AppConfig) {
         self.config = newConfig
         guard device != nil else { return }
         sendPacket(CRTCommand.makeCLE())
@@ -110,7 +110,7 @@ public final class HIDDevice {
 
         // Send initialisation sequence
         sendPacket(CRTCommand.makeDIS())
-        sendPacket(CRTCommand.makeLIG(UInt8(clamping: config.brightness)))
+        sendPacket(CRTCommand.makeLIG(UInt8(clamping: config.n3?.brightness ?? 50)))
         sendPacket(CRTCommand.makeSTP())
         sendPacket(CRTCommand.makeCLE())
 
@@ -135,7 +135,7 @@ public final class HIDDevice {
         ]
         var sent = 0
         for (configKey, keyIndex) in lcdKeys {
-            guard let buttonConfig = config.buttons[configKey],
+            guard let buttonConfig = config.n3?.buttons[configKey],
                   let iconPath = buttonConfig.icon else { continue }
             guard let jpegData = ImageLoader.loadAsJPEG(path: iconPath) else {
                 print("Warning: failed to load icon for \(configKey): \(iconPath)")

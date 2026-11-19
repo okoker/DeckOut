@@ -6,7 +6,7 @@ public final class ActionDispatcher {
 
     // MARK: - Properties
 
-    private let config: DeckConfig
+    private let config: AppConfig
     private let shellQueue = DispatchQueue(label: "streamdeck.shell", qos: .utility)
     private let brightnessControl: BrightnessControl?
 
@@ -47,7 +47,7 @@ public final class ActionDispatcher {
 
     // MARK: - Init
 
-    public init(config: DeckConfig) {
+    public init(config: AppConfig) {
         self.config = config
         if let displays = config.displays, !displays.isEmpty {
             self.brightnessControl = BrightnessControl(displays: displays)
@@ -56,8 +56,18 @@ public final class ActionDispatcher {
         }
 
         // Warn once if key: actions are configured but Input Monitoring is not granted
-        let hasKeyActions = config.buttons.values.contains { $0.action.hasPrefix("key:") }
-            || config.knobs.values.contains { $0.rotate.action.hasPrefix("key:") || $0.press.action.hasPrefix("key:") }
+        var actions: [String] = []
+        if let n3 = config.n3 {
+            actions += n3.buttons.values.map(\.action)
+            actions += n3.knobs.values.flatMap { [$0.rotate.action, $0.press.action] }
+        }
+        if let n4 = config.n4 {
+            actions += n4.keys.values.map(\.action)
+            actions += n4.knobs.values.flatMap { [$0.rotate.action, $0.press.action] }
+            actions += n4.strip.values.compactMap(\.action)
+            actions += [n4.swipe?.action].compactMap { $0 }
+        }
+        let hasKeyActions = actions.contains { $0.hasPrefix("key:") }
         if hasKeyActions && !AXIsProcessTrusted() {
             print("WARNING: key: actions configured but Input Monitoring not granted. Keyboard shortcuts will silently fail. Grant access in System Settings → Privacy & Security → Input Monitoring.")
         }
@@ -75,14 +85,14 @@ public final class ActionDispatcher {
         switch event {
 
         case .keyDown(let key):
-            guard let buttonConfig = config.buttons[key] else {
+            guard let buttonConfig = config.n3?.buttons[key] else {
                 print("Warning: no config for button \(key)")
                 return
             }
             execute(action: buttonConfig.action, step: nil)
 
         case .knobTurn(let knob, let sign):
-            guard let knobConfig = config.knobs[knob] else {
+            guard let knobConfig = config.n3?.knobs[knob] else {
                 print("Warning: no config for knob \(knob)")
                 return
             }
@@ -90,7 +100,7 @@ public final class ActionDispatcher {
             execute(action: knobConfig.rotate.action, step: sign * step)
 
         case .knobDown(let knob):
-            guard let knobConfig = config.knobs[knob] else {
+            guard let knobConfig = config.n3?.knobs[knob] else {
                 print("Warning: no config for knob \(knob)")
                 return
             }

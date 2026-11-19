@@ -1,32 +1,62 @@
 {
-  "brightness": 50,
-  "buttons": {
-    "lcd_1": { "action": "shell:open -a 'Google Chrome'", "icon": "/Applications/Google Chrome.app/Contents/Resources/app.icns" },
-    "lcd_2": { "action": "shell:open -a 'Docker Desktop'", "icon": "/Applications/Docker.app/Contents/Resources/AppIcon.icns" },
-    "lcd_3": { "action": "shell:open -a 'Penkeep'", "icon": "/Applications/Penkeep.app/Contents/Resources/icon.icns" },
-    "lcd_4": { "action": "key:cmd+space" },
-    "lcd_5": { "action": "none" },
-    "lcd_6": { "action": "none" },
-    "btn_1": { "action": "none" },
-    "btn_2": { "action": "none" },
-    "btn_3": { "action": "none" }
-  },
-  "knobs": {
-    "big": {
-      "rotate": { "action": "system_volume", "step": 5 },
-      "press":  { "action": "system_mute_toggle" }
-    },
-    "small_1": {
-      "rotate": { "action": "none", "step": 3 },
-      "press":  { "action": "none" }
-    },
-    "small_2": {
-      "rotate": { "action": "display_brightness", "step": 5 },
-      "press":  { "action": "display_brightness_cycle" }
-    }
-  },
   "displays": [
     { "name": "Left",  "serial": "YOUR_AN_SERIAL_1" },
     { "name": "Right", "serial": "YOUR_AN_SERIAL_2" }
-  ]
+  ],
+  "decks": {
+    "n3": {
+      "brightness": 50,
+      "buttons": {
+        "lcd_1": { "action": "shell:open -a 'Google Chrome'", "icon": "/Applications/Google Chrome.app/Contents/Resources/app.icns" },
+        "lcd_2": { "action": "shell:open -a 'Docker Desktop'", "icon": "/Applications/Docker.app/Contents/Resources/AppIcon.icns" },
+        "lcd_3": { "action": "shell:open -a 'Penkeep'", "icon": "/Applications/Penkeep.app/Contents/Resources/icon.icns" },
+        "lcd_4": { "action": "key:cmd+space" },
+        "lcd_5": { "action": "none" },
+        "lcd_6": { "action": "none" },
+        "btn_1": { "action": "none" },
+        "btn_2": { "action": "none" },
+        "btn_3": { "action": "none" }
+      },
+      "knobs": {
+        "big": {
+          "rotate": { "action": "system_volume", "step": 5 },
+          "press":  { "action": "system_mute_toggle" }
+        },
+        "small_1": {
+          "rotate": { "action": "none", "step": 3 },
+          "press":  { "action": "none" }
+        },
+        "small_2": {
+          "rotate": { "action": "display_brightness", "step": 5 },
+          "press":  { "action": "display_brightness_cycle" }
+        }
+      }
+    },
+    "n4": {
+      "brightness": 50,
+      "keys": {
+        "key_1": { "action": "shell:open -a 'Google Chrome'", "icon": "/Applications/Google Chrome.app/Contents/Resources/app.icns" },
+        "key_2": { "action": "shell:open -a 'Docker Desktop'", "icon": "/Applications/Docker.app/Contents/Resources/AppIcon.icns" },
+        "key_3": { "action": "key:cmd+space" }
+      },
+      "knobs": {
+        "knob_1": {
+          "rotate": { "action": "display_brightness", "step": 5 },
+          "press":  { "action": "display_brightness_cycle" }
+        },
+        "knob_4": {
+          "rotate": { "action": "system_volume", "step": 5 },
+          "press":  { "action": "system_mute_toggle" }
+        }
+      },
+      "strip": {
+        "1": { "type": "internet", "host": "one.one.one.one", "arrow_ms": 2, "timeout_s": 3, "action": "shell:open -a Terminal" },
+        "2": { "type": "load", "action": "shell:open -a 'Activity Monitor'" },
+        "3": { "type": "empty" },
+        "4": { "type": "volume" }
+      },
+      "swipe": { "action": "none" },
+      "lock_photo": "/Users/YOUR_NAME/.config/vsd/lock.jpg"
+    }
+  }
 }

@@ -20,10 +20,13 @@ import Testing
 }
 
 @Test func oldConfigParses() throws {
-    let path = repoRoot.appendingPathComponent("config.example.json").path
-    let config = try #require(DeckConfig.load(from: path))
-    #expect(config.brightness == 50)
-    #expect(config.buttons.count == 9)
-    #expect(config.knobs.count == 3)
+    // v1.0.0's config.example.json, frozen: a file with no `decks` key is the N3 section.
+    let data = try Data(contentsOf: repoRoot.appendingPathComponent("Tests/DeckCoreTests/Fixtures/config-v1.0.0.json"))
+    let config = try AppConfig.parse(data)
+    let n3 = try #require(config.n3)
+    #expect(n3.brightness == 50)
+    #expect(n3.buttons.count == 9)
+    #expect(n3.knobs.count == 3)
     #expect(config.displays?.count == 2)
+    #expect(config.n4 == nil)
 }

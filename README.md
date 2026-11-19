@@ -172,30 +172,38 @@ Keyboard shortcuts support modifiers `cmd`, `shift`, `ctrl`, `alt`/`opt` and key
 
 ## Config reference
 
+Shared settings at the top, one section per deck under `decks` (full example: `config.example.json`):
+
 ```jsonc
 {
-  "brightness": 50,              // LCD key backlight (0–100)
-  "buttons": {
-    "lcd_1": {
-      "action": "shell:open -a 'Safari'",
-      "icon": "/Applications/Safari.app/Contents/Resources/AppIcon.icns"  // optional
-    },
-    "btn_1": { "action": "key:cmd+shift+a" }
-  },
-  "knobs": {
-    "big": {
-      "rotate": { "action": "system_volume", "step": 5 },
-      "press":  { "action": "system_mute_toggle" }
-    }
-  },
   "displays": [                  // optional, for monitor brightness
     { "name": "Left", "serial": "AN_SERIAL_FROM_M1DDC" }
-  ]
+  ],
+  "decks": {
+    "n3": {
+      "brightness": 50,          // LCD key backlight (0–100)
+      "buttons": {
+        "lcd_1": {
+          "action": "shell:open -a 'Safari'",
+          "icon": "/Applications/Safari.app/Contents/Resources/AppIcon.icns"  // optional
+        },
+        "btn_1": { "action": "key:cmd+shift+a" }
+      },
+      "knobs": {
+        "big": {
+          "rotate": { "action": "system_volume", "step": 5 },
+          "press":  { "action": "system_mute_toggle" }
+        }
+      }
+    }
+  }
 }
 ```
 
 Valid button keys: `lcd_1` through `lcd_6`, `btn_1` through `btn_3`.
 Valid knob keys: `big`, `small_1`, `small_2`. Each has `rotate` and `press` sub-actions.
+
+A config from v1.0.0 — `brightness`, `buttons` and `knobs` at the top level, no `decks` — still loads as the N3 section.
 
 ## History
 

@@ -59,19 +59,43 @@ func validateConfigSecurity(_ path: String, exitOnFail: Bool) -> Bool {
 
 // MARK: - Load configuration
 
-func loadAndPrintConfig() -> DeckConfig? {
-    guard let config = DeckConfig.load(from: configPath) else { return nil }
-    print("Config loaded from: \(configPath)")
-    print("  Brightness:        \(config.brightness)")
-    print("  Buttons configured: \(config.buttons.count)")
-    for (name, btn) in config.buttons.sorted(by: { $0.key < $1.key }) {
+func printButtons(_ buttons: [String: ButtonConfig], label: String) {
+    print("  \(label) configured: \(buttons.count)")
+    for (name, btn) in buttons.sorted(by: { $0.key < $1.key }) {
         let iconNote = btn.icon.map { " (icon: \($0))" } ?? ""
         print("    \(name): \(btn.action)\(iconNote)")
     }
-    print("  Knobs configured:  \(config.knobs.count)")
-    for (name, knob) in config.knobs.sorted(by: { $0.key < $1.key }) {
+}
+
+func printKnobs(_ knobs: [String: KnobConfig]) {
+    print("  Knobs configured:  \(knobs.count)")
+    for (name, knob) in knobs.sorted(by: { $0.key < $1.key }) {
         let rotateStep = knob.rotate.step.map { ", step: \($0)" } ?? ""
         print("    \(name): rotate=\(knob.rotate.action)\(rotateStep), press=\(knob.press.action)")
+    }
+}
+
+func loadAndPrintConfig() -> AppConfig? {
+    guard let config = AppConfig.load(from: configPath) else { return nil }
+    print("Config loaded from: \(configPath)")
+    if let n3 = config.n3 {
+        print(" N3:")
+        print("  Brightness:        \(n3.brightness)")
+        printButtons(n3.buttons, label: "Buttons")
+        printKnobs(n3.knobs)
+    }
+    if let n4 = config.n4 {
+        print(" N4:")
+        print("  Brightness:        \(n4.brightness)")
+        printButtons(n4.keys, label: "Keys")
+        printKnobs(n4.knobs)
+        print("  Strip blocks:      \(n4.strip.count)")
+        for (name, block) in n4.strip.sorted(by: { $0.key < $1.key }) {
+            let tap = block.action.map { ", tap=\($0)" } ?? ""
+            print("    \(name): \(block.type.rawValue)\(tap)")
+        }
+        print("  Swipe:             \(n4.swipe?.action ?? "none")")
+        print("  Lock photo:        \(n4.lockPhoto ?? "none")")
     }
     if let displays = config.displays, !displays.isEmpty {
         print("  Displays configured: \(displays.count)")

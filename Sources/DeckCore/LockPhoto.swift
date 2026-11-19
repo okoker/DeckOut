@@ -3,25 +3,24 @@ import Foundation
 import ImageIO
 
 /// A photo shown across the N4 while the Mac is locked. The keys and the strip are windows onto one
-/// 800×480 panel: the photo is scaled to fill the panel (centre-cropped), each slot's rectangle is cut
-/// out at its panel position and turned 180°, and the pieces are sent like icons. Nothing is stored on
-/// the deck.
+/// picture: the photo is scaled to fill the deck's face (centre-cropped), each slot's rectangle is cut
+/// out at its position and turned 180°, and the pieces are sent like icons. Nothing is stored on the deck.
 enum LockPhoto {
-    static let canvas = CGSize(width: 800, height: 480)
+    /// The deck's face in key-image pixels: the bounding box of the 14 screens.
+    static let canvas = CGSize(width: 800, height: 464)
 
-    /// Slot → rectangle on the panel, top-left origin, as seen by the user.
-    /// STARTING GUESS (calibrated on the device in Task 11): keys on the sibling AKP05E firmware's grid
-    /// (x = 5 + 169·column, y = 15 + 174·row, 112×112); strip blocks 176×112 centred under the four
-    /// knobs, on the next row (y = 363).
+    /// Slot → rectangle on the face, top-left origin, as seen by the user. Measured on the N4 19/11/2026
+    /// from a photo of a test grid (one key-image pixel ≈ 1.35 photo pixels): keys 112×112 at 172 apart,
+    /// rows 176 apart; strip blocks 176×112 at 208 apart, 352 below the top row, as wide as the key block.
     static let n4Rects: [UInt8: CGRect] = {
         var rects: [UInt8: CGRect] = [:]
         for column in 0..<5 {
-            let x = CGFloat(5 + 169 * column)
-            rects[UInt8(11 + column)] = CGRect(x: x, y: 15, width: 112, height: 112)    // top row: key_1–key_5
-            rects[UInt8(6 + column)] = CGRect(x: x, y: 189, width: 112, height: 112)    // bottom row: key_6–key_10
+            let x = CGFloat(172 * column)
+            rects[UInt8(11 + column)] = CGRect(x: x, y: 0, width: 112, height: 112)      // top row: key_1–key_5
+            rects[UInt8(6 + column)] = CGRect(x: x, y: 176, width: 112, height: 112)     // bottom row: key_6–key_10
         }
         for block in 0..<4 {
-            rects[UInt8(1 + block)] = CGRect(x: CGFloat(12 + 200 * block), y: 363, width: 176, height: 112)
+            rects[UInt8(1 + block)] = CGRect(x: CGFloat(208 * block), y: 352, width: 176, height: 112)
         }
         return rects
     }()

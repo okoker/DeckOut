@@ -148,8 +148,8 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - **While locked:** keys, strip taps and swipes do nothing. Knobs run only the built-in actions (`system_volume`,
   `system_mute_toggle`, `zr7_volume`, `zr7_mute_toggle`, `display_brightness`, `display_brightness_cycle`);
   `shell:` and `key:` never run from any control. Live strip readings pause
-- **N4 with `lock_photo`:** on lock the photo is drawn across all 14 slots (scaled to fill the 800×480 panel,
-  each slot cut at its panel position); on unlock the layout is redrawn. Without a photo, every deck keeps its
+- **N4 with `lock_photo`:** on lock the photo is drawn across all 14 slots (scaled to fill the deck's face,
+  each slot cut at its measured position); on unlock the layout is redrawn. Without a photo, every deck keeps its
   layout, inert
 - Keep the photo in `~/.config/vsd/`: macOS asks before a background program reads Desktop, Documents, Downloads
   or iCloud Drive, and an unsigned daemon loses that permission on every rebuild

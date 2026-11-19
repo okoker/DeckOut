@@ -77,3 +77,18 @@ private func quadrantPhoto(width: Int, height: Int) -> CGImage {
     #expect(left.b > 200 && left.r < 60)     // blue (photo's right) now on the left
     #expect(right.r > 200 && right.b < 60)
 }
+
+@Test func n4RectsMatchTheMeasuredLayout() {
+    // Measured on the N4 19/11/2026 from a photo of a test grid: keys 172 apart, rows 176 apart, the strip
+    // 352 below the top row with blocks 208 apart, spanning exactly the key block's width (800).
+    #expect(LockPhoto.canvas == CGSize(width: 800, height: 464))
+    #expect(LockPhoto.n4Rects[11] == CGRect(x: 0, y: 0, width: 112, height: 112))      // key_1
+    #expect(LockPhoto.n4Rects[15] == CGRect(x: 688, y: 0, width: 112, height: 112))    // key_5
+    #expect(LockPhoto.n4Rects[6] == CGRect(x: 0, y: 176, width: 112, height: 112))     // key_6
+    #expect(LockPhoto.n4Rects[10] == CGRect(x: 688, y: 176, width: 112, height: 112))  // key_10
+    #expect(LockPhoto.n4Rects[1] == CGRect(x: 0, y: 352, width: 176, height: 112))     // strip 1
+    #expect(LockPhoto.n4Rects[4] == CGRect(x: 624, y: 352, width: 176, height: 112))   // strip 4
+    for rect in LockPhoto.n4Rects.values {
+        #expect(CGRect(origin: .zero, size: LockPhoto.canvas).contains(rect))
+    }
+}

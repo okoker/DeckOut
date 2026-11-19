@@ -63,6 +63,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-056 | `LockTests/slicesCoverRects` | Wide, tall and exact-size photos give one slice per N4 slot, each its rectangle's size |
 | T-057 | `LockTests/quadrantsLandInTheRightSlices` | The photo's top-left reaches the top-left key, its bottom-right the rightmost strip block |
 | T-058 | `LockTests/slicesAreTurned180` | Each slice is turned 180° (else the photo shows upside down per tile) |
+| T-059 | `LockTests/n4RectsMatchTheMeasuredLayout` | The lock photo's slot rectangles match the layout measured on the N4 (keys 172 apart, rows 176, strip 352 below, blocks 208 apart) and fit the 800×464 face |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

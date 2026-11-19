@@ -179,11 +179,12 @@ One file, one section per deck; shared settings stay at the top.
   `display_brightness`, `display_brightness_cycle`. `shell:` and `key:` never run while locked, from any control
   (a `key:` action would type into the lock screen). Live measurements pause.
 - **N4 with a `lock_photo`**: on lock, draw the photo across all 14 slots in place; on unlock, redraw the layout.
-  - The keys and strip are windows onto one 800×480 panel. Scale the photo to fill an 800×480 canvas
-    (centre-crop), cut out each slot's rectangle at its panel position, turn it 180°, send it like an icon. The
-    photo then reads as one picture behind the key frames.
-  - Slot rectangles on the panel are measured on the N4 with a test pattern. The sibling AKP05E firmware's grid
-    (x = 5 + 169·column, y = 15 + 174·row, 112×112) is the starting guess; its strip blocks differ in size.
+  - The keys and strip are windows onto one picture. Scale the photo to fill the deck's face (centre-crop), cut
+    out each slot's rectangle at its position, turn it 180°, send it like an icon. The photo then reads as one
+    picture behind the key frames.
+  - Slot rectangles were measured on the N4 (19/11/2026) from a photo of a test grid. In key-image pixels: keys
+    112×112 at 172 apart, rows 176 apart; strip blocks 176×112 at 208 apart, 352 below the top row; the face is
+    800×464. The sibling AKP05E firmware's grid (x = 5 + 169·column, y = 15 + 174·row) was only the starting guess.
   - The photo file lives in `~/.config/vsd/` (the config points to it). macOS asks permission before a background
     program reads Desktop, Documents, Downloads or iCloud Drive, and for an unsigned daemon that permission is lost
     on every rebuild (the same trap as Accessibility in `device_quirks.md`). The app will later copy a chosen photo

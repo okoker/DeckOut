@@ -52,6 +52,11 @@ public final class AgentLink: ObservableObject {
         open()
     }
 
+    /// Start over on a new connection (after the agent was registered afresh).
+    public func reconnect() {
+        dropped(generation)
+    }
+
     /// One call to the agent; `failure` runs if the connection drops before a reply.
     public func call(_ body: (AgentXPC) -> Void, failure: @escaping @Sendable (Error) -> Void = { _ in }) {
         guard let connection, let proxy = connection.remoteObjectProxyWithErrorHandler(failure) as? AgentXPC else { return }

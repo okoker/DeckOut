@@ -36,9 +36,12 @@ private struct Refused: LocalizedError { var errorDescription: String? { "Operat
     #expect(await AgentRegistrar(service: enabled, sleep: { _ in }).ensureRegistered() == .enabled)
     #expect(enabled.registers == 0)
 
-    // Enabled but not answering: register again (macOS doesn't always start an approved job).
-    let again = FakeService([.enabled])
+    // Enabled but not answering: take it out and register it afresh. Seen 19/11/2026: a replaced ad hoc agent hit
+    // a launch constraint violation on its first start, launchd dropped the job and then couldn't find its
+    // program; unregister + register brought it back.
+    let again = FakeService([.notRegistered, .enabled])
     #expect(await AgentRegistrar(service: again, sleep: { _ in }).registerAgain() == .enabled)
+    #expect(again.unregisters == 1)
     #expect(again.registers == 1)
 }
 

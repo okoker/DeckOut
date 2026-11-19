@@ -64,15 +64,12 @@ public final class AgentRegistrar {
         return .failed(lastProblem)
     }
 
-    /// Registered but not answering: macOS doesn't always start an approved job, so register it again
-    /// (`src/apps/SettingsWindow/src/ServicesRegister.swift:35-43` @b237a07).
+    /// Registered but not answering: take the job out and register it afresh. macOS doesn't always start an
+    /// approved job (`src/apps/SettingsWindow/src/ServicesRegister.swift:35-43` @b237a07), and on 19/11/2026 a
+    /// replaced ad hoc agent hit a launch constraint violation on its first start, after which launchd couldn't find
+    /// its program; unregister + register brought it back.
     public func registerAgain() async -> RegistrationState {
-        do {
-            try service.register()
-        } catch {
-            if service.status == .requiresApproval { return .needsApproval }
-            return .failed(error.localizedDescription)
-        }
+        try? await service.unregister()
         return await ensureRegistered()
     }
 

@@ -169,6 +169,7 @@ public final class AppModel: ObservableObject {
         let state = await registrar.registerAgain()
         registration = state
         log("registered again: \(state)")
+        if state == .enabled { link?.reconnect() }
     }
 
     private func isFailed(_ state: RegistrationState?) -> Bool {

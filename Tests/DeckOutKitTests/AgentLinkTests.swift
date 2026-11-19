@@ -120,13 +120,18 @@ final class StubServer: NSObject, NSXPCListenerDelegate, @unchecked Sendable {
     listener.delegate = mute
     listener.resume()
     var hooks = 0
-    let link = AgentLink(connect: { NSXPCConnection(listenerEndpoint: listener.endpoint) }, appBuild: "x",
-                         retryDelay: 0.05, answerTimeout: 0.2)
+    var connects = 0
+    let link = AgentLink(connect: { connects += 1; return NSXPCConnection(listenerEndpoint: listener.endpoint) },
+                         appBuild: "x", retryDelay: 0.05, answerTimeout: 0.2)
     link.onNotAnswering = { hooks += 1 }
     link.start()
     #expect(await until { link.state == .notAnswering })
     try? await Task.sleep(nanoseconds: 500_000_000)
     #expect(hooks == 1)
+
+    // After the agent is registered afresh, the link starts over on a new connection.
+    link.reconnect()
+    #expect(await until { connects == 2 })
 }
 
 /// Takes every call and never replies.

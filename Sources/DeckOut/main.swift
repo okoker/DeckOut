@@ -1,0 +1,3 @@
+import DeckOutKit
+
+DeckOutApp.main()

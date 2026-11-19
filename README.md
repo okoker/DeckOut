@@ -74,7 +74,7 @@ Monitor brightness control identifies displays by serial number (from `m1ddc dis
 
 ### Prerequisites
 
-- macOS 13 (Ventura) or later, Apple Silicon
+- macOS 15 (Sequoia) or later, Apple Silicon
 - Xcode Command Line Tools (`xcode-select --install`)
 - [Homebrew](https://brew.sh) (only needed for `m1ddc` if you want monitor brightness)
 
@@ -122,7 +122,7 @@ If using monitor brightness, add your display serials to the `displays` array:
 
 ```bash
 mkdir -p ~/Library/Application\ Support/StreamDeckController
-cp .build/release/StreamDeckController ~/Library/Application\ Support/StreamDeckController/
+cp .build/release/DeckOutAgent ~/Library/Application\ Support/StreamDeckController/StreamDeckController
 cp Info.plist ~/Library/Application\ Support/StreamDeckController/
 ```
 
@@ -162,7 +162,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.streamdeck.controlle
 tail -f ~/Library/Logs/StreamDeckController.log
 
 # Update after rebuilding — copy then rename; don't overwrite the installed binary in place
-cp .build/release/StreamDeckController ~/Library/Application\ Support/StreamDeckController/StreamDeckController.new
+cp .build/release/DeckOutAgent ~/Library/Application\ Support/StreamDeckController/StreamDeckController.new
 mv -f ~/Library/Application\ Support/StreamDeckController/StreamDeckController.new ~/Library/Application\ Support/StreamDeckController/StreamDeckController
 launchctl kickstart -k gui/$(id -u)/com.streamdeck.controller
 ```

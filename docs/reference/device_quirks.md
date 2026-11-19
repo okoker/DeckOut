@@ -83,7 +83,7 @@ Don't `cp` a new build over the installed binary in place. macOS caches code-sig
 
 ```bash
 DIR=~/Library/Application\ Support/StreamDeckController
-cp .build/release/StreamDeckController "$DIR/StreamDeckController.new"
+cp .build/release/DeckOutAgent "$DIR/StreamDeckController.new"
 mv -f "$DIR/StreamDeckController.new" "$DIR/StreamDeckController"
 launchctl kickstart -k gui/$(id -u)/com.streamdeck.controller
 ```

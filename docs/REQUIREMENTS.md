@@ -4,7 +4,9 @@
 Lightweight macOS daemon (Swift) that drives budget stream decks over USB HID: the TreasLin N3 (VID 0x5548,
 PID 0x1001) and the MiraBox Stream Dock N4 (VID 0x6602, PID 0x1001). One daemon drives every supported deck that is
 plugged in, each with its own layout; both may be connected at once. Reads button/knob events, maps them to
-configurable actions. No GUI — configured via JSON file.
+configurable actions. No GUI yet — configured via JSON file; the DeckOut app (`docs/design/config_app.md`) is being built.
+macOS 15 or later, Apple Silicon. The program is `DeckOutAgent` (built by `swift build`); a hand install from the
+README keeps it under its old name, `StreamDeckController`.
 
 ## Devices
 Event codes overlap between the decks with different meanings, so each deck's input is decoded with its own map.
@@ -196,7 +198,7 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - On knob rotate: applies ±step for each tick
 - On knob press: executes the knob's press action
 - Reloads the config on `SIGHUP` or the distributed notification `com.streamdeck.controller.reload`
-  (`StreamDeckController --post-reload` posts it), then redraws every slot in place — no clear, so nothing blinks;
+  (`DeckOutAgent --post-reload` posts it), then redraws every slot in place — no clear, so nothing blinks;
   a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged.
   Requests within 0.15 s of the first merge into one reload. The monitor control is built off the main thread at
   start, and again when `displays` changes or on a reload from outside (`SIGHUP`, `--post-reload`), which finds
@@ -245,6 +247,6 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 ## Non-Goals (for now)
 - No GUI
 - No CLI config tool
-- Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController`) or `StreamDeckController --post-reload`
+- Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController` for a hand install) or `DeckOutAgent --post-reload`
 - No switching presets from the deck itself: the live preset is the config's `active_preset`
 - No Windows/Linux support

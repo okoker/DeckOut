@@ -42,6 +42,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-035 | `LayoutPlanTests/deckWithoutSectionIsAllBlank` | A connected deck with no config section is drawn all black |
 | T-036 | `LayoutPlanTests/rendererFallsBackToBlank` | A missing icon or picture still yields a black image of the slot's size, so every other slot draws |
 | T-037 | `LayoutPlanTests/n3IconsUseTheN3Pipeline` | N3 icons keep the v1.0.0 85×85 rendering; N4 keys render at 112×112 |
+| T-038 | `StripRendererTests/volumeRendersAllStates` | The volume block renders at 0 %, 45 %, 100 %, muted and with no output device; muted looks different |
+| T-039 | `StripRendererTests/volumeGaugeFillFollowsPercent` | The gauge arc fills with the level: lit past halfway at 100 %, unlit at 0 % |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

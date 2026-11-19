@@ -11,6 +11,10 @@ public final class Daemon {
     private let decks = DeckManager()
     private var keepaliveTimer: Timer?
 
+    // Live strip blocks: each source runs only while a connected deck shows its block.
+    private let volumeWatcher = VolumeWatcher()
+    private var volumeReading: (percent: Int?, muted: Bool)?
+
     public init(config: AppConfig) {
         self.config = config
         self.dispatcher = ActionDispatcher(config: config)
@@ -18,7 +22,13 @@ public final class Daemon {
 
     public func start() {
         decks.onConnect = { [weak self] connection in self?.connected(connection) }
+        decks.onRemove = { [weak self] _ in self?.updateLiveSources() }
         decks.onInput = { [weak self] kind, input in self?.handle(kind, input) }
+        volumeWatcher.onChange = { [weak self] percent, muted in
+            print("Volume: \(percent.map { "\($0)%" } ?? "–")\(muted ? ", muted" : "")")
+            self?.volumeReading = (percent, muted)
+            self?.redrawLive(.volume)
+        }
         decks.start()
         keepaliveTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.decks.connections.forEach { $0.keepalive() }
@@ -34,6 +44,7 @@ public final class Daemon {
             connection.setBrightness(brightness(for: connection.model.kind))
             drawAll(connection)
         }
+        updateLiveSources()
     }
 
     // MARK: - Decks
@@ -41,6 +52,7 @@ public final class Daemon {
     private func connected(_ connection: DeckConnection) {
         connection.start(brightness: brightness(for: connection.model.kind))
         drawAll(connection)
+        updateLiveSources()
     }
 
     private func brightness(for kind: DeckKind) -> Int {
@@ -58,11 +70,60 @@ public final class Daemon {
         let plan = LayoutPlan.slots(model: model, config: config)
         if model.clearsBeforeRedraw { connection.clearAll() }
         for (slot, content) in plan.sorted(by: { $0.key < $1.key }) {
-            connection.draw(slot: slot, jpeg: LayoutPlan.render(content, slot: slot, model: model))
+            var jpeg: Data?
+            if case .strip(let type) = content { jpeg = liveImage(type) }
+            connection.draw(slot: slot, jpeg: jpeg ?? LayoutPlan.render(content, slot: slot, model: model))
         }
         connection.commit()
         let ms = Int(Date().timeIntervalSince(started) * 1000)
         print("Drew \(plan.count) slots on \(model.kind.rawValue) in \(ms) ms")
+    }
+
+    // MARK: - Live strip blocks
+
+    /// Live block types shown on any connected deck.
+    private func liveTypesShown() -> Set<StripBlockType> {
+        var shown = Set<StripBlockType>()
+        for connection in decks.connections {
+            for case .strip(let type) in LayoutPlan.slots(model: connection.model, config: config).values {
+                shown.insert(type)
+            }
+        }
+        return shown
+    }
+
+    /// Runs the measurements something on screen needs and stops the rest.
+    private func updateLiveSources() {
+        let shown = liveTypesShown()
+        if shown.contains(.volume) {
+            volumeWatcher.start()
+        } else {
+            volumeWatcher.stop()
+            volumeReading = nil
+        }
+    }
+
+    /// The image for a live block from its latest reading; nil until that block type is built.
+    private func liveImage(_ type: StripBlockType) -> Data? {
+        switch type {
+        case .volume:
+            let reading = volumeReading ?? VolumeControl.current().map { (percent: Optional($0.percent), muted: $0.muted) }
+            return StripRenderer.volume(percent: reading?.percent, muted: reading?.muted ?? false)
+        case .internet, .load, .picture, .empty:
+            return nil
+        }
+    }
+
+    /// Redraws only the slots showing `type`, on every deck that shows it.
+    private func redrawLive(_ type: StripBlockType) {
+        guard let jpeg = liveImage(type) else { return }
+        for connection in decks.connections {
+            let slots = LayoutPlan.slots(model: connection.model, config: config)
+                .filter { $0.value == .strip(type) }.keys.sorted()
+            guard !slots.isEmpty else { continue }
+            for slot in slots { connection.draw(slot: slot, jpeg: jpeg) }
+            connection.commit()
+        }
     }
 
     // MARK: - Input

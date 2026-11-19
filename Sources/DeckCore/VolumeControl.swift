@@ -23,9 +23,16 @@ enum VolumeControl {
         setMute(deviceID, mute: !muted)
     }
 
+    /// Volume (0–100) and mute of the default output device, read the same way the knob reads them.
+    /// Nil when there is no output device.
+    static func current() -> (percent: Int, muted: Bool)? {
+        guard let deviceID = defaultOutputDevice() else { return nil }
+        return (Int((getVolume(deviceID) * 100).rounded()), getMute(deviceID))
+    }
+
     // MARK: - CoreAudio helpers
 
-    private static func defaultOutputDevice() -> AudioDeviceID? {
+    static func defaultOutputDevice() -> AudioDeviceID? {
         var deviceID = AudioDeviceID(0)
         var size = UInt32(MemoryLayout<AudioDeviceID>.size)
         var address = AudioObjectPropertyAddress(

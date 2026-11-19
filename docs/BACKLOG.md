@@ -27,10 +27,6 @@ Next free ID: BL-005
 
 ### Open
 
-- BL-001 [P1] [bug] A reload blocks the main thread for ~0.5 s while `BrightnessControl` is rebuilt and runs `m1ddc`
-  (display list + one read per monitor) synchronously; a monitor whose DDC read never returns would hang the daemon.
-  Reuse the brightness control when `displays` is unchanged, run `m1ddc` off main, and merge bursts of reloads into
-  one. Must land before the config app, which reloads on every save. `Daemon.reload`, `BrightnessControl.swift` (19/11/2026)
 - BL-002 [P2] [feature] No handling for the Mac waking from system sleep. If a deck keeps power through sleep but resets
   without re-enumerating, its keys could show the deck's own logo until the next lock / unlock, reload or replug. On
   `NSWorkspace.didWakeNotification`: re-run the start-up sequence, redraw, recheck the lock. Untested here — this Mac

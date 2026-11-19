@@ -146,18 +146,27 @@ daemon.showLockPhotoAlways = arguments.contains("--show-lock-photo")
 daemon.start()
 
 /// Re-read the config through the same security checks; on any failure keep the previous one.
-func reloadConfig(reason: String) {
-    print("\nReloading config (\(reason))...")
+func reloadConfig() -> ReloadResult {
+    print("\nReloading config...")
     guard validateConfigSecurity(configPath, exitOnFail: false) else {
         print("Config reload blocked by security check — keeping previous config.")
-        return
+        return ReloadResult(loaded: false, problem: "blocked by the security check")
     }
     guard let newConfig = loadAndPrintConfig() else {
         print("Config reload failed — keeping previous config.")
-        return
+        return ReloadResult(loaded: false, problem: "could not load the config")
     }
     daemon.reload(newConfig)
     print("Config reloaded.")
+    return ReloadResult(loaded: true, problem: nil)
+}
+
+/// A burst of reload requests (a save per slider step) becomes one reload.
+let reloadMerger = ReloadMerger { reloadConfig() }
+
+func requestReload(reason: String) {
+    print("Reload requested (\(reason))")
+    reloadMerger.request(nil)
 }
 
 // MARK: - Signal handling
@@ -178,7 +187,7 @@ sigtermSource.setEventHandler {
     print("\nShutting down...")
     CFRunLoopStop(CFRunLoopGetMain())
 }
-sighupSource.setEventHandler { reloadConfig(reason: "SIGHUP") }
+sighupSource.setEventHandler { requestReload(reason: "SIGHUP") }
 
 sigintSource.resume()
 sigtermSource.resume()
@@ -187,7 +196,7 @@ sighupSource.resume()
 // Reload notification (posted by --post-reload, later by the config app). `.deliverImmediately`:
 // the daemon is never the active app, and AppKit would otherwise hold the notification back.
 final class ReloadObserver: NSObject {
-    @objc func reload(_ note: Notification) { reloadConfig(reason: "notification") }
+    @objc func reload(_ note: Notification) { requestReload(reason: "notification") }
 }
 let reloadObserver = ReloadObserver()
 DistributedNotificationCenter.default().addObserver(

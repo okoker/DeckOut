@@ -8,7 +8,11 @@ public final class ActionDispatcher {
 
     private let config: AppConfig
     private let shellQueue = DispatchQueue(label: "streamdeck.shell", qos: .utility)
-    private let brightnessControl: BrightnessControl?
+
+    /// Owned by the `Daemon`, which keeps one across reloads and builds it off the main thread.
+    /// Nil while it is being built (`brightnessBuilding`), or when no monitors are set up.
+    var brightnessControl: BrightnessControl?
+    var brightnessBuilding = false
 
     // MARK: - Key code tables
 
@@ -47,13 +51,9 @@ public final class ActionDispatcher {
 
     // MARK: - Init
 
-    public init(config: AppConfig) {
+    init(config: AppConfig, brightness: BrightnessControl?) {
         self.config = config
-        if let displays = config.displays, !displays.isEmpty {
-            self.brightnessControl = BrightnessControl(displays: displays)
-        } else {
-            self.brightnessControl = nil
-        }
+        self.brightnessControl = brightness
 
         // Warn once if key: actions are configured but Input Monitoring is not granted
         var actions: [String] = []
@@ -71,11 +71,6 @@ public final class ActionDispatcher {
         if hasKeyActions && !AXIsProcessTrusted() {
             print("WARNING: key: actions configured but Input Monitoring not granted. Keyboard shortcuts will silently fail. Grant access in System Settings → Privacy & Security → Input Monitoring.")
         }
-    }
-
-    /// Graceful teardown before replacement on config reload.
-    public func shutdown() {
-        brightnessControl?.shutdown()
     }
 
     // MARK: - Action execution
@@ -168,7 +163,8 @@ public final class ActionDispatcher {
 
         if action == "display_brightness" {
             guard let bc = brightnessControl else {
-                print("Warning: display_brightness action but no displays configured")
+                print(brightnessBuilding ? "Warning: display_brightness: monitors not ready yet"
+                                         : "Warning: display_brightness action but no displays configured")
                 return
             }
             bc.adjust(step: step ?? 0)
@@ -177,7 +173,8 @@ public final class ActionDispatcher {
 
         if action == "display_brightness_cycle" {
             guard let bc = brightnessControl else {
-                print("Warning: display_brightness_cycle action but no displays configured")
+                print(brightnessBuilding ? "Warning: display_brightness_cycle: monitors not ready yet"
+                                         : "Warning: display_brightness_cycle action but no displays configured")
                 return
             }
             bc.cycleMode()

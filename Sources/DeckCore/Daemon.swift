@@ -45,12 +45,26 @@ public final class Daemon {
         let memLevel: PressureLevel?
     }
 
+    /// Monitor brightness (DDC via `m1ddc`). One control lives across reloads: building it runs `m1ddc` once per
+    /// monitor, which can take half a second or hang on a monitor that never answers, so it is built off the
+    /// main thread, and again only when `displays` changes.
+    private var brightness: BrightnessControl?
+    private var brightnessBuilding = false
+    private var brightnessGeneration = 0      // a build that finishes after a newer one started is dropped
+
     public init(config: AppConfig) {
         self.config = config
-        self.dispatcher = ActionDispatcher(config: config)
+        self.dispatcher = ActionDispatcher(config: config, brightness: nil)
+    }
+
+    /// True when the monitors to control differ (order included: it decides the cycle order). Nil and empty
+    /// both mean "no monitors".
+    static func displaysChanged(_ old: [DisplayConfig]?, _ new: [DisplayConfig]?) -> Bool {
+        (old ?? []) != (new ?? [])
     }
 
     public func start() {
+        rebuildBrightness(for: config.displays)
         decks.onConnect = { [weak self] connection in self?.connected(connection) }
         decks.onRemove = { [weak self] _ in self?.updateLiveSources() }
         decks.onInput = { [weak self] kind, input in self?.handle(kind, input) }
@@ -70,14 +84,57 @@ public final class Daemon {
 
     /// Switch to a new, already validated config and redraw every connected deck in place.
     public func reload(_ newConfig: AppConfig) {
+        let started = Date()
+        let displaysChanged = Self.displaysChanged(config.displays, newConfig.displays)
         config = newConfig
-        dispatcher.shutdown()
-        dispatcher = ActionDispatcher(config: newConfig)
+        dispatcher = makeDispatcher()
+        if displaysChanged { rebuildBrightness(for: newConfig.displays) }
         for connection in decks.connections {
             connection.setBrightness(brightness(for: connection.model.kind))
             showCurrent(connection)
         }
         updateLiveSources()
+        print("Reloaded in \(Int(Date().timeIntervalSince(started) * 1000)) ms")
+    }
+
+    private func makeDispatcher() -> ActionDispatcher {
+        let dispatcher = ActionDispatcher(config: config, brightness: brightness)
+        dispatcher.brightnessBuilding = brightnessBuilding
+        return dispatcher
+    }
+
+    /// Shuts the old monitor control down and builds one for `displays` off the main thread. Until it is
+    /// ready, brightness actions log "monitors not ready yet".
+    private func rebuildBrightness(for displays: [DisplayConfig]?) {
+        brightness?.shutdown()
+        brightness = nil
+        brightnessGeneration += 1
+        let generation = brightnessGeneration
+        guard let displays, !displays.isEmpty else {
+            brightnessBuilding = false
+            dispatcher.brightnessControl = nil
+            dispatcher.brightnessBuilding = false
+            return
+        }
+        brightnessBuilding = true
+        dispatcher.brightnessControl = nil
+        dispatcher.brightnessBuilding = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let started = Date()
+            let control = BrightnessControl(displays: displays)
+            let ms = Int(Date().timeIntervalSince(started) * 1000)
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.brightnessGeneration == generation else {
+                    control?.shutdown()          // displays changed again meanwhile
+                    return
+                }
+                print("Monitors ready in \(ms) ms")
+                self.brightness = control
+                self.brightnessBuilding = false
+                self.dispatcher.brightnessControl = control
+                self.dispatcher.brightnessBuilding = false
+            }
+        }
     }
 
     /// Every 5 s: keepalive to every deck, the lock re-check, then the periodic live-block readings.

@@ -135,7 +135,9 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - On knob press: executes the knob's press action
 - Reloads the config on `SIGHUP` or the distributed notification `com.streamdeck.controller.reload`
   (`StreamDeckController --post-reload` posts it), then redraws every slot in place — no clear, so nothing blinks;
-  a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged
+  a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged.
+  Requests within 0.15 s of the first merge into one reload. The monitor control is built off the main thread at
+  start, and again only when `displays` changes; until it is ready, brightness actions log "monitors not ready yet"
 - `--config <path>` loads that file instead of searching (development); the same security checks apply
 - `--show-lock-photo` keeps the N4's lock photo up while unlocked (development: lining up the panel rectangles)
 - Logs to stdout/file for debugging

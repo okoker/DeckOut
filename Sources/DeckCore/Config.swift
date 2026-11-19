@@ -53,9 +53,14 @@ extension AppConfig: Decodable {
     }
 }
 
-public struct DisplayConfig: Codable {
+public struct DisplayConfig: Codable, Equatable {
     public let name: String
     public let serial: String          // AN Serial from `m1ddc display list detailed`
+
+    public init(name: String, serial: String) {
+        self.name = name
+        self.serial = serial
+    }
 }
 
 // MARK: - Deck sections

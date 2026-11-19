@@ -19,6 +19,15 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-012 | `ConfigTests/decksWinsOverTopLevel` | With `decks` present, a top-level N3 layout is ignored — even when `decks` has no `n3` |
 | T-013 | `ConfigTests/fileWithNeitherFormatThrows` | `{}` or an incomplete v1.0.0 layout is rejected, not loaded as an empty layout that blanks the deck |
 | T-014 | `ConfigTests/exampleConfigParses` | The shipped `config.example.json` is a valid new-format config with both decks |
+| T-015 | `ActionResolverTests/n3KeyDownResolvesItsAction` | A key press runs the action configured for that key |
+| T-016 | `ActionResolverTests/eachDeckReadsOnlyItsOwnSection` | A control name is looked up only in its own deck's section (no `key_1` on the N3, no `big` on the N4) |
+| T-017 | `ActionResolverTests/knobTurnScalesStepBySign` | A knob turn's step is the configured `step` (default 1) times the turn's direction |
+| T-018 | `ActionResolverTests/knobDownResolvesPressAction` | A knob press runs the knob's `press` action |
+| T-019 | `ActionResolverTests/stripTapAndSwipeResolve` | A strip tap runs its block's action (none if the block has none); a swipe runs `swipe.action`, on the N4 only |
+| T-020 | `ActionResolverTests/releasesNoneAndUnsetResolveToNothing` | Key and knob releases, `none` and unconfigured controls run nothing |
+| T-021 | `ActionResolverTests/lockedBlocksKeysTapsAndSwipe` | While locked, keys, strip taps and swipes run nothing — even a built-in action |
+| T-022 | `ActionResolverTests/lockedKnobsRunOnlyBuiltIns` | While locked, knobs run only the six volume/brightness built-ins; `shell:` and `key:` never run |
+| T-023 | `ActionResolverTests/unlockedAllowsEverything` | Unlocked, every input may run every action |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

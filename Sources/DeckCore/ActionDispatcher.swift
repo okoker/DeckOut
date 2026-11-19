@@ -80,38 +80,18 @@ public final class ActionDispatcher {
 
     // MARK: - Public dispatch
 
+    /// Until the multi-deck daemon (Task 5), every input comes from the N3.
     public func dispatch(event: DeckInput) {
         print("Event: \(event)")
-        switch event {
-
-        case .keyDown(let key):
-            guard let buttonConfig = config.n3?.buttons[key] else {
-                print("Warning: no config for button \(key)")
-                return
-            }
-            execute(action: buttonConfig.action, step: nil)
-
-        case .knobTurn(let knob, let sign):
-            guard let knobConfig = config.n3?.knobs[knob] else {
-                print("Warning: no config for knob \(knob)")
-                return
-            }
-            let step = knobConfig.rotate.step ?? 1
-            execute(action: knobConfig.rotate.action, step: sign * step)
-
-        case .knobDown(let knob):
-            guard let knobConfig = config.n3?.knobs[knob] else {
-                print("Warning: no config for knob \(knob)")
-                return
-            }
-            execute(action: knobConfig.press.action, step: nil)
-
-        case .keyUp, .knobUp, .stripTap, .swipe:
-            return
-        }
+        guard let resolved = ActionResolver.resolve(event, deck: .n3, config: config) else { return }
+        execute(resolved)
     }
 
     // MARK: - Action execution
+
+    func execute(_ resolved: ResolvedAction) {
+        execute(action: resolved.action, step: resolved.step)
+    }
 
     private func execute(action: String, step: Int?) {
         if action == "none" {

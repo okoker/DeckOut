@@ -6,7 +6,7 @@
 
 A lightweight macOS daemon that drives budget USB stream decks — turning hardware buttons and knobs into app launchers, system volume controls, and external monitor brightness dials. Written in Swift, it talks directly to the device over USB HID, parses the proprietary "CRT" packet protocol, and maps every button press, knob rotation, and knob click to configurable actions defined in a single JSON file. The daemon runs as a LaunchAgent with no GUI, no menu bar icon, and no dock presence; it starts at login, reconnects automatically if the deck is unplugged and re-plugged, and reloads its configuration on `SIGHUP` without a restart.
 
-Technically, it uses IOKit's `IOHIDManager` to claim the device by USB vendor/product ID (`0x5548:0x1001`), registers an input-report callback on the main `CFRunLoop`, and dispatches parsed events through an action router. Actions include launching apps via shell commands, simulating keyboard shortcuts through `CGEvent`, adjusting system volume via CoreAudio, and controlling external monitor brightness over DDC/CI using [`m1ddc`](https://github.com/waydabber/m1ddc). LCD button icons are loaded from `.icns` files, JPEG-compressed, and pushed to the device over a chunked image transfer protocol. A 5-second keepalive packet prevents the device from going to sleep.
+Technically, it uses IOKit's `IOHIDManager` to claim each supported deck's vendor interface by USB vendor/product ID (`0x5548:0x1001`, `0x6602:0x1001`), registers an input-report callback on the main `CFRunLoop`, and dispatches parsed events through an action router. Actions include launching apps via shell commands, simulating keyboard shortcuts through `CGEvent`, adjusting system volume via CoreAudio, and controlling external monitor brightness over DDC/CI using [`m1ddc`](https://github.com/waydabber/m1ddc). LCD button icons are loaded from `.icns` files, JPEG-compressed, and pushed to the device over a chunked image transfer protocol. A 5-second keepalive packet prevents the device from going to sleep.
 
 ### Why this exists
 
@@ -24,6 +24,10 @@ The manufacturer-supplied software ("VSD Craft") is a ~980 MB Qt app bundled wit
 - DOPWii / KKM-K3 (6-key + 3-knob variant)
 
 If your device enumerates with VID `0x5548` / PID `0x1001` and speaks the CRT packet protocol, it will almost certainly work.
+
+**Also supported:** MiraBox Stream Dock N4 (`0x6602:0x1001`) — 10 LCD keys in two rows of five, a touch strip of four
+image blocks, and four push-knobs. Keys, knobs, strip taps and swipe all map to actions; keys and strip blocks show
+icons. Both decks can be plugged in at once, each with its own layout (see [Config reference](#config-reference)).
 
 ### Physical layout
 
@@ -140,6 +144,8 @@ On first run, macOS may prompt for:
 ```bash
 # Reload config without restart
 killall -HUP StreamDeckController
+# …or, the same thing by notification
+~/Library/Application\ Support/StreamDeckController/StreamDeckController --post-reload
 
 # Stop
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.streamdeck.controller.plist
@@ -202,6 +208,11 @@ Shared settings at the top, one section per deck under `decks` (full example: `c
 
 Valid button keys: `lcd_1` through `lcd_6`, `btn_1` through `btn_3`.
 Valid knob keys: `big`, `small_1`, `small_2`. Each has `rotate` and `press` sub-actions.
+
+The N4 has its own section, `decks.n4`: `brightness`; `keys` `key_1`–`key_5` (top row) and `key_6`–`key_10` (bottom
+row), each with an `action` and optional `icon`; `knobs` `knob_1`–`knob_4` with `rotate` and `press`; `strip` blocks
+`"1"`–`"4"`, each with a `type` (`internet`, `load`, `volume`, `picture` with an `icon`, or `empty`) and an optional
+tap `action`; `swipe` with one `action`; and `lock_photo`. See `config.example.json`.
 
 A config from v1.0.0 — `brightness`, `buttons` and `knobs` at the top level, no `decks` — still loads as the N3 section.
 

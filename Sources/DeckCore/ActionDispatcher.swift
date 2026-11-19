@@ -78,15 +78,6 @@ public final class ActionDispatcher {
         brightnessControl?.shutdown()
     }
 
-    // MARK: - Public dispatch
-
-    /// Until the multi-deck daemon (Task 5), every input comes from the N3.
-    public func dispatch(event: DeckInput) {
-        print("Event: \(event)")
-        guard let resolved = ActionResolver.resolve(event, deck: .n3, config: config) else { return }
-        execute(resolved)
-    }
-
     // MARK: - Action execution
 
     func execute(_ resolved: ResolvedAction) {

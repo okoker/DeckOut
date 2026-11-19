@@ -28,6 +28,13 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-021 | `ActionResolverTests/lockedBlocksKeysTapsAndSwipe` | While locked, keys, strip taps and swipes run nothing — even a built-in action |
 | T-022 | `ActionResolverTests/lockedKnobsRunOnlyBuiltIns` | While locked, knobs run only the six volume/brightness built-ins; `shell:` and `key:` never run |
 | T-023 | `ActionResolverTests/unlockedAllowsEverything` | Unlocked, every input may run every action |
+| T-024 | `RenderTests/batHeaderCarriesWireSlotAndLength` | The `BAT` header carries the image length and the wire slot byte as-is (N3 `lcd_1` stays slot 1) |
+| T-025 | `RenderTests/n4IconIs112SquareAndTurned180` | N4 key images are 112×112, turned 180° (else upside down on the deck), with a black 4 px margin |
+| T-026 | `RenderTests/n4IconKeepsProportions` | A non-square icon is fitted, not stretched |
+| T-027 | `RenderTests/n4IconMissingFileIsNil` | A missing icon file gives no image (the caller draws black) |
+| T-028 | `RenderTests/stripBlankIsBlackAtSize` | A blank strip block is a black 176×112 JPEG |
+| T-029 | `RenderTests/stripPictureIs176x112AndTurned180` | A `picture` block is 176×112 and turned 180° |
+| T-030 | `RenderTests/stripPictureMissingFileIsNil` | A missing picture gives no image (the caller draws black) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

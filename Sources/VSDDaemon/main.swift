@@ -1,10 +1,27 @@
 import AppKit
 import DeckCore
 import Foundation
+
+// One log line at a time, even when stdout is a file (launchd log): no block-buffered output.
+setvbuf(stdout, nil, _IOLBF, 0)
+
+// MARK: - Arguments
+//   --config <path>   use this config file instead of searching for one (development)
+//   --post-reload     ask a running daemon to re-read its config, then exit
+
+let arguments = CommandLine.arguments
+
+if arguments.contains("--post-reload") {
+    DistributedNotificationCenter.default().postNotificationName(
+        .init(Daemon.reloadNotification), object: nil, userInfo: nil, deliverImmediately: true)
+    print("Posted \(Daemon.reloadNotification)")
+    exit(0)
+}
+
 // MARK: - Config path resolution
 
 let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
-let execDir = URL(fileURLWithPath: CommandLine.arguments[0])
+let execDir = URL(fileURLWithPath: arguments[0])
     .deletingLastPathComponent().path
 
 let candidates = [
@@ -12,7 +29,16 @@ let candidates = [
     execDir + "/config.json"
 ]
 
-guard let configPath = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
+let configPath: String
+if let flag = arguments.firstIndex(of: "--config") {
+    guard flag + 1 < arguments.count else {
+        print("Error: --config needs a path")
+        exit(1)
+    }
+    configPath = arguments[flag + 1]
+} else if let found = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+    configPath = found
+} else {
     print("Error: config.json not found")
     print("Searched:")
     candidates.forEach { print("  \($0)") }
@@ -112,18 +138,25 @@ guard let initialConfig = loadAndPrintConfig() else {
     print("Fatal: could not load config at startup")
     exit(1)
 }
-var config = initialConfig
+// MARK: - Start
 
-// MARK: - Start HID device
+let daemon = Daemon(config: initialConfig)
+daemon.start()
 
-let hidDevice = HIDDevice(config: config)
-var dispatcher = ActionDispatcher(config: config)
-
-hidDevice.onEvent = { event in
-    dispatcher.dispatch(event: event)
+/// Re-read the config through the same security checks; on any failure keep the previous one.
+func reloadConfig(reason: String) {
+    print("\nReloading config (\(reason))...")
+    guard validateConfigSecurity(configPath, exitOnFail: false) else {
+        print("Config reload blocked by security check — keeping previous config.")
+        return
+    }
+    guard let newConfig = loadAndPrintConfig() else {
+        print("Config reload failed — keeping previous config.")
+        return
+    }
+    daemon.reload(newConfig)
+    print("Config reloaded.")
 }
-
-hidDevice.start()
 
 // MARK: - Signal handling
 
@@ -143,34 +176,27 @@ sigtermSource.setEventHandler {
     print("\nShutting down...")
     CFRunLoopStop(CFRunLoopGetMain())
 }
-
-// SIGHUP = reload config without restart (keep old config on error)
-sighupSource.setEventHandler {
-    print("\nReloading config...")
-    guard validateConfigSecurity(configPath, exitOnFail: false) else {
-        print("Config reload blocked by security check — keeping previous config.")
-        return
-    }
-    if let newConfig = loadAndPrintConfig() {
-        config = newConfig
-        dispatcher.shutdown()
-        dispatcher = ActionDispatcher(config: config)
-        hidDevice.reloadConfig(config)
-        print("Config reloaded. Send SIGHUP again to reload.")
-    } else {
-        print("Config reload failed — keeping previous config.")
-    }
-}
+sighupSource.setEventHandler { reloadConfig(reason: "SIGHUP") }
 
 sigintSource.resume()
 sigtermSource.resume()
 sighupSource.resume()
 
+// Reload notification (posted by --post-reload, later by the config app). `.deliverImmediately`:
+// the daemon is never the active app, and AppKit would otherwise hold the notification back.
+final class ReloadObserver: NSObject {
+    @objc func reload(_ note: Notification) { reloadConfig(reason: "notification") }
+}
+let reloadObserver = ReloadObserver()
+DistributedNotificationCenter.default().addObserver(
+    reloadObserver, selector: #selector(ReloadObserver.reload(_:)),
+    name: .init(Daemon.reloadNotification), object: nil, suspensionBehavior: .deliverImmediately)
+
 // Initialise AppKit for HUD overlay windows (no dock icon, no menu bar)
 NSApplication.shared.setActivationPolicy(.accessory)
 NSApp.finishLaunching()
 
-print("StreamDeckController running. SIGHUP to reload config, Ctrl+C to stop.")
+print("StreamDeckController running. SIGHUP or --post-reload to reload config, Ctrl+C to stop.")
 
 // Block on the run loop — IOKit HID reports only arrive while this is running
 CFRunLoopRun()

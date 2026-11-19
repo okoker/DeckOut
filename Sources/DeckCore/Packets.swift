@@ -46,12 +46,11 @@ enum CRTCommand {
         makePacket(cmd: [0x43, 0x4F, 0x4E, 0x4E, 0x45, 0x43, 0x54])
     }
 
-    /// BAT image header — begins image transfer for a key (0-indexed input, sent as 1-indexed)
-    static func makeBAT(imageLength: Int, keyIndex: Int) -> [UInt8] {
+    /// BAT image header — begins an image transfer to a wire slot (`DeckModel.keySlots` / `stripSlots`).
+    static func makeBAT(imageLength: Int, slot: UInt8) -> [UInt8] {
         let lenHi = UInt8((imageLength >> 8) & 0xFF)
         let lenLo = UInt8(imageLength & 0xFF)
-        let key = UInt8(keyIndex + 1)  // protocol uses 1-indexed keys
-        return makePacket(cmd: [0x42, 0x41, 0x54, 0x00, 0x00, lenHi, lenLo, key])
+        return makePacket(cmd: [0x42, 0x41, 0x54, 0x00, 0x00, lenHi, lenLo, slot])
     }
 
     /// Raw image data chunk — no CRT prefix, just report ID + payload

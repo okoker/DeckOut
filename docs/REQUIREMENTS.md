@@ -1,9 +1,15 @@
 # StreamDeckController — Requirements
 
 ## Overview
-Lightweight macOS daemon (Swift) that communicates with a TreasLin N3 stream deck (VID 0x5548, PID 0x1001) over USB HID. Reads button/knob events, maps them to configurable actions. No GUI — configured via JSON file.
+Lightweight macOS daemon (Swift) that drives budget stream decks over USB HID: the TreasLin N3 (VID 0x5548,
+PID 0x1001) and the MiraBox Stream Dock N4 (VID 0x6602, PID 0x1001). One daemon drives every supported deck that is
+plugged in, each with its own layout; both may be connected at once. Reads button/knob events, maps them to
+configurable actions. No GUI — configured via JSON file.
 
-## Device
+## Devices
+Event codes overlap between the decks with different meanings, so each deck's input is decoded with its own map.
+
+### TreasLin N3
 - **6 LCD buttons** (event codes 0x01–0x06, press + release)
 - **3 round buttons** (event codes 0x25, 0x30, 0x31, press + release)
 - **3 rotary knobs** (each: clockwise, counter-clockwise, press + release)
@@ -11,7 +17,16 @@ Lightweight macOS daemon (Swift) that communicates with a TreasLin N3 stream dec
   - Small knob 1: rotate 0x90/0x91, press 0x33
   - Small knob 2: rotate 0x60/0x61, press 0x34
 
-## Protocol (proven working)
+### MiraBox Stream Dock N4
+Maps verified on the unit (18/11/2026); details in `docs/design/n4_support.md`.
+- **10 LCD keys**, 2 rows of 5: top row 0x01–0x05, bottom row 0x06–0x0A (press + release)
+- **Touch strip** of 4 image blocks: tap 0x40–0x43 (one frame, no release); swipe 0x39 (no direction);
+  0x38 (touch outside the blocks) is ignored
+- **4 push-knobs**, left → right: rotate clockwise / anticlockwise, press (no release)
+  - Knob 1: 0xA1 / 0xA0, press 0x37 · Knob 2: 0x51 / 0x50, press 0x35
+  - Knob 3: 0x91 / 0x90, press 0x33 · Knob 4: 0x71 / 0x70, press 0x36
+
+## Protocol (proven working, same on both decks)
 - USB HID vendor interface: usage page 0xFFA0, usage 0x0001
 - Packet size: 1025 bytes (0x00 report ID + 1024 data)
 - Init sequence: CRT DIS → CRT LIG → CRT STP → CRT CLE
@@ -103,25 +118,29 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 
 `m1ddc` is the only external dependency. Install via `brew install m1ddc`. Without it, all other daemon features work — brightness actions simply log a warning.
 
-## LCD Icons (phase 2)
-- Optional `icon` field per LCD button in config
-- On startup, daemon sends each icon to the device via CRT BAT protocol
-- Images resized to 64x64 JPEG, rotated -90°
-- No icon = cleared/blank
+## LCD Icons
+- Optional `icon` field per LCD key in config; sent to the deck as JPEG via CRT BAT (header with length and wire
+  slot), 1024-byte chunks, then STP
+- N3: 85×85 JPEG, turned 90° + 180°, shifted −9 / +8 px to sit centred on the LCD. No icon = cleared/blank
+- N4: keys 112×112 JPEG turned 180°, no offset; strip blocks 176×112 turned 180° (`picture` blocks show an icon).
+  Slots: top-row keys 11–15, bottom-row keys 6–10, strip blocks 1–4. No icon = black
 
 ## Daemon Behaviour
 - Runs as background process (launchd plist for auto-start)
-- Connects to device on startup, reconnects on USB replug
-- Sends init sequence, then listens for events
-- Sends CONNECT keepalive every 5 seconds
+- Connects to every supported deck on startup; each reconnects on USB replug while the others keep running
+- Sends init sequence to each deck, then listens for events
+- Sends CONNECT keepalive to every connected deck every 5 seconds
 - On button press: executes mapped action (ignores release events for buttons)
 - On knob rotate: applies ±step for each tick
-- On knob press: toggles mute state
+- On knob press: executes the knob's press action
+- Reloads the config on `SIGHUP` or the distributed notification `com.streamdeck.controller.reload`
+  (`StreamDeckController --post-reload` posts it)
+- `--config <path>` loads that file instead of searching (development); the same security checks apply
 - Logs to stdout/file for debugging
 - Graceful shutdown on SIGTERM/SIGINT
 
 ## Safety Constraints
-- **HID isolation**: MUST only open the device matching VID 0x5548 / PID 0x1001 on usage page 0xFFA0. Never enumerate, open, or interfere with any other HID device (keyboards, mice, trackpads, etc.)
+- **HID isolation**: MUST only open the vendor interface (usage page 0xFFA0, usage 1) of the supported decks — N3 VID 0x5548 / PID 0x1001 and N4 VID 0x6602 / PID 0x1001. Never the decks' keyboard interfaces. Never enumerate, open, or interfere with any other HID device (keyboards, mice, trackpads, etc.)
 - **No kernel driver manipulation**: MUST NOT unload, detach, or modify any macOS kernel drivers or kexts. The daemon operates purely in userspace via IOKit HID API
 - **USB passivity**: MUST NOT send USB control transfers, reset devices, or alter USB configuration of any device other than the target deck
 - **launchd safety**: The launchd plist MUST only manage this daemon's own process. No modification of other launchd jobs, plists, or system services. Use `LaunchAgents` (user-level), never `LaunchDaemons` (system-level)
@@ -131,6 +150,6 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 ## Non-Goals (for now)
 - No GUI
 - No CLI config tool
-- Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController`)
-- No multi-deck support (multiple stream decks plugged in simultaneously)
+- Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController`) or `StreamDeckController --post-reload`
+- No pages or scenes: one layout per deck model
 - No Windows/Linux support

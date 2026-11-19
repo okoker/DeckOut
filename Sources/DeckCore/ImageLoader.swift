@@ -106,7 +106,7 @@ enum ImageLoader {
     }
 
     /// Find bounding box of non-transparent pixels and crop to it.
-    private static func trimTransparency(_ image: CGImage) -> CGImage? {
+    static func trimTransparency(_ image: CGImage) -> CGImage? {
         let w = image.width
         let h = image.height
         let colorSpace = CGColorSpaceCreateDeviceRGB()

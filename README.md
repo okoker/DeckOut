@@ -28,8 +28,9 @@ If your device enumerates with VID `0x5548` / PID `0x1001` and speaks the CRT pa
 **Also supported:** MiraBox Stream Dock N4 (`0x6602:0x1001`) — 10 LCD keys in two rows of five, a touch strip of four
 image blocks, and four push-knobs. Keys, knobs, strip taps and swipe all map to actions; keys and strip blocks show
 icons. Strip blocks can also be live: internet latency (with a rising / falling arrow, red when there's no reply),
-CPU and memory load, and system volume. While the Mac is locked the N4 can show a photo across its keys and strip,
-and its keys do nothing. Both decks can be plugged in at once, each with its own layout (see
+CPU and memory load, and system volume. While the Mac is locked the N4 can show a photo across its keys and strip.
+On both decks, keys, strip taps and swipes do nothing while the Mac is locked — new for the N3 since v1.0.0 — and
+knobs keep only their volume, ZR7 and monitor-brightness actions. Both decks can be plugged in at once, each with its own layout (see
 [Config reference](#config-reference)). Connect the N4 to a USB-A port: on a USB-C port it may not power up after a
 replug (`docs/KNOWN_ISSUES.md`, KI-009).
 

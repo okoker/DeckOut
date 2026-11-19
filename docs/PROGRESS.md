@@ -3,7 +3,7 @@
 ## Current Status
 One launchd daemon drives the TreasLin N3 and the MiraBox N4 (installed 19/11/2026 from `feat/n4-support`): buttons,
 knobs, LCD icons, the N4's live strip and lock photo, system volume, ZR7 volume and monitor brightness all working.
-Last run 19/11/2026: `swift test` 59/59 (T-001–T-059, T-059 new in Task 11), watched; device checks on both decks
+Last run 19/11/2026: `swift test` 60/60 (T-001–T-060; T-059 new in Task 11, T-060 from the final review), watched; device checks on both decks
 (every control, reload, live strip, lock, both decks together, two 10-min performance windows), then a key on each
 deck, the internet tile and a lock / unlock on the installed daemon.
 
@@ -17,10 +17,9 @@ deck, the internet tile and a lock / unlock on the installed daemon.
 - **For a person:** plug in either deck or both; each shows its own icons and runs its own actions. The N4's strip
   shows internet latency, CPU / memory and volume, live; locking the Mac puts a photo across the N4 and makes keys
   inert while the volume knob still works. Reloading the config redraws without a blink.
-- **Decision (owner, 19/11/2026):** N4 layout — knob 1 free, 2 monitor brightness, 3 ZR7, 4 system volume; bottom
-  row Tailscale, iTerm, Homelab Topology, Notes (first key empty); strip internet / load / empty / volume; deck
-  brightness 75. The network popup runs `networkDetail2.sh` in a login shell (`zsh -lc`) so Homebrew tools are found
-  — also on the N3. The N4 goes on USB-A (KI-009). Lock-photo framing and brightness wait for the config app.
+- **Decision (owner, 19/11/2026):** the owner's own N4 layout in the live config, strip internet / load / empty /
+  volume, deck brightness 75. A shell action that needs Homebrew tools runs in a login shell (`zsh -lc`). The N4
+  goes on USB-A (KI-009). Lock-photo framing and brightness settings wait for the config app.
 - **Checked:** the owner worked every control on both decks with the log open; lock, sleep-to-lock and unlock; unplug
   each deck while the other runs. Lock-photo positions measured from two photos of a test grid. Performance:
   0.135 % of one core with both decks and the live strip, 0.015 % with the N3 alone (old daemon 0.008 %, a 7-day

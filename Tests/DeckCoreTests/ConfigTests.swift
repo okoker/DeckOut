@@ -114,3 +114,17 @@ private func parse(_ json: String) throws -> AppConfig {
     #expect(c.n4?.strip.count == 4)
     #expect(c.displays?.count == 2)
 }
+
+@Test func internetNumbersOutOfRangeAreRefused() throws {
+    // A negative or huge timeout used to load fine and then crash the daemon at the first measurement
+    // (UInt64(timeout * 1e9) traps), so launchd restarted it straight into the same crash.
+    func block(_ fields: String) -> String {
+        #"{ "decks": { "n4": { "brightness": 50, "strip": { "1": { "type": "internet", "# + fields + #" } } } } }"#
+    }
+    for bad in [#""timeout_s": -3"#, #""timeout_s": 0"#, #""timeout_s": 1e10"#, #""arrow_ms": -1"#] {
+        #expect(throws: (any Error).self, "\(bad)") { try parse(block(bad)) }
+    }
+    let ok = try parse(block(#""timeout_s": 0.5, "arrow_ms": 0"#))
+    #expect(ok.n4?.strip["1"]?.timeoutS == 0.5)
+    #expect(ok.n4?.strip["1"]?.arrowMs == 0)
+}

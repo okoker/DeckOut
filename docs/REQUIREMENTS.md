@@ -36,7 +36,7 @@ Maps verified on the unit (18/11/2026); details in `docs/design/n4_support.md`.
 
 ## Configuration
 One JSON file: `~/.config/vsd/config.json`, or `config.json` next to the executable. Read at start-up and re-read on
-`SIGHUP`; a reload that fails the security checks or doesn't parse keeps the previous config.
+`SIGHUP` or the reload notification (`--post-reload`); a reload that fails the security checks or doesn't parse keeps the previous config.
 
 ### Structure
 Shared settings at the top; one section per deck under `decks`. Full example: `config.example.json`.
@@ -70,7 +70,7 @@ Shared settings at the top; one section per deck under `decks`. Full example: `c
 - **N4:** keys `key_1`–`key_5` (top row, left → right), `key_6`–`key_10` (bottom row); knobs `knob_1`–`knob_4` left →
   right; strip blocks `"1"`–`"4"` left → right. `brightness` is required; `keys`, `knobs`, `strip`, `swipe` and
   `lock_photo` may be left out.
-- **Strip block `type`:** `internet` (`host`, default `one.one.one.one`; `arrow_ms`, default 2; `timeout_s`, default 3),
+- **Strip block `type`:** `internet` (`host`, default `one.one.one.one`; `arrow_ms`, default 2, 0 or more; `timeout_s`, default 3, 0.1–60 — out-of-range numbers are refused at load),
   `load`, `volume`, `picture` (shows `icon`), `empty`. A tap runs the block's `action`. An unknown type makes the whole
   file invalid.
 - **`swipe.action`:** one action for a swipe on the strip. **`lock_photo`:** shown across the N4 while the Mac is locked.
@@ -121,7 +121,7 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 ## LCD Icons
 - Optional `icon` field per LCD key in config; sent to the deck as JPEG via CRT BAT (header with length and wire
   slot), 1024-byte chunks, then STP
-- N3: 85×85 JPEG, turned 90° + 180°, shifted −9 / +8 px to sit centred on the LCD. No icon = cleared/blank
+- N3: 85×85 JPEG, turned 90° + 180°, shifted −9 / +8 px to sit centred on the LCD. No icon = black
 - N4: keys 112×112 JPEG turned 180°, no offset; strip blocks 176×112 turned 180° (`picture` blocks show an icon).
   Slots: top-row keys 11–15, bottom-row keys 6–10, strip blocks 1–4. No icon = black
 

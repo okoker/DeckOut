@@ -121,6 +121,16 @@ public struct StripBlockConfig: Decodable {
         host = try c.decodeIfPresent(String.self, forKey: .host) ?? "one.one.one.one"
         arrowMs = try c.decodeIfPresent(Double.self, forKey: .arrowMs) ?? 2
         timeoutS = try c.decodeIfPresent(Double.self, forKey: .timeoutS) ?? 3
+        // Refuse impossible numbers here, at load: the probe turns timeout_s into nanoseconds and
+        // milliseconds with integer conversions that would crash on them.
+        guard (0.1...60).contains(timeoutS) else {
+            throw DecodingError.dataCorruptedError(forKey: .timeoutS, in: c,
+                                                   debugDescription: "timeout_s must be between 0.1 and 60 seconds")
+        }
+        guard arrowMs >= 0 else {
+            throw DecodingError.dataCorruptedError(forKey: .arrowMs, in: c,
+                                                   debugDescription: "arrow_ms must be 0 or more")
+        }
     }
 }
 

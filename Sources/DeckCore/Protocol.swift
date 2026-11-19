@@ -71,7 +71,7 @@ enum CRTCommand {
 
 // MARK: - Event types
 
-enum ButtonID: String {
+public enum ButtonID: String {
     case lcd1, lcd2, lcd3, lcd4, lcd5, lcd6
     case btn1, btn2, btn3
 
@@ -90,7 +90,7 @@ enum ButtonID: String {
     }
 }
 
-enum KnobID: String {
+public enum KnobID: String {
     case big, small1, small2
 
     var configKey: String {
@@ -102,7 +102,7 @@ enum KnobID: String {
     }
 }
 
-enum DeckEvent {
+public enum DeckEvent {
     case buttonPress(ButtonID)
     case buttonRelease(ButtonID)
     case knobRotateCW(KnobID)

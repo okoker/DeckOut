@@ -1,4 +1,5 @@
 import AppKit
+import DeckCore
 import Foundation
 // MARK: - Config path resolution
 

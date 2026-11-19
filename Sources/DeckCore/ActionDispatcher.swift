@@ -2,7 +2,7 @@ import ApplicationServices
 import Foundation
 import CoreGraphics
 
-final class ActionDispatcher {
+public final class ActionDispatcher {
 
     // MARK: - Properties
 
@@ -47,7 +47,7 @@ final class ActionDispatcher {
 
     // MARK: - Init
 
-    init(config: DeckConfig) {
+    public init(config: DeckConfig) {
         self.config = config
         if let displays = config.displays, !displays.isEmpty {
             self.brightnessControl = BrightnessControl(displays: displays)
@@ -64,13 +64,13 @@ final class ActionDispatcher {
     }
 
     /// Graceful teardown before replacement on config reload.
-    func shutdown() {
+    public func shutdown() {
         brightnessControl?.shutdown()
     }
 
     // MARK: - Public dispatch
 
-    func dispatch(event: DeckEvent) {
+    public func dispatch(event: DeckEvent) {
         print("Event: \(event)")
         switch event {
 

@@ -2,7 +2,7 @@ import Foundation
 import IOKit
 import IOKit.hid
 
-final class HIDDevice {
+public final class HIDDevice {
 
     // MARK: - Properties
 
@@ -15,11 +15,11 @@ final class HIDDevice {
     private let reportBufferSize = 512
     private var config: DeckConfig
 
-    var onEvent: ((DeckEvent) -> Void)?
+    public var onEvent: ((DeckEvent) -> Void)?
 
     // MARK: - Init
 
-    init(config: DeckConfig) {
+    public init(config: DeckConfig) {
         self.config = config
         self.reportBuffer = .allocate(capacity: 512)
         self.reportBuffer.initialize(repeating: 0, count: 512)
@@ -28,14 +28,14 @@ final class HIDDevice {
     // MARK: - Public API
 
     /// Hot-reload config: update action mappings and resend LCD icons
-    func reloadConfig(_ newConfig: DeckConfig) {
+    public func reloadConfig(_ newConfig: DeckConfig) {
         self.config = newConfig
         guard device != nil else { return }
         sendPacket(CRTCommand.makeCLE())
         sendLCDIcons()
     }
 
-    func start() {
+    public func start() {
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         self.manager = manager
 

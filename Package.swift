@@ -1,10 +1,13 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "StreamDeckController",
     platforms: [.macOS(.v13)],
     targets: [
-        .executableTarget(name: "StreamDeckController", path: "Sources/VSDDaemon")
-    ]
+        .target(name: "DeckCore", path: "Sources/DeckCore"),
+        .executableTarget(name: "StreamDeckController", dependencies: ["DeckCore"], path: "Sources/VSDDaemon"),
+        .testTarget(name: "DeckCoreTests", dependencies: ["DeckCore"], path: "Tests/DeckCoreTests"),
+    ],
+    swiftLanguageModes: [.v5]
 )

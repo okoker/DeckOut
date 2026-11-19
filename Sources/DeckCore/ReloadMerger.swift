@@ -17,20 +17,20 @@ public struct ReloadResult: Codable, Equatable {
 /// The first request schedules `perform` after `delay`; requests that arrive before it runs ride along, and every
 /// one of them gets the same result. A request arriving while `perform` runs (or after) schedules exactly one more.
 /// Call `request` on `queue`; `perform` and the completions run there too.
-public final class ReloadMerger {
+final class ReloadMerger {
     private let delay: TimeInterval
     private let queue: DispatchQueue
     private let perform: () -> ReloadResult
     private var waiting: [(ReloadResult) -> Void] = []
     private var scheduled = false
 
-    public init(delay: TimeInterval = 0.15, queue: DispatchQueue = .main, perform: @escaping () -> ReloadResult) {
+    init(delay: TimeInterval = 0.15, queue: DispatchQueue = .main, perform: @escaping () -> ReloadResult) {
         self.delay = delay
         self.queue = queue
         self.perform = perform
     }
 
-    public func request(_ completion: ((ReloadResult) -> Void)?) {
+    func request(_ completion: ((ReloadResult) -> Void)?) {
         if let completion { waiting.append(completion) }
         guard !scheduled else { return }
         scheduled = true

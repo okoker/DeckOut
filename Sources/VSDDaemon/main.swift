@@ -30,121 +30,14 @@ guard let configPath = ConfigFile.resolvePath(arguments: arguments, home: homeDi
     exit(1)
 }
 
-// MARK: - Load configuration
-
-func printButtons(_ buttons: [String: ButtonConfig], label: String) {
-    print("  \(label) configured: \(buttons.count)")
-    for (name, btn) in buttons.sorted(by: { $0.key < $1.key }) {
-        let iconNote = btn.icon.map { " (icon: \($0))" } ?? ""
-        print("    \(name): \(btn.action)\(iconNote)")
-    }
-}
-
-func printKnobs(_ knobs: [String: KnobConfig]) {
-    print("  Knobs configured:  \(knobs.count)")
-    for (name, knob) in knobs.sorted(by: { $0.key < $1.key }) {
-        let rotateStep = knob.rotate.step.map { ", step: \($0)" } ?? ""
-        print("    \(name): rotate=\(knob.rotate.action)\(rotateStep), press=\(knob.press.action)")
-    }
-}
-
-/// "Preset: Music (2 presets)", and a warning when `active_preset` names no preset.
-func printPreset(active: String, live: String, count: Int) {
-    if active != live { print("  Warning: active_preset \"\(active)\" not found, using \"\(live)\"") }
-    print("  Preset: \(live) (\(count) preset\(count == 1 ? "" : "s"))")
-}
-
-func printConfig(_ config: AppConfig) {
-    print("Config loaded from: \(configPath)")
-    if let n3 = config.n3 {
-        print(" N3:")
-        printPreset(active: n3.activePreset, live: n3.active.name, count: n3.presets.count)
-        print("  Brightness:        \(n3.brightness)")
-        printButtons(n3.buttons, label: "Buttons")
-        printKnobs(n3.knobs)
-    }
-    if let n4 = config.n4 {
-        print(" N4:")
-        printPreset(active: n4.activePreset, live: n4.active.name, count: n4.presets.count)
-        print("  Brightness:        \(n4.brightness)")
-        printButtons(n4.keys, label: "Keys")
-        printKnobs(n4.knobs)
-        print("  Strip blocks:      \(n4.strip.count)")
-        for (name, block) in n4.strip.sorted(by: { $0.key < $1.key }) {
-            let tap = block.action.map { ", tap=\($0)" } ?? ""
-            print("    \(name): \(block.type.rawValue)\(tap)")
-        }
-        print("  Swipe:             \(n4.swipe?.action ?? "none")")
-        print("  Lock photo:        \(n4.lockPhoto.map { "\($0.path) (zoom \($0.zoom), offset \($0.offsetX), \($0.offsetY))" } ?? "none")")
-    }
-    if let displays = config.displays, !displays.isEmpty {
-        print("  Displays configured: \(displays.count)")
-        for d in displays {
-            print("    \(d.name): serial=\(d.serial)")
-        }
-    }
-}
-
-// Without a usable config the daemon still runs, with the decks blank, and says why: under launchd's KeepAlive,
-// exiting would restart it into the same failure forever. A reload that loads replaces the blank config.
-let startup = ConfigFile.startupConfig(at: configPath)
-if let problem = startup.problem {
-    print(problem)
-    print("Starting with no decks set up (they stay blank) until a reload loads a config.")
-} else {
-    printConfig(startup.config)
-}
-
 // MARK: - Start
 
-/// Commands run with the user's own shell environment, read at start and on reloads from outside (SIGHUP,
-/// `--post-reload`); until the first read finishes, PATH plus Homebrew's folders.
-let shellEnvironment = ShellEnvironment()
-
-func refreshEnvironment() {
-    shellEnvironment.refresh {
-        let status = shellEnvironment.status
-        DispatchQueue.main.async {
-            print(status.state == .resolved ? "Shell environment: resolved"
-                                            : "Shell environment: fell back (\(status.detail ?? "unknown"))")
-        }
-    }
-}
-
-let daemon = Daemon(config: startup.config, environment: shellEnvironment)
-refreshEnvironment()
-daemon.start()
-if arguments.contains("--show-lock-photo") { daemon.showLockPhoto(startup.config.n4?.lockPhoto) }
-
-/// Re-read the config through the same security checks; on any failure keep the previous one.
-func reloadConfig() -> ReloadResult {
-    print("\nReloading config...")
-    switch ConfigFile.load(at: configPath) {
-    case .success(let newConfig):
-        printConfig(newConfig)
-        daemon.reload(newConfig)
-        print("Config reloaded.")
-        return ReloadResult(loaded: true, problem: nil)
-    case .failure(let error):
-        print("\(error.description) — keeping previous config.")
-        return ReloadResult(loaded: false, problem: error.description)
-    }
-}
-
-/// A burst of reload requests (a save per slider step) becomes one reload.
-let reloadMerger = ReloadMerger { reloadConfig() }
-
-/// One environment read per merged reload, not one per request in the burst.
-var environmentRefreshPending = false
+let agent = Agent(configPath: configPath)
+agent.start(showLockPhoto: arguments.contains("--show-lock-photo"))
 
 func requestReload(reason: String) {
     print("Reload requested (\(reason))")
-    environmentRefreshPending = true
-    reloadMerger.request { _ in
-        guard environmentRefreshPending else { return }
-        environmentRefreshPending = false
-        refreshEnvironment()
-    }
+    agent.externalReload()
 }
 
 // MARK: - Signal handling

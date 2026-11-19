@@ -67,10 +67,22 @@ public final class Daemon {
         (old ?? []) != (new ?? [])
     }
 
+    /// Called after a deck connects or is removed.
+    var onDecksChanged: (() -> Void)?
+
+    /// The decks plugged in now.
+    var connectedKinds: [DeckKind] { decks.connections.map { $0.model.kind } }
+
     public func start() {
         rebuildBrightness(for: config.displays)
-        decks.onConnect = { [weak self] connection in self?.connected(connection) }
-        decks.onRemove = { [weak self] _ in self?.updateLiveSources() }
+        decks.onConnect = { [weak self] connection in
+            self?.connected(connection)
+            self?.onDecksChanged?()
+        }
+        decks.onRemove = { [weak self] _ in
+            self?.updateLiveSources()
+            self?.onDecksChanged?()
+        }
         decks.onInput = { [weak self] kind, input in self?.handle(kind, input) }
         volumeWatcher.onChange = { [weak self] percent, muted in
             print("Volume: \(percent.map { "\($0)%" } ?? "–")\(muted ? ", muted" : "")")
@@ -370,6 +382,12 @@ public final class Daemon {
     }
 
     // MARK: - Input
+
+    /// Runs one action exactly as a press would, minus the lock check (the config app's Test button).
+    func run(action: String, step: Int?, completion: @escaping (ActionResult) -> Void) {
+        print("Test → \(action)\(step.map { " step \($0)" } ?? "")")
+        dispatcher.execute(ResolvedAction(action: action, step: step), completion: completion)
+    }
 
     private func handle(_ kind: DeckKind, _ input: DeckInput) {
         switch input {

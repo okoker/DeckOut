@@ -252,8 +252,17 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - **Shell command sandboxing**: `shell:` actions run with the user's normal permissions. The daemon itself requires no elevated privileges (no sudo, no root)
 - **Graceful failure**: If the device is not connected, the daemon waits quietly and retries. No error storms, no resource hogging, no interference with other USB devices
 
+## The App (DeckOut)
+How it works: `docs/reference/app.md`. Contracts:
+- Runs only as `/Applications/DeckOut.app` (the dev variant, `io.github.okoker.deckout.dev`, anywhere); registers its
+  agent with `SMAppService.agent` from `Contents/Library/LaunchAgents`; never opens a USB device itself
+- Talks to the agent only over XPC, each side checking the other's code signature; restarts an agent of another
+  build once per launch
+- The app's "running" indicator comes from the agent's `status`, never from `SMAppService.status`
+- Editing (plan 3) and the rest of the design's phases are not built yet: until then the config is set by hand
+
 ## Non-Goals (for now)
-- No GUI
+- No CLI config tool
 - No CLI config tool
 - Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController` for a hand install) or `DeckOutAgent --post-reload`
 - No switching presets from the deck itself: the live preset is the config's `active_preset`

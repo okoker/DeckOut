@@ -10,6 +10,7 @@ public final class Daemon {
     private var dispatcher: ActionDispatcher
     private let decks = DeckManager()
     private var keepaliveTimer: Timer?
+    private let lockMonitor = LockMonitor()
 
     // Live strip blocks: each source runs only while a connected deck shows its block.
     private let volumeWatcher = VolumeWatcher()
@@ -51,6 +52,9 @@ public final class Daemon {
             self?.volumeReading = (percent, muted)
             self?.redrawLive(.volume)
         }
+        lockMonitor.onChange = { [weak self] locked in self?.lockChanged(locked) }
+        lockMonitor.start()
+        print("Screen \(lockMonitor.locked ? "locked" : "unlocked") at start")
         decks.start()
         keepaliveTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.tick()
@@ -64,14 +68,15 @@ public final class Daemon {
         dispatcher = ActionDispatcher(config: newConfig)
         for connection in decks.connections {
             connection.setBrightness(brightness(for: connection.model.kind))
-            drawAll(connection)
+            showCurrent(connection)
         }
         updateLiveSources()
     }
 
-    /// Every 5 s: keepalive to every deck, then the periodic live-block readings.
+    /// Every 5 s: keepalive to every deck, the lock re-check, then the periodic live-block readings.
     private func tick() {
         decks.connections.forEach { $0.keepalive() }
+        lockMonitor.recheck()
         if loadActive { sampleLoad() }
         if latencyProbe != nil { measureLatency() }
     }
@@ -80,8 +85,14 @@ public final class Daemon {
 
     private func connected(_ connection: DeckConnection) {
         connection.start(brightness: brightness(for: connection.model.kind))
-        drawAll(connection)
+        showCurrent(connection)
         updateLiveSources()
+    }
+
+    /// The layout, or — while the Mac is locked — the N4's lock photo if one is set.
+    private func showCurrent(_ connection: DeckConnection) {
+        if lockMonitor.locked, drawLockPhoto(connection) { return }
+        drawAll(connection)
     }
 
     private func brightness(for kind: DeckKind) -> Int {
@@ -108,6 +119,38 @@ public final class Daemon {
         print("Drew \(plan.count) slots on \(model.kind.rawValue) in \(ms) ms")
     }
 
+    // MARK: - Lock
+
+    /// Locked: live readings pause and the N4 shows its lock photo (without one, every deck keeps its
+    /// layout, inert). Unlocked: every deck redraws its layout and live readings resume.
+    private func lockChanged(_ locked: Bool) {
+        print(locked ? "Screen locked" : "Screen unlocked")
+        updateLiveSources()
+        for connection in decks.connections {
+            if locked {
+                _ = drawLockPhoto(connection)
+            } else {
+                drawAll(connection)
+            }
+        }
+    }
+
+    /// Draws the lock photo across an N4's keys and strip. False (nothing drawn) for another deck,
+    /// with no `lock_photo` set, or when the photo can't be read.
+    @discardableResult
+    private func drawLockPhoto(_ connection: DeckConnection) -> Bool {
+        guard connection.model.kind == .n4, let path = config.n4?.lockPhoto else { return false }
+        let started = Date()
+        let slices = LockPhoto.jpegSlices(path: path)
+        guard !slices.isEmpty else { return false }
+        for (slot, jpeg) in slices.sorted(by: { $0.key < $1.key }) {
+            connection.draw(slot: slot, jpeg: jpeg)
+        }
+        connection.commit()
+        print("Drew lock photo on n4 (\(slices.count) slots) in \(Int(Date().timeIntervalSince(started) * 1000)) ms")
+        return true
+    }
+
     // MARK: - Live strip blocks
 
     /// Live block types shown on any connected deck.
@@ -123,7 +166,7 @@ public final class Daemon {
 
     /// Runs the measurements something on screen needs and stops the rest.
     private func updateLiveSources() {
-        let shown = liveTypesShown()
+        let shown = lockMonitor.locked ? [] : liveTypesShown()
         if shown.contains(.volume) {
             volumeWatcher.start()
         } else {
@@ -238,7 +281,7 @@ public final class Daemon {
 
     /// Redraws only the slots showing `type`, on every deck that shows it.
     private func redrawLive(_ type: StripBlockType) {
-        guard let jpeg = liveImage(type) else { return }
+        guard !lockMonitor.locked, let jpeg = liveImage(type) else { return }   // never over the lock photo
         for connection in decks.connections {
             let slots = LayoutPlan.slots(model: connection.model, config: config)
                 .filter { $0.value == .strip(type) }.keys.sorted()
@@ -251,6 +294,10 @@ public final class Daemon {
     // MARK: - Input
 
     private func handle(_ kind: DeckKind, _ input: DeckInput) {
+        switch input {
+        case .keyDown, .stripTap, .swipe: lockMonitor.recheck()     // don't trust a stale "unlocked"
+        default: break
+        }
         guard let resolved = ActionResolver.resolve(input, deck: kind, config: config) else {
             switch input {
             case .keyUp, .knobUp: break
@@ -259,6 +306,10 @@ public final class Daemon {
             return
         }
         let step = resolved.step.map { " step \($0)" } ?? ""
+        guard LockPolicy.allows(input, action: resolved.action, locked: lockMonitor.locked) else {
+            print("Input \(kind.rawValue) \(input) → \(resolved.action)\(step): ignored while locked")
+            return
+        }
         print("Input \(kind.rawValue) \(input) → \(resolved.action)\(step)")
         dispatcher.execute(resolved)
     }

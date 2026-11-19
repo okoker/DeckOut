@@ -58,6 +58,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-051 | `LatencyProbeTests/replyForSomeoneElseDoesNotMatch` | Replies to other identifiers or sequences, requests, and truncated packets are ignored (every ICMP socket sees every reply) |
 | T-052 | `LatencyProbeTests/internetRendersAllStates` | The internet block renders rising, falling, steady, no reading yet, and no reply |
 | T-053 | `LatencyProbeTests/failedBlockIsRed` | No reply turns the whole block red; a normal reading keeps a black background |
+| T-054 | `LockTests/startsFromTheSessionState` | At start the lock state is the session's own |
+| T-055 | `LockTests/recheckCorrectsState` | A "locked" notification the session contradicts is corrected on the next recheck; a real lock with no notification is caught by the recheck; no duplicate callbacks |
+| T-056 | `LockTests/slicesCoverRects` | Wide, tall and exact-size photos give one slice per N4 slot, each its rectangle's size |
+| T-057 | `LockTests/quadrantsLandInTheRightSlices` | The photo's top-left reaches the top-left key, its bottom-right the rightmost strip block |
+| T-058 | `LockTests/slicesAreTurned180` | Each slice is turned 180° (else the photo shows upside down per tile) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

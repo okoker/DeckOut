@@ -140,6 +140,19 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - Logs to stdout/file for debugging
 - Graceful shutdown on SIGTERM/SIGINT
 
+## Lock Behaviour (all decks unless stated)
+- Lock state comes from the distributed notifications `com.apple.screenIsLocked` / `com.apple.screenIsUnlocked`
+  (instant), re-checked against the session's `CGSSessionScreenIsLocked` on every 5 s tick and before acting on a
+  key, strip tap or swipe — the lock notification can fire when a screen saver merely starts
+- **While locked:** keys, strip taps and swipes do nothing. Knobs run only the built-in actions (`system_volume`,
+  `system_mute_toggle`, `zr7_volume`, `zr7_mute_toggle`, `display_brightness`, `display_brightness_cycle`);
+  `shell:` and `key:` never run from any control. Live strip readings pause
+- **N4 with `lock_photo`:** on lock the photo is drawn across all 14 slots (scaled to fill the 800×480 panel,
+  each slot cut at its panel position); on unlock the layout is redrawn. Without a photo, every deck keeps its
+  layout, inert
+- Keep the photo in `~/.config/vsd/`: macOS asks before a background program reads Desktop, Documents, Downloads
+  or iCloud Drive, and an unsigned daemon loses that permission on every rebuild
+
 ## Safety Constraints
 - **HID isolation**: MUST only open the vendor interface (usage page 0xFFA0, usage 1) of the supported decks — N3 VID 0x5548 / PID 0x1001 and N4 VID 0x6602 / PID 0x1001. Never the decks' keyboard interfaces. Never enumerate, open, or interfere with any other HID device (keyboards, mice, trackpads, etc.)
 - **No kernel driver manipulation**: MUST NOT unload, detach, or modify any macOS kernel drivers or kexts. The daemon operates purely in userspace via IOKit HID API

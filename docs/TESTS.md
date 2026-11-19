@@ -112,6 +112,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-105 | `XPCTests/liveStripPushedToClients` | The live strip's images reach the app on request and are pushed when a block gets a new one |
 | T-106 | `AgentTests/liveImagesKeyedByBlock` | A live image goes to every block of its type in the live preset; switching preset drops blocks that aren't live there |
 | T-107 | `scripts/check-bundle.sh` (build check, run by `make app`) | An assembled DeckOut.app: Info.plist (bundle id, executable, macOS 15, build), the agent plist (label = Mach service = `--mach-service` argument, `BundleProgram`, KeepAlive), the helper signed as the agent label and the app as its bundle id, a strict signature check, arm64 only, nothing loose in the bundle root |
+| T-108 | `RegistrarTests/registersWhenNotRegistered` | The app registers its agent when macOS has none, leaves an enabled one alone, and registers again when asked (enabled but not answering) |
+| T-109 | `RegistrarTests/notFoundUnregistersThenRetries` | macOS reporting "not found" (after a Login Items reset, or just after install): unregister once, register, retry up to 10 × 1 s; still not found → a failure with a message |
+| T-110 | `RegistrarTests/requiresApprovalIsReported` | Switched off in Login Items → "needs approval", also when `register()` is refused for that reason; any other refusal passes its message on |
+| T-111 | `AgentLinkTests/restartsAnOlderAgentOnce` | An agent of another build (or one too old to report it) is asked to restart once; if the same build comes back, the app says so and doesn't loop |
+| T-112 | `AgentLinkTests/hearsStatusAndStrip`, `silentAgentIsReportedOnce` | The app's link hears status and live strip pushes, reconnects when the agent goes away, and reports an agent that doesn't answer (registering it again once) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

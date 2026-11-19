@@ -18,6 +18,7 @@ private final class StubControl: AgentControl, @unchecked Sendable {
     let liveStripValue = LiveStrip(images: ["1": Data([0xFF, 0xD8, 1]), "4": Data([0xFF, 0xD8, 4])])
     var restarted = false
     var heardRestart: (() -> Void)?
+    var accessibilityRequests = 0
 
     func status() -> AgentStatus { statusValue }
     func reload(completion: @escaping (ReloadResult) -> Void) { completion(reloadValue) }
@@ -35,6 +36,10 @@ private final class StubControl: AgentControl, @unchecked Sendable {
         heardRestart?()
     }
     func liveStrip() -> LiveStrip { liveStripValue }
+    func requestAccessibility() -> Bool {
+        accessibilityRequests += 1
+        return false
+    }
 }
 
 private final class ClientSpy: NSObject, AgentClientXPC, @unchecked Sendable {
@@ -199,4 +204,11 @@ private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
         DispatchQueue.main.async { harness.stub.onLiveStripChange?() }
     }
     #expect(decode(LiveStrip.self, pushed) == harness.stub.liveStripValue)
+}
+
+@Test func accessibilityRequestReachesTheAgent() async {            // T-124
+    let harness = Harness()
+    let granted: Bool? = await harness.call { proxy, reply in proxy.requestAccessibility(reply: reply) }
+    #expect(granted == false)
+    #expect(harness.stub.accessibilityRequests == 1)
 }

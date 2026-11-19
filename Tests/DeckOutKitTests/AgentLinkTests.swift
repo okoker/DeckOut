@@ -28,6 +28,7 @@ final class StubAgent: AgentControl, @unchecked Sendable {
     }
     func restart() { restarts += 1 }
     func liveStrip() -> LiveStrip { strip }
+    func requestAccessibility() -> Bool { false }
 }
 
 /// A listener serving a stub agent; `connect()` opens a client connection to it.
@@ -143,6 +144,7 @@ final class MuteAgent: NSObject, AgentXPC {
     func refreshEnvironment(reply: @escaping (Data) -> Void) {}
     func restart(reply: @escaping () -> Void) {}
     func liveStrip(reply: @escaping (Data) -> Void) {}
+    func requestAccessibility(reply: @escaping (Bool) -> Void) {}
 }
 
 /// Refuses every connection, like an agent that can't check its peer, or a Mach service that isn't there.

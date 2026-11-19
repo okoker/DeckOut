@@ -93,3 +93,21 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
     try? await Task.sleep(nanoseconds: 600_000_000)
     #expect(exited)
 }
+
+@Test func appReloadLogsOneLine() async throws {                     // T-123
+    // The app saves on every edit; each reload it asks for logs one line, not the whole config (plan 1 review M8).
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-log-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    let path = folder.appendingPathComponent("config.json").path
+    try ConfigFile.save(AppConfig(n4: N4Section(brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+                                                presets: [N4Preset(name: "Work", keys: [:], strip: [:])],
+                                                activePreset: "Work")), to: path)
+    nonisolated(unsafe) var lines: [String] = []
+    nonisolated(unsafe) let agent = Agent(configPath: path, environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]),
+                                          log: { lines.append($0) })
+    lines.removeAll()   // the start-up summary
+    let _: ReloadResult = await onMain { done in agent.reload(completion: done) }
+    #expect(lines.contains("Config reloaded (from the app): N4 Work"))
+    #expect(!lines.contains { $0.hasPrefix("Config loaded from") })
+    #expect(lines.count <= 2)
+}

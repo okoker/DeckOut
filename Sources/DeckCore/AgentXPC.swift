@@ -17,6 +17,8 @@ import Foundation
     func restart(reply: @escaping () -> Void)
     /// Reply: `LiveStrip`.
     func liveStrip(reply: @escaping (Data) -> Void)
+    /// Ask macOS to list the agent under Accessibility; reply: whether it's allowed now.
+    func requestAccessibility(reply: @escaping (Bool) -> Void)
 }
 
 /// What the background part tells the app without being asked.
@@ -120,6 +122,10 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
             reply()
             control.restart()
         }
+    }
+
+    public func requestAccessibility(reply: @escaping (Bool) -> Void) {
+        DispatchQueue.main.async { [control] in reply(control.requestAccessibility()) }
     }
 
     public func liveStrip(reply: @escaping (Data) -> Void) {

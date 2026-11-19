@@ -37,7 +37,8 @@ import Testing
         #expect(SecStaticCodeCreateWithPath(ls as CFURL, [], &code) == errSecSuccess)
         var req: SecRequirement?
         #expect(SecRequirementCreateWithString(requirement as CFString, [], &req) == errSecSuccess)
-        return SecStaticCodeCheckValidity(try #require(code), [], try #require(req)) == errSecSuccess
+        guard let code, let req else { return false }
+        return SecStaticCodeCheckValidity(code, [], req) == errSecSuccess
     }
     let pinned = try #require(CodeSigning.requirement(peerIdentifier: "com.apple.ls", teamID: nil, peerCDHash: hash))
     #expect(try satisfies(pinned))

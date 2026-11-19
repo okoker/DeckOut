@@ -127,6 +127,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-120 | `ConfigStoreTests/changeSavesAndReloads` | Each change in the app is saved whole (mode 0600) and asks the agent to reload once; a change that changes nothing saves nothing; a slider dragged through 30 values leaves the last one on disk |
 | T-121 | `ConfigStoreTests/undoRestoresTheWholeConfig` | Undo puts back the whole config from before a change (a renamed and deleted preset come back, the live preset too), saved and reloaded; redo; a new change drops the redo |
 | T-122 | `ConfigStoreTests/handEditIsPickedUp` | A hand edit made while the app is open is kept: the next change builds on it. A hand edit that doesn't load is never saved over, the app says why, and changes work again once it loads |
+| T-123 | `AgentTests/appReloadLogsOneLine` | A reload the app asks for logs one line ("Config reloaded (from the app): N4 Work"), not the whole config, so the log doesn't grow by a config per edit |
+| T-124 | `XPCTests/accessibilityRequestReachesTheAgent` | The app's "Allow…" reaches the agent (which asks macOS to list it under Accessibility) and hears whether it's allowed |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

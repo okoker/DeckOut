@@ -1,3 +1,4 @@
+import ApplicationServices
 import Foundation
 
 /// What the background part reports to the config app.
@@ -10,11 +11,14 @@ public struct AgentStatus: Codable, Equatable {
     public var activePresets: [String: String]    // deck → live preset
     public var configProblem: String?             // why the config file didn't load, if it didn't
     public var environment: EnvironmentStatus
+    /// Whether macOS lets the agent post keyboard shortcuts and media keys (Accessibility). Nil from an older agent.
+    public var accessibility: Bool?
 
     public init(version: String, build: String? = nil, decks: [String], activePresets: [String: String],
-                configProblem: String?, environment: EnvironmentStatus) {
+                configProblem: String?, environment: EnvironmentStatus, accessibility: Bool? = nil) {
         self.version = version
         self.build = build
+        self.accessibility = accessibility
         self.decks = decks
         self.activePresets = activePresets
         self.configProblem = configProblem
@@ -56,6 +60,8 @@ public protocol AgentControl: AnyObject {
     /// Exit soon, after the reply has gone; launchd's KeepAlive starts the binary now in the bundle.
     func restart()
     func liveStrip() -> LiveStrip
+    /// Ask macOS to list the agent under Accessibility (the app opens the pane); returns whether it's allowed now.
+    func requestAccessibility() -> Bool
     /// Fires on deck connect and remove, after each reload, and after each environment read.
     var onStatusChange: (() -> Void)? { get set }
     /// Fires when a live strip block got a new image.
@@ -72,6 +78,9 @@ public final class Agent: AgentControl {
     private var configProblem: String?
     private var environmentRefreshPending = false
     private var monitorRebuildPending = false
+    /// A reload from outside (SIGHUP, `--post-reload`) logs the whole config; the app's own, one line each.
+    private var verboseReloadPending = false
+    private let log: (String) -> Void
     public var onStatusChange: (() -> Void)?
     public var onLiveStripChange: (() -> Void)?
     /// The latest image of each live block type; `liveStrip()` maps them onto the live preset's blocks.
@@ -89,8 +98,10 @@ public final class Agent: AgentControl {
     public init(configPath: String, environment: ShellEnvironment = .init(),
                 version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev",
                 build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev",
-                exit: @escaping () -> Void = { Darwin.exit(0) }) {
+                exit: @escaping () -> Void = { Darwin.exit(0) },
+                log: @escaping (String) -> Void = { print($0) }) {
         self.configPath = configPath
+        self.log = log
         self.exitProcess = exit
         self.environment = environment
         self.version = version
@@ -122,6 +133,7 @@ public final class Agent: AgentControl {
     public func externalReload() {
         environmentRefreshPending = true
         monitorRebuildPending = true
+        verboseReloadPending = true
         merger.request { [weak self] _ in
             guard let self, self.environmentRefreshPending else { return }
             self.environmentRefreshPending = false
@@ -136,7 +148,8 @@ public final class Agent: AgentControl {
         if let n3 = config.n3 { presets[DeckKind.n3.rawValue] = n3.active.name }
         if let n4 = config.n4 { presets[DeckKind.n4.rawValue] = n4.active.name }
         return AgentStatus(version: version, build: build, decks: daemon.connectedKinds.map(\.rawValue).sorted(),
-                           activePresets: presets, configProblem: configProblem, environment: environment.status)
+                           activePresets: presets, configProblem: configProblem, environment: environment.status,
+                           accessibility: AXIsProcessTrusted())
     }
 
     public func reload(completion: @escaping (ReloadResult) -> Void) {
@@ -169,6 +182,13 @@ public final class Agent: AgentControl {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [exitProcess] in exitProcess() }
     }
 
+    public func requestAccessibility() -> Bool {
+        let prompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        let trusted = AXIsProcessTrustedWithOptions([prompt: true] as CFDictionary)
+        log("Accessibility: \(trusted ? "allowed" : "asked macOS to list DeckOutAgent")")
+        return trusted
+    }
+
     public func liveStrip() -> LiveStrip {
         var images: [String: Data] = [:]
         for (block, settings) in config.n4?.strip ?? [:] {
@@ -187,20 +207,22 @@ public final class Agent: AgentControl {
 
     /// Re-read the config through the same security checks; on any failure keep the previous one.
     private func reloadNow() -> ReloadResult {
-        print("\nReloading config...")
+        let verbose = verboseReloadPending
+        verboseReloadPending = false
+        if verbose { log("\nReloading config...") }
         let result: ReloadResult
         let rebuildMonitors = monitorRebuildPending
         monitorRebuildPending = false
         switch ConfigFile.load(at: configPath) {
         case .success(let newConfig):
-            Self.printConfig(newConfig, path: configPath)
+            if verbose { Self.printConfig(newConfig, path: configPath) }
             config = newConfig
             configProblem = nil
             daemon.reload(newConfig, rebuildMonitors: rebuildMonitors)
-            print("Config reloaded.")
+            log(verbose ? "Config reloaded." : "Config reloaded (from the app): \(Self.summary(newConfig))")
             result = ReloadResult(loaded: true, problem: nil)
         case .failure(let error):
-            print("\(error.description) — keeping previous config.")
+            log("\(error.description) — keeping previous config.")
             configProblem = error.description
             result = ReloadResult(loaded: false, problem: error.description)
         }
@@ -209,6 +231,12 @@ public final class Agent: AgentControl {
     }
 
     // MARK: - Load summary
+
+    /// "N3 Default, N4 Work": each deck set up and its live preset.
+    static func summary(_ config: AppConfig) -> String {
+        let decks = [config.n3.map { "N3 \($0.active.name)" }, config.n4.map { "N4 \($0.active.name)" }].compactMap { $0 }
+        return decks.isEmpty ? "no decks set up" : decks.joined(separator: ", ")
+    }
 
     private static func printConfig(_ config: AppConfig, path: String) {
         print("Config loaded from: \(path)")

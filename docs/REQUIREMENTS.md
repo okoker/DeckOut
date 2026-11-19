@@ -213,7 +213,8 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   status, stdout, stderr or the error), `showLockPhoto` (a framing, or nil for the layout; the preview ends by itself
   when the connection that set it goes, e.g. the app quits or crashes in photo mode), `refreshEnvironment`,
   `restart` (replies, then exits 0.3 s later; launchd's KeepAlive starts the binary now in the bundle) and
-  `liveStrip` (the images the N4's live strip blocks show, keyed by block, as drawn); the app hears `statusChanged`
+  `liveStrip` (the images the N4's live strip blocks show, keyed by block, as drawn) and `requestAccessibility` (asks
+  macOS to list the agent under Accessibility; `status` reports whether it's allowed); the app hears `statusChanged`
   on deck connect / remove, reloads and environment reads, and `liveStripChanged` with each new live block image. Payloads are JSON of DeckCore's
   types; a request that doesn't decode gets the error "bad request". Only DeckOut's own app may connect, checked by
   XPC before any call runs: signed with a Developer ID, a peer with the agent's own team id and the app's bundle id;
@@ -228,6 +229,7 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - Inside DeckOut the config is `~/.config/vsd/config.json` (dev variant: `~/.config/vsd-dev/config.json`), unless
   `--config` names another; a hand install searches as above
 - `status` also reports the build (`CFBundleVersion`) the agent started with; version and build are read at launch
+- A reload from outside (`SIGHUP`, `--post-reload`) logs the whole config; one the app asks for logs one line
 - Graceful shutdown on SIGTERM/SIGINT
 
 ## Lock Behaviour (all decks unless stated)

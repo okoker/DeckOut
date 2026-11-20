@@ -6,6 +6,10 @@ import Foundation
 /// What the window shows.
 public enum Screen: Equatable {
     case moveToApplications(String)
+    /// The hand-installed controller from before DeckOut is there: retire it, or keep it, before registering.
+    case oldController
+    /// The deck controller was stopped and taken out of Login Items (removal).
+    case removed
     case starting
     case needsApproval
     case agentProblem(String)
@@ -20,6 +24,12 @@ public enum Screen: Equatable {
 public final class AppModel: ObservableObject {
     public let identity: AppIdentity?
     public let appBuild: String
+    /// The person's home folder (tests use a temp one).
+    let home: String
+    @Published public private(set) var oldControllerPending = false
+    @Published public private(set) var keptOldController = false
+    @Published public private(set) var oldControllerProblem: String?
+    @Published public private(set) var removed = false
     @Published public private(set) var locationProblem: String?
     @Published public private(set) var registration: RegistrationState?
     @Published public private(set) var config: AppConfig?
@@ -75,9 +85,11 @@ public final class AppModel: ObservableObject {
     }
 
     /// The parts, given: the app's own (above), or a store alone for previews and tests (no agent).
-    init(identity: AppIdentity?, appBuild: String, link: AgentLink?, store: ConfigStore?, registrar: AgentRegistrar?) {
+    init(identity: AppIdentity?, appBuild: String, link: AgentLink?, store: ConfigStore?, registrar: AgentRegistrar?,
+         home: String = NSHomeDirectory()) {
         self.identity = identity
         self.appBuild = appBuild
+        self.home = home
         self.link = link
         self.store = store
         self.registrar = registrar
@@ -111,8 +123,12 @@ public final class AppModel: ObservableObject {
     // MARK: - Screens
 
     public var screen: Screen {
-        Self.screen(locationProblem: locationProblem, registration: registration, linkState: link?.state ?? .connecting,
-                    status: link?.status, shown: shown)
+        if locationProblem == nil {
+            if oldControllerPending { return .oldController }
+            if removed { return .removed }
+        }
+        return Self.screen(locationProblem: locationProblem, registration: registration,
+                           linkState: link?.state ?? .connecting, status: link?.status, shown: shown)
     }
 
     public nonisolated static func screen(locationProblem: String?, registration: RegistrationState?, linkState: AgentLink.State,
@@ -178,7 +194,7 @@ public final class AppModel: ObservableObject {
     /// Location check, registration, then the link. Debug builds also take `--unregister` (take the agent out of
     /// launchd and Login Items, then quit), for test sessions.
     public func launch(arguments: [String] = CommandLine.arguments, bundlePath: String = Bundle.main.bundlePath) async {
-        guard let identity, let registrar, let link else {
+        guard let identity, let registrar else {
             locationProblem = "Run DeckOut from its app bundle (make app)."
             log("not inside a DeckOut bundle")
             return
@@ -200,10 +216,62 @@ public final class AppModel: ObservableObject {
             return
         }
         store?.load()
+        // The hand-installed controller first: two controllers would both act on every press. (Debug runs that
+        // drive the app themselves skip the question.)
+        let automated = arguments.contains("--selftest") || arguments.contains("--snapshot")
+        if !automated, OldController.find(home: home) != nil {
+            oldControllerPending = true
+            log("found the hand-installed controller; asking before registering")
+            return
+        }
+        await register()
+    }
+
+    /// Registers the agent with macOS, then starts the link.
+    func register() async {
+        guard let registrar else { return }
         let state = await registrar.ensureRegistered()
         registration = state
         log("registration: \(state)")
-        if state == .enabled { link.start() }
+        if state == .enabled { link?.start() }
+    }
+
+    /// Retire It: launchd stops the old controller and its plist moves aside (kept); then DeckOut registers.
+    public func retireOldController(launchctl: ([String]) -> Int32 = OldController.runLaunchctl) async {
+        do {
+            try OldController.retire(home: home, launchctl: launchctl)
+        } catch {
+            oldControllerProblem = "It couldn't be moved aside: \(error.localizedDescription)"
+            return
+        }
+        oldControllerProblem = nil
+        oldControllerPending = false
+        log("retired the hand-installed controller")
+        await register()
+    }
+
+    /// Not Now: DeckOut registers its own anyway; the status line keeps saying both are installed.
+    public func keepOldController() async {
+        oldControllerPending = false
+        keptOldController = true
+        await register()
+    }
+
+    /// Stops the deck controller and takes it out of Login Items (the first step of removing DeckOut).
+    public func stopAndRemove() async {
+        guard let registrar else { return }
+        do {
+            try await registrar.unregister()
+            removed = true
+            log("agent unregistered (removal)")
+        } catch {
+            log("unregister failed: \(error.localizedDescription)")
+        }
+    }
+
+    public func startAgain() async {
+        removed = false
+        await register()
     }
 
     /// The app became active (back from System Settings, say): if the agent isn't registered and answering, look
@@ -307,6 +375,9 @@ public final class AppModel: ObservableObject {
     public var statusLine: (health: Health, text: String) {
         let line = Self.statusLine(screen: screen, linkState: link?.state ?? .connecting, status: link?.status,
                                    configProblem: configProblem)
+        if line.health != .problem, keptOldController {
+            return (.busy, "An older deck controller is also installed: presses may fire twice")
+        }
         if line.health == .good, let configNotice { return (.good, configNotice) }
         return line
     }
@@ -322,6 +393,8 @@ public final class AppModel: ObservableObject {
                                               configProblem: String?) -> (health: Health, text: String) {
         switch screen {
         case .moveToApplications: return (.problem, "Not in Applications")
+        case .oldController: return (.busy, "Waiting: another deck controller is installed")
+        case .removed: return (.problem, "Deck controller stopped and out of Login Items")
         case .needsApproval: return (.problem, "Deck controller switched off in Login Items")
         case .agentProblem: return (.problem, "Deck controller not running")
         case .starting: return (.busy, "Starting the deck controller…")

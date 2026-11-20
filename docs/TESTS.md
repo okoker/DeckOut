@@ -152,6 +152,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-145 | `MonitorListTests/placesFromScreens` | Monitors of the same model are told apart by where they sit: Left / Right (/ Middle), or Top / Bottom when stacked |
 | T-146 | `OldControllerTests/findsAndRetiresReversibly` | The hand-installed controller (`com.streamdeck.controller`) is found; retiring it boots it out of launchd and moves its plist aside (kept for rollback), also when it wasn't running |
 | T-147 | `M1ddcTests/prefersTheBundledM1ddc` | The agent uses the app's own `m1ddc` (`Contents/Helpers/m1ddc`), else Homebrew's |
+| T-148 | `FirstRunTests/oldControllerComesFirst` | With the hand-installed controller there, DeckOut asks before registering its own (two would both act on every press): Not Now registers and keeps a warning in the status line; Retire It boots it out, moves its plist aside, then registers |
+| T-149 | `FirstRunTests/removalUnregisters` | Stop and Remove takes the agent out of launchd and Login Items and shows how to finish removing DeckOut; Start Again registers it again |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

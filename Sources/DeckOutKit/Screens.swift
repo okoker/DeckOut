@@ -124,3 +124,36 @@ struct StartingScreen: View {
         .background(StageBackground())
     }
 }
+
+struct OldControllerScreen: View {
+    let problem: String?
+    let retire: () -> Void
+    let keep: () -> Void
+
+    var body: some View {
+        MessageScreen(title: "Another deck controller is installed",
+                      message: "The deck controller installed by hand before DeckOut (StreamDeckController) also runs your decks. With both, every press would fire twice. Retire it to let DeckOut take over: it is stopped and its launch file is moved aside, so it can be put back; its program and your settings stay.") {
+            Image(systemName: "rectangle.2.swap").font(.system(size: 50, weight: .light)).foregroundStyle(.secondary)
+        } buttons: {
+            Button("Not Now", action: keep)
+            Button("Retire It", action: retire).keyboardShortcut(.defaultAction)
+        }
+        .overlay(alignment: .bottom) {
+            if let problem { Text(problem).font(.system(size: 12)).foregroundStyle(.red).padding(.bottom, 40) }
+        }
+    }
+}
+
+struct RemovedScreen: View {
+    let startAgain: () -> Void
+
+    var body: some View {
+        MessageScreen(title: "The deck controller is stopped",
+                      message: "DeckOut is out of Login Items and your decks have stopped. To remove DeckOut, quit it and drag it to the Bin; your settings stay in ~/.config/vsd. To use your decks again, start it.") {
+            Image(systemName: "stop.circle").font(.system(size: 50, weight: .light)).foregroundStyle(.secondary)
+        } buttons: {
+            Button("Quit DeckOut") { NSApp.terminate(nil) }
+            Button("Start Again", action: startAgain).keyboardShortcut(.defaultAction)
+        }
+    }
+}

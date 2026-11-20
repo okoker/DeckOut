@@ -56,6 +56,10 @@ Next free ID: BL-035
   New Preset… and Rename… still open, and ⌘Z in them only undoes typing; the command window stays open through an
   unplug. BL-022: Library on a key with a text icon, closed without a pick, leaves the key as it was; a picked symbol
   then Bold / Fill changes the key at once. BL-015: Edit → Undo is greyed with nothing to undo; after typing in a
-  field, ⌘Z undoes the typing. BL-007: a wide picture on an N3 key shows boxed on black, not squashed. Then delete
-  the backup `~/.config/vsd-dev.bak-2026-11-20` (the start-up icon cleanup removed exactly the 31 predicted files).
-  Run lines in `PROGRESS.md`.
+  field, ⌘Z undoes the typing. BL-007: a wide picture on an N3 key shows boxed on black, not squashed. BL-017: with
+  Lock Photo… open, overwrite the photo's file (same name) and the window shows the new picture without a relaunch.
+  BL-012: Make Executable on a script it can't change (someone else's, or on a read-only disk) says why under the
+  button. BL-014: a Shortcut made in the Shortcuts app while DeckOut is open shows in the Run a Shortcut picker
+  once DeckOut is back in front. Toolbar: Icon Only, its buttons level with the window's close / minimise / zoom
+  buttons, and no right-click Icon and Text menu. Then delete the backup `~/.config/vsd-dev.bak-2026-11-20` (the
+  start-up icon cleanup removed exactly the 31 predicted files). Run lines in `PROGRESS.md`.

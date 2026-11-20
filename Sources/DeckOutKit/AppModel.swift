@@ -296,9 +296,11 @@ public final class AppModel: ObservableObject {
     /// first and the link stopped, so the window says so at once and nothing (the not-answering recovery, coming back
     /// to the app, the window opening again) registers it again; only Start Again does. The unregister waits its
     /// turn: a step under way finishes first, then the link is stopped again (that step may have started it) and the
-    /// agent unregistered, last. Until that has run, `removing` keeps the window saying it's stopping.
+    /// agent unregistered, last. Until that has run, `removing` keeps the window saying it's stopping. Asked for
+    /// again while removed, it does nothing (Start Again clears removed, so a later removal works).
     public func stopAndRemove() async {
         guard let registrar else { return }
+        guard !removed else { return }      // a removal already asked for
         removed = true
         removing = true
         link?.stop()

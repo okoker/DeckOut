@@ -181,6 +181,35 @@ private final class HeldService: ServiceManaging, @unchecked Sendable {
     #expect(link.state != .connected && link.status == nil, "the link stays stopped")
 }
 
+@MainActor @Test func removalAskedForOnce() async throws {   // T-164
+    // Stop and Remove confirmed again while the first one's unregister is under way (held): the second does nothing,
+    // so macOS gets one unregister and the window says stopping until it lands. After Start Again, a removal works.
+    let home = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-home-\(UUID().uuidString)").path
+    let service = HeldService(.enabled)
+    let app = try model(home: home, service: service)
+    await app.launch(arguments: ["DeckOut"], bundlePath: "/Users/x/Applications/DeckOut Dev.app")
+    #expect(app.registration == .enabled)
+
+    service.hold()
+    let first = Task { await app.stopAndRemove() }
+    #expect(await until { service.heldCalls == 1 })
+    let second = Task { await app.stopAndRemove() }
+    try await Task.sleep(nanoseconds: 200_000_000)   // time for the second to queue or return
+    #expect(app.removing, "stopping until the first removal lands")
+
+    service.release()
+    await first.value
+    await second.value
+    #expect(service.log == ["unregister", "unregistered"], "one unregister")
+    #expect(!app.removing)
+    #expect(app.removalProblem == nil)
+
+    await app.startAgain()
+    await app.stopAndRemove()
+    #expect(service.log == ["unregister", "unregistered", "register", "unregister", "unregistered"])
+    #expect(app.removed && !app.removing)
+}
+
 @MainActor @Test func startAgainDropsAFailedRemoval() async throws {   // T-164
     // macOS refuses the removal's unregister: Settings says so. But when Start Again is pressed while that unregister
     // is still under way (held), the person no longer wants the removal: no problem is shown, and the agent is

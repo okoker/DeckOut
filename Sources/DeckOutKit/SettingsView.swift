@@ -61,7 +61,7 @@ struct GeneralSettings: View {
                     HStack {
                         Text("Starts at login and runs in the background.")
                         Spacer()
-                        Button("Stop and Remove…") { confirmingRemove = true }
+                        Button("Stop and Remove…") { confirmingRemove = true }.disabled(model.removed)
                     }
                 }
             } footer: {

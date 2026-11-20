@@ -13,8 +13,10 @@ until UAT. No signing. Downloads allowed: m1ddc source, Phosphor icons. Plans an
   minors are BL-006–BL-010. Plan 3 (editing) built on `deckout-3-editing` (from plan 2's branch): 152 tests, test
   session 3 (`--selftest` 12/12), fresh review fixed (I1–I3, M1, M7); minors BL-011–BL-015. Plan 4 (lock photo) built on
   `deckout-4-lock-photo`: 161 tests, session 4 (`--selftest` with a lock photo), review fixed (I1–I4, M2, M4);
-  minors BL-016–BL-019. Next: plan 5 (icons) on `deckout-5-icons`; its Phosphor files and plan 6's vendored m1ddc
-  sit uncommitted in the tree (Packaging/Resources/, Vendor/, scripts/phosphor-index.swift) until their branches. Downloads verified and parked in the session scratchpad:
+  minors BL-016–BL-019. Plan 5 (icons) built on
+  `deckout-5-icons`: 172 tests, session 5, review fixed (I1, I2, M1–M3, M8); minors BL-020–BL-023. Next: plan 6
+  (settings, monitors, first run) on `deckout-6-settings`; its vendored m1ddc and first pieces sit uncommitted in the
+  tree until that branch. Downloads verified and parked in the session scratchpad:
   Phosphor 2.1.2 (npm sha512 matched), m1ddc 1.3.1 (Homebrew's sha256 matched; 1.3.2 is a day old, not adopted).
 - The installed daemon is the plan 1 build, running; the dev app is `~/Applications/DeckOut Dev.app`, unregistered.
 
@@ -36,15 +38,27 @@ One launchd daemon drives the TreasLin N3 and the MiraBox N4 (DeckOut plan 1 bui
 app shell (plan 2) is built on a local branch: it registers its agent, checks signatures both ways, and shows the
 plugged-in deck as it is, live strip included; editing comes with plan 3.
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
+20/11/2026 — DeckOut plan 5 on `deckout-5-icons`: `swift test` green (new T-139–T-143), watched; test session 5: `--selftest` passed with a text and a symbol tile drawn by the real app's bundled library; the app recovered from KI-008 by itself. Not checked: the pickers by hand (owner, at UAT).
 20/11/2026 — DeckOut plan 4 on `deckout-4-lock-photo`: `swift test` 161/161 (new T-134–T-138), watched; test session 4: `--selftest` passed with a generated lock photo moved while the N4 previewed it (agent: one decode, 17–33 ms per preview), Done back to keys, all undone; real-window snapshot of photo mode. Not checked: real drag / pinch / scroll (owner, at UAT).
 20/11/2026 — DeckOut plan 3 on `deckout-3-editing`: `swift test` 152/152 (new T-119–T-133), watched; test session 3 on this Mac without the owner: `--selftest` 12/12 against the live dev agent (key set and saved, Test ran `echo` in the agent, preset made live then deleted, brightness drag one undo, all undone), the app recovered from KI-008 by itself, update restart; real-window snapshots of the editors. Not checked: clicks, typing, focus (owner, at UAT).
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- DeckOut plan 5, icons (`docs/superpowers/plans/2026-11-19-deckout-5-icons.md`), then plan 6, then UAT.
-  Backlog: BL-002–BL-019.
+- DeckOut plan 6, settings / monitors / first run (`docs/superpowers/plans/2026-11-19-deckout-6-settings-first-run.md`),
+  then UAT. Backlog: BL-002–BL-023.
 
 ## Completed
+
+### 20/11/2026 — Keys can show text or a symbol on a colour, made in DeckOut
+- **Reference:** `docs/reference/app.md` (Icons); plan `docs/superpowers/plans/2026-11-19-deckout-5-icons.md`;
+  T-139–T-143; BL-020–BL-023.
+- **For a person:** besides an app's icon or your own picture, a key can show a word or two (wrapped, sized to fit)
+  or one of 1,530 symbols, on one of ten colours, with the text colour picked to read well. The key remembers how its
+  icon was made, so you can change the words or the colour later.
+- **Decision (owner, 19/11/2026):** the Phosphor library (MIT). (CL calls:) ten swatches and Auto / White / Black
+  instead of a colour well; tiles drawn by the app, the agent still draws a file.
+- **Checked:** `swift test` green; test session 5 (run line above). A fresh reviewer found symbols drawn off-centre
+  and long text going unreadable, plus a typo in a tile able to stop the agent loading the file: all fixed test-first.
 
 ### 20/11/2026 — The N4's lock photo is chosen, moved and zoomed in DeckOut, live on the deck
 - **Reference:** `docs/reference/app.md` (Lock photo mode); plan `docs/superpowers/plans/2026-11-19-deckout-4-lock-photo.md`;
@@ -89,22 +103,6 @@ plugged-in deck as it is, live strip included; editing comes with plan 3.
   with the new agent: a replaced, unregistered agent was killed on its first start and launchd lost the job; the
   app now unregisters and registers it afresh when it doesn't answer. A fresh reviewer found two important issues
   (a refused agent never reported; a vanished one still shown as running), both fixed test-first.
-
-### 19/11/2026 — The daemon is ready for the DeckOut app: presets, photo framing, new actions, no reload stall
-- **Reference:** design `docs/design/config_app.md` (phases 0–1; plan 1 built); `docs/REQUIREMENTS.md` (Configuration,
-  Actions, Daemon Behaviour); `docs/reference/n4.md`; `docs/reference/device_quirks.md` (media keys); T-061–T-094.
-- **For a person:** a reload no longer freezes the decks while the monitors are read, and a burst of saves redraws
-  once. Each deck can hold several layouts (presets), one of them live. Keys can open an app, a website, a file or
-  folder, run a script or one of Apple's Shortcuts, or play / pause / skip; volume and monitor keys take a step. The
-  lock photo can be zoomed and moved. Commands find Homebrew tools (your own shell's PATH). With no usable config the
-  daemon runs with blank decks and says why, instead of crash-looping. All set by hand in the JSON until the app exists.
-- **Decision (owner, 19/11/2026):** built natively on a branch, merged and pushed to GitHub (no release tag), then
-  installed as the daemon. The rename to DeckOut waits for plan 2. A reload's full redraw (75–158 ms) stays for now
-  as BL-005. The XPC service takes any caller running as the owner until plan 2's signing check; nothing starts it yet.
-- **Checked:** `swift test` 95/95; a fresh reviewer's three important findings fixed test-first. Device session with
-  the owner (run line in Current Status): every new action kind, presets, the framed lock photo, a blank start, the
-  layout kept when the file went missing. Next / previous track unverified (no track player here); the owner's
-  network script needs a terminal, so `script:` can't run it.
 
 ## History
 Older work: `old_progress/README.md`.

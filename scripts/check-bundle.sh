@@ -44,6 +44,13 @@ m1ddc="$app/Contents/Helpers/m1ddc"
 for res in Phosphor-Bold.ttf Phosphor-Fill.ttf phosphor-icons.json Phosphor-LICENSE.txt DeckOut-LICENSE.txt m1ddc-LICENSE.txt; do
     [ -f "$app/Contents/Resources/$res" ] || fail "missing resource $res"
 done
+# The debug runs' switches are compiled in only under DEBUG (BL-024). The release app must not carry
+# --show-old-controller, which sits in the same DEBUG block as --selftest and --snapshot. Only that name is checked: an
+# optimised build keeps strings of up to 15 bytes inside the machine code, where grep never sees them.
+if [ "$id" = io.github.okoker.deckout ]; then
+    ! grep -a -q -- --show-old-controller "$app/Contents/MacOS/DeckOut" \
+        || fail "the release app carries the debug switches (--show-old-controller found)"
+fi
 extra=$(ls -A "$app" | grep -vx Contents || true)
 [ -z "$extra" ] || fail "loose files in the bundle root: $extra"
 echo "OK: $app ($id, build $(pb CFBundleVersion "$info"))"

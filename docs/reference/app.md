@@ -154,7 +154,7 @@ the job definition it registered: a changed plist needs a new label.
   longer has it (if it does: "still running", nothing moved), and moves its plist to `….plist.retired-by-deckout`
   (kept for rollback; its program and the config stay), then registers DeckOut's; it runs off the main thread and
   its buttons wait while it does; a second Retire It leaves the kept copy alone; **Not Now** registers DeckOut's anyway and the status line
-  keeps warning that presses may fire twice. Automated debug runs (`--selftest`, `--snapshot`) skip the question.
+  keeps warning that presses may fire twice. Automated debug runs (`--selftest`, `--snapshot`) skip the question; a release build has no such runs and always asks.
 - **Removal:** Settings → General → Stop and Remove… (confirmed) stops the link and unregisters the agent (out of
   launchd and Login Items) and shows "The deck controller is stopped" with Quit and Start Again; then the person bins
   the app. Nothing registers it again (the not-answering recovery, coming back to the app, the window opening again)

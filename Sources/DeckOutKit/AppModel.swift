@@ -244,9 +244,13 @@ public final class AppModel: ObservableObject {
         }
         store?.load()
         // The hand-installed controller first: two controllers would both act on every press. (Debug runs that
-        // drive the app themselves skip the question.)
+        // drive the app themselves skip the question; a release build has no such runs.)
+        #if DEBUG
         let automated = (arguments.contains("--selftest") || arguments.contains("--snapshot"))
             && !arguments.contains("--show-old-controller")
+        #else
+        let automated = false
+        #endif
         if !automated, OldController.find(home: home) != nil {
             oldControllerPending = true
             log("found the hand-installed controller; asking before registering")

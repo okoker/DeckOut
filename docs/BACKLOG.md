@@ -65,9 +65,6 @@ Next free ID: BL-034
   Library and closing the popover leaves the starting star on the key (undoable). `IconRow.swift` (plan 5 review)
 - BL-023 [P2] [debt] The icons folder only grows: every colour tap or text edit writes a new `tile-<hash>.png`. Sweep
   files no config or undo step names (with BL-018). `IconFiles.swift` (plan 5 review)
-- BL-024 [P2] [debt] The `--selftest` / `--snapshot` skip of the old-controller question isn't inside `#if DEBUG`, so
-  a release build launched with those arguments skips it (no person does). Put it under DEBUG. `AppModel.swift`
-  (plan 6 review)
 - BL-025 [P2] [debt] `AppModel.m1ddcPath` repeats `BrightnessControl.findM1DDC`'s search. Make the DeckCore one
   public and use it. `AppModel+Settings.swift`, `BrightnessControl.swift` (plan 6 review)
 - BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three

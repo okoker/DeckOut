@@ -21,7 +21,7 @@ struct StripEditor: View {
             Divider().padding(.vertical, 2)
             FieldRow("Shows") {
                 Picker("", selection: Binding(get: { type }, set: { model.setStripType($0, block: control.id) })) {
-                    Text("An icon").tag(StripBlockType.picture)
+                    Text("An image").tag(StripBlockType.picture)
                     Divider()
                     Text("Internet latency").tag(StripBlockType.internet)
                     Text("CPU and memory").tag(StripBlockType.load)

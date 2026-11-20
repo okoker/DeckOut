@@ -247,7 +247,7 @@ struct SymbolPicker: View {
                 .frame(height: 260)
                 Text("\(names.count) symbols · Phosphor (MIT)").font(.system(size: 10.5)).foregroundStyle(.secondary)
             } else {
-                Text("The symbol library isn't in this build.").foregroundStyle(.secondary)
+                Text(SymbolLibrary.missingText).foregroundStyle(.secondary)
             }
         }
         .padding(12)

@@ -30,6 +30,9 @@ public final class SymbolLibrary {
     /// The app's own copy, from its bundle.
     public static let shared: SymbolLibrary? = Bundle.main.resourceURL.flatMap { SymbolLibrary(folder: $0) }
 
+    /// What the app says in a build without it: choosing Library, and the picker.
+    static let missingText = "The symbol library isn't in this build."
+
     public func code(for name: String) -> UInt32? { codes[name] }
 
     public func font(_ style: Style, size: CGFloat) -> CTFont {

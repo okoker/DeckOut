@@ -51,10 +51,16 @@ extension AppModel {
         }
     }
 
-    /// The tile drawn into the icons folder; nil, with `iconProblem` saying why, when there's nothing to draw.
+    /// The tile drawn into the icons folder; nil, with `iconProblem` saying why, when there's nothing to draw (a
+    /// symbol in a build without the library says that).
     private func drawTile(_ tile: IconTile, library: SymbolLibrary?, width: Int, height: Int) -> String? {
         guard let store else { return nil }
-        guard let path = IconFiles.tile(tile, library: library ?? symbolLibrary, folder: IconFiles.folder(forConfig: store.path),
+        let library = library ?? symbolLibrary
+        if tile.kind == .symbol, library == nil {
+            iconProblem = SymbolLibrary.missingText
+            return nil
+        }
+        guard let path = IconFiles.tile(tile, library: library, folder: IconFiles.folder(forConfig: store.path),
                                         width: width, height: height) else {
             iconProblem = tile.kind == .text ? "Type some text for the icon." : "That symbol couldn't be drawn."
             return nil

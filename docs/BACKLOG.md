@@ -68,9 +68,6 @@ Next free ID: BL-033
   slider). `ConfigStore.swift`, `PhotoStage.swift` (plan 4 review)
 - BL-020 [P2] [debt] The self-test checks that a tile's PNG exists and is in the app's config, not that the agent drew
   it (status or log), and each run leaves its tile PNGs in `icons/`. `SelfTest.swift` (plan 5 review)
-- BL-021 [P2] [bug] With the icon library missing from a build, choosing Library says "That symbol couldn't be drawn"
-  rather than that the library isn't there, and the picker's own message can't be reached. `IconRow.swift`
-  (plan 5 review)
 - BL-022 [P2] [bug] The symbol picker's Bold / Fill switch changes nothing until a symbol is clicked; choosing
   Library and closing the popover leaves the starting star on the key (undoable). `IconRow.swift` (plan 5 review)
 - BL-023 [P2] [debt] The icons folder only grows: every colour tap or text edit writes a new `tile-<hash>.png`. Sweep

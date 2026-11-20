@@ -106,3 +106,38 @@ import Testing
     model.setStripHost(" example.org\n", block: "1")
     #expect(model.stripBlock("1")?.host == "example.org")
 }
+
+// In a build without the symbol library, choosing Library on a key or a strip block says so and changes nothing
+// (BL-021); a text tile still draws. With the library, a name it doesn't have says the symbol couldn't be drawn.
+@MainActor @Test func missingLibrarySaysSo() throws {   // T-167
+    var config = AppConfig.empty
+    config.setButton(.n4, "key_1", ButtonConfig(action: "media_next"))
+    config.setStripBlock("1", StripBlockConfig(type: .internet, action: "url:https://example.com"))
+    let model = try previewModel(config, deck: .n4, selection: "key_1")
+    model.symbolLibrary = nil
+    let before = model.config
+    let star = IconTile(kind: .symbol, text: nil, symbol: "star", style: "fill", background: "#3A3A3C", foreground: nil)
+
+    model.setTile(star, button: "key_1", on: .n4)
+    #expect(model.config == before)
+    #expect(model.iconProblem == "The symbol library isn't in this build.")
+    model.iconProblem = nil
+    model.setStripTile(star, block: "1")
+    #expect(model.config == before)
+    #expect(model.iconProblem == "The symbol library isn't in this build.")
+
+    let text = IconTile(kind: .text, text: "Next", symbol: nil, style: nil, background: "#0A84FF", foreground: nil)
+    model.setTile(text, button: "key_1", on: .n4)
+    #expect(model.config?.button(.n4, "key_1")?.tile == text && model.iconProblem == nil)
+
+    let library = try #require(SymbolLibrary(folder: resourcesFolder))
+    let unknown = IconTile(kind: .symbol, text: nil, symbol: "no-such", style: "bold", background: "#000000", foreground: nil)
+    let withText = model.config
+    model.setTile(unknown, button: "key_1", on: .n4, library: library)
+    #expect(model.config == withText)
+    #expect(model.iconProblem == "That symbol couldn't be drawn.")
+    model.iconProblem = nil
+    model.setStripTile(unknown, block: "1", library: library)
+    #expect(model.config == withText)
+    #expect(model.iconProblem == "That symbol couldn't be drawn.")
+}

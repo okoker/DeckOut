@@ -30,6 +30,10 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var keptOldController = false
     @Published public private(set) var oldControllerProblem: String?
     @Published public private(set) var removed = false
+    /// External monitors as m1ddc lists them now, and where each sits.
+    @Published public internal(set) var monitors: [Monitor] = []
+    @Published public internal(set) var monitorPlaces: [UInt32: String] = [:]
+    @Published public internal(set) var monitorsNote: String?
     @Published public private(set) var locationProblem: String?
     @Published public private(set) var registration: RegistrationState?
     @Published public private(set) var config: AppConfig?

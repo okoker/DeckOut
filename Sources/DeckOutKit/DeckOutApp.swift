@@ -25,6 +25,10 @@ public struct DeckOutApp: App {
             CommandGroup(replacing: .undoRedo) { UndoCommands(model: model) }
         }
 
+        Settings {
+            SettingsView(model: model)
+        }
+
         #if DEBUG
         Window("Agent Status", id: "agent-status") {
             if let link = model.link {

@@ -41,7 +41,7 @@ m1ddc="$app/Contents/Helpers/m1ddc"
 [ -x "$m1ddc" ] || fail "no Contents/Helpers/m1ddc"
 [ "$(lipo -archs "$m1ddc")" = "arm64" ] || fail "m1ddc isn't arm64 only"
 [ "$(codesign -dv "$m1ddc" 2>&1 | sed -n 's/^Identifier=//p')" = "$id.m1ddc" ] || fail "m1ddc not signed as $id.m1ddc"
-for res in Phosphor-Bold.ttf Phosphor-Fill.ttf phosphor-icons.json Phosphor-LICENSE.txt; do
+for res in Phosphor-Bold.ttf Phosphor-Fill.ttf phosphor-icons.json Phosphor-LICENSE.txt DeckOut-LICENSE.txt m1ddc-LICENSE.txt; do
     [ -f "$app/Contents/Resources/$res" ] || fail "missing resource $res"
 done
 extra=$(ls -A "$app" | grep -vx Contents || true)

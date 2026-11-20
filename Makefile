@@ -39,6 +39,8 @@ app:
 	if [ -f Packaging/AppIcon.icns ]; then cp Packaging/AppIcon.icns "$(APP)/Contents/Resources/"; fi
 	cp Packaging/Resources/Phosphor-Bold.ttf Packaging/Resources/Phosphor-Fill.ttf Packaging/Resources/phosphor-icons.json \
 	    Packaging/Resources/Phosphor-LICENSE.txt "$(APP)/Contents/Resources/"
+	cp LICENSE "$(APP)/Contents/Resources/DeckOut-LICENSE.txt"
+	cp Vendor/m1ddc/LICENSE "$(APP)/Contents/Resources/m1ddc-LICENSE.txt"
 	mkdir -p "$(APP)/Contents/Helpers" build
 	clang -Wall -Werror -Wextra -fmodules -arch arm64 -mmacosx-version-min=15.0 -I Vendor/m1ddc/headers \
 	    -framework CoreDisplay Vendor/m1ddc/sources/*.m -o build/m1ddc

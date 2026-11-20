@@ -177,3 +177,36 @@ extension AppConfig {
         return make(n)
     }
 }
+
+// MARK: - Monitors
+
+extension AppConfig {
+    /// Adds the monitor to `displays` (at the end of the cycle order) or takes it out; none left → no `displays`.
+    public mutating func useMonitor(serial: String, name: String, _ use: Bool) {
+        var list = displays ?? []
+        if use {
+            guard !list.contains(where: { $0.serial == serial }) else { return }
+            list.append(DisplayConfig(name: name.isEmpty ? serial : name, serial: serial))
+        } else {
+            list.removeAll { $0.serial == serial }
+        }
+        displays = list.isEmpty ? nil : list
+    }
+
+    /// Renames a monitor in place; an empty name changes nothing.
+    public mutating func renameMonitor(serial: String, to name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, var list = displays, let index = list.firstIndex(where: { $0.serial == serial }) else { return }
+        list[index] = DisplayConfig(name: trimmed, serial: serial)
+        displays = list
+    }
+
+    /// Moves a monitor one place earlier (up) or later in the cycle order.
+    public mutating func moveMonitor(serial: String, up: Bool) {
+        guard var list = displays, let index = list.firstIndex(where: { $0.serial == serial }) else { return }
+        let target = up ? index - 1 : index + 1
+        guard list.indices.contains(target) else { return }
+        list.swapAt(index, target)
+        displays = list
+    }
+}

@@ -89,8 +89,10 @@ private func centreHas(_ image: CGImage, where match: ((r: Int, g: Int, b: Int))
         IconTile(kind: .symbol, text: nil, symbol: "lightbulb", style: "fill", background: "#5E5CE6", foreground: nil),
         IconTile(kind: .symbol, text: nil, symbol: "music-notes", style: "bold", background: "#FA233B", foreground: nil),
         IconTile(kind: .text, text: "B", symbol: nil, style: nil, background: "#FFD60A", foreground: nil),
+        IconTile(kind: .text, text: "Standup with the design team", symbol: nil, style: nil, background: "#30D158", foreground: nil),
+        IconTile(kind: .symbol, text: nil, symbol: "play", style: "fill", background: "#3A3A3C", foreground: nil),
     ]
-    let ctx = try #require(CGContext(data: nil, width: 6 * 140, height: 140, bitsPerComponent: 8, bytesPerRow: 6 * 140 * 4,
+    let ctx = try #require(CGContext(data: nil, width: 8 * 140, height: 140, bitsPerComponent: 8, bytesPerRow: 8 * 140 * 4,
                                      space: CGColorSpace(name: CGColorSpace.sRGB)!,
                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
     for (i, tile) in tiles.enumerated() {
@@ -123,4 +125,73 @@ private func centreHas(_ image: CGImage, where match: ((r: Int, g: Int, b: Int))
     model.setTile(bad, button: "key_1", on: .n4, library: library)
     #expect(model.config?.button(.n4, "key_1")?.icon == nil)
     #expect(model.iconProblem != nil)
+}
+
+/// The drawn ink's bounding box: pixels clearly unlike the background (the image read once, as sRGB bytes).
+private func ink(_ image: CGImage, background bg: (r: Int, g: Int, b: Int)) -> CGRect {
+    let w = image.width, h = image.height
+    var bytes = [UInt8](repeating: 0, count: w * h * 4)
+    let ctx = CGContext(data: &bytes, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+    var minX = Int.max, minY = Int.max, maxX = -1, maxY = -1
+    for y in 0..<h {
+        for x in 0..<w {
+            let i = (y * w + x) * 4
+            if abs(Int(bytes[i]) - bg.r) > 60 || abs(Int(bytes[i + 1]) - bg.g) > 60 || abs(Int(bytes[i + 2]) - bg.b) > 60 {
+                minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+    }
+    return maxX < 0 ? .null : CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+}
+
+@Test func symbolsSitInTheMiddle() throws {   // T-142 (review I1)
+    let library = try #require(SymbolLibrary(folder: resourcesFolder))
+    for name in ["play", "caret-right", "skip-forward", "microphone", "pause"] {
+        for style in ["bold", "fill"] {
+            let tile = IconTile(kind: .symbol, text: nil, symbol: name, style: style, background: "#000000", foreground: nil)
+            let box = ink(try decode(try #require(TileRenderer.render(tile, library: library))), background: (0, 0, 0))
+            #expect(abs(box.midX - 128) <= 3, "\(name) \(style) centre x \(box.midX)")
+            #expect(abs(box.midY - 128) <= 6, "\(name) \(style) centre y \(box.midY)")
+        }
+    }
+}
+
+@Test func textWrapsStaysReadableAndCentred() throws {   // T-141 (review I2, M8)
+    func render(_ text: String) throws -> CGRect {
+        let tile = IconTile(kind: .text, text: text, symbol: nil, style: nil, background: "#000000", foreground: "#FFFFFF")
+        return ink(try decode(try #require(TileRenderer.render(tile, library: nil))), background: (0, 0, 0))
+    }
+    // A phrase wraps at its spaces instead of shrinking to a sliver.
+    let phrase = try render("Standup with the design team")
+    #expect(phrase.height >= 90, "wrapped onto lines: ink height \(phrase.height)")
+    #expect(phrase.minX >= 6 && phrase.maxX <= 250)
+    // Too long even wrapped: the smallest readable size, cut with an ellipsis, never clipped at the edges.
+    for long in [String(repeating: "W", count: 80), String(repeating: "word ", count: 40), "a\nb\nc\nd\ne"] {
+        let box = try render(long)
+        #expect(box.minX >= 6 && box.maxX <= 250 && box.minY >= 6 && box.maxY <= 250, "\(long.prefix(12)): \(box)")
+    }
+    // Pasted Windows line endings split like any other.
+    let crlf = try render("Stand\r\nup"), oneLine = try render("Standup")
+    #expect(crlf.height > oneLine.height)
+    // One capital sits in the middle, not high.
+    let a = try render("A")
+    #expect(abs(a.midY - 128) <= 4, "A centre y \(a.midY)")
+    #expect(abs(a.midX - 128) <= 3)
+}
+
+@Test func aBrokenTileDoesNotBreakTheConfig() throws {   // T-139 (review M3)
+    let json = #"{"decks":{"n4":{"brightness":75,"keys":{"key_1":{"action":"none","icon":"/i.png","tile":{"kind":"emoji"}}}}}}"#
+    let config = try AppConfig.parse(Data(json.utf8))
+    #expect(config.n4?.keys["key_1"]?.icon == "/i.png")
+    #expect(config.n4?.keys["key_1"]?.tile == nil)
+}
+
+@Test func defaultTextReadsWell() {   // T-143 (review M1)
+    #expect(IconRow.defaultText(.openApp("/System/Applications/Utilities/Activity Monitor.app")) == "Activity Monitor")
+    #expect(IconRow.defaultText(.nothing) == "Key")
+    #expect(IconRow.defaultText(.playPause) == "Play / Pause")
+    #expect(IconRow.defaultText(.openWebsite("https://www.github.com/okoker")) == "github.com")
 }

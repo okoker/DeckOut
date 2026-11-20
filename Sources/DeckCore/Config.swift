@@ -385,6 +385,18 @@ public struct ButtonConfig: Codable, Equatable {
         self.step = step
         self.tile = tile
     }
+
+    private enum CodingKeys: String, CodingKey { case action, icon, step, tile }
+
+    /// A `tile` that doesn't read (a hand-edit typo, a kind from a newer app) reads as none: the key still loads, and
+    /// so does the rest of the file.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        action = try c.decode(String.self, forKey: .action)
+        icon = try c.decodeIfPresent(String.self, forKey: .icon)
+        step = try c.decodeIfPresent(Int.self, forKey: .step)
+        tile = (try? c.decodeIfPresent(IconTile.self, forKey: .tile)) ?? nil
+    }
 }
 
 /// A key icon the app generated: text on a colour, or a symbol from its library on a colour (`#RRGGBB`).

@@ -114,7 +114,7 @@ struct IconRow: View {
                 }
             }
         }
-        FieldRow(tile.kind == .text ? "Text colour" : "Symbol") {
+        FieldRow(tile.kind == .text ? "Text colour" : "Symbol colour") {
             Picker("", selection: Binding(get: { tile.foreground ?? "auto" }, set: { value in
                 var changed = tile
                 changed.foreground = value == "auto" ? nil : value
@@ -143,6 +143,22 @@ struct IconRow: View {
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(rgb: 0x3B3B3E), lineWidth: 1.5).padding(-1))
     }
 
+    /// The text a new text icon starts with: what the key opens or does, by name (it wraps; it's never cut).
+    static func defaultText(_ choice: ActionChoice) -> String {
+        switch choice {
+        case .nothing: return "Key"
+        case .openApp(let path) where !path.isEmpty: return ActionNames.appName(path)
+        case .openFile(let path) where !path.isEmpty, .runScript(let path) where !path.isEmpty:
+            return ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+        case .openWebsite(let url):
+            if let host = URL(string: url)?.host { return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host }
+            return "Website"
+        case .runShortcut(let name) where !name.isEmpty: return name
+        case .keyboardShortcut(let keys) where !keys.isEmpty: return ActionNames.shortcutSymbols(keys)
+        default: return choice.kind(in: .key).title
+        }
+    }
+
     private func pick(_ new: Source) {
         switch new {
         case .app:
@@ -152,9 +168,7 @@ struct IconRow: View {
         case .image:
             chooseImage()
         case .text:
-            let words = ActionNames.summary(choice.action).detail ?? ActionNames.summary(choice.action).title
-            let text = String(words.prefix(14))
-            model.setTile(IconTile(kind: .text, text: text.isEmpty ? "Key" : text, symbol: nil, style: nil,
+            model.setTile(IconTile(kind: .text, text: Self.defaultText(choice), symbol: nil, style: nil,
                                    background: Self.swatches[0], foreground: nil), button: id, on: deck)
         case .library:
             model.setTile(IconTile(kind: .symbol, text: nil, symbol: "star", style: "fill", background: Self.swatches[9],

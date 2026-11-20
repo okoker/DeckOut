@@ -87,8 +87,10 @@ the job definition it registered: a changed plist needs a new label.
 - **Icons** ([App | Image | Text | Library], and No Icon): the app's own icon for Open App (rendered to a 256 px PNG
   in `<config folder>/icons/`, following the app unless you chose another icon); a picture you choose (decoded and
   saved as a PNG at most 512 px on a side in `icons/`; a file that isn't a picture is refused with a message); text
-  (up to three lines) or a library symbol on one of ten colours, drawn by the app as `icons/tile-<hash>.png` (256 px,
-  sRGB, white or near-black text by the background unless chosen) with the key's `tile` recording how, so it opens
+  (wrapped at spaces into up to three lines, as large as fits down to a readable minimum, then cut with an ellipsis;
+  a new one starts with the key's app, file or site name) or a library symbol (centred on its outline) on one of ten
+  colours, drawn by the app as `icons/tile-<hash>.png` (256 px, sRGB, white or near-black text by the background
+  unless chosen; a `tile` that doesn't read is ignored) with the key's `tile` recording how, so it opens
   for editing again; changing the key's action keeps it. The library is Phosphor 2.1.2 (1,530 symbols, Bold and
   Fill, MIT), searched in a popover. The preview is the key as the deck shows it.
 - **Strip blocks:** Internet latency (host, arrow threshold in ms, red after s), CPU and memory, Volume, a picture

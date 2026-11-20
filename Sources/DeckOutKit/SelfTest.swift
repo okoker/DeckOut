@@ -116,6 +116,7 @@ enum SelfTest {
         model.loadMonitors()
         for _ in 0..<20 where model.monitors.isEmpty { await wait(0.25) }
         check(!model.monitors.isEmpty, "monitors listed: \(model.monitors.map { model.monitorLabel($0) })")
+        check(model.monitors.allSatisfy { $0.answers == true }, "every monitor answered a brightness read")
 
         // Undo everything: the file is back, byte for byte.
         while store.canUndo { store.undo() }
@@ -124,6 +125,16 @@ enum SelfTest {
         let restored = try? ConfigFile.load(at: store.path).get()
         check(original.flatMap { try? AppConfig.parse($0) } == restored, "every change undone: the config is as it was")
         check(model.link?.status?.configProblem == nil, "the agent loaded every save")
+
+        // Removal stays removed: Stop and Remove, wait past the not-answering deadline, come back to the app; launchd
+        // must have no DeckOut job.
+        await model.stopAndRemove()
+        await wait(13)
+        await model.becameActive()
+        await wait(2)
+        let label = model.identity?.agentLabel ?? ""
+        check(OldController.runLaunchctl(["print", "gui/\(getuid())/\(label)"]) != 0, "removed and still removed after 15 s")
+        check(model.screen == .removed, "the window says it's stopped")
         return ok
     }
 }

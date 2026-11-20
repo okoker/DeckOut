@@ -62,6 +62,18 @@ enum SelfTest {
         check(result?.stdout == "deckout-selftest\n" && result?.exitStatus == 0,
               "Test ran it in the agent: \(result.map { "exit \($0.exitStatus.map(String.init) ?? "–"), \($0.stdout.debugDescription)" } ?? "no answer")")
 
+        // Icons: a text tile, then a library symbol (the app's own fonts), on the same key.
+        model.setTile(IconTile(kind: .text, text: "Self\ntest", symbol: nil, style: nil, background: "#0F8A7E",
+                               foreground: nil), button: key, on: deck)
+        let textIcon = model.config?.button(deck, key)?.icon
+        check(textIcon.map { FileManager.default.fileExists(atPath: $0) } == true, "text tile drawn into icons/")
+        check(model.symbolLibrary?.names.count == 1530, "the app's symbol library loaded (\(model.symbolLibrary?.names.count ?? 0))")
+        model.setTile(IconTile(kind: .symbol, text: nil, symbol: "terminal-window", style: "fill", background: "#3A3A3C",
+                               foreground: nil), button: key, on: deck)
+        check(model.config?.button(deck, key)?.tile?.symbol == "terminal-window" && model.config?.button(deck, key)?.icon != textIcon,
+              "symbol tile on the key")
+        await wait(0.5)
+
         // Presets: new (live), switch back, delete it.
         let before = model.livePreset
         let made = model.newPreset()

@@ -64,23 +64,52 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
     }
     try ConfigFile.save(config(active: "Work"), to: path)
     nonisolated(unsafe) let agent = Agent(configPath: path, environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]))
-    nonisolated(unsafe) var pushes = 0
-    agent.onLiveStripChange = { pushes += 1 }
 
     let internet = Data([0xFF, 0xD8, 0x01]), volume = Data([0xFF, 0xD8, 0x04])
     let strip = await onMain { done in
-        agent.receiveLiveImage(.internet, internet)
-        agent.receiveLiveImage(.volume, volume)
+        agent.receiveLiveImages([.internet: internet, .volume: volume])
         done(agent.liveStrip())
     }
     #expect(strip.images == ["1": internet, "3": internet, "4": volume])
-    #expect(pushes == 2)
 
     // Another preset goes live: only its live blocks keep an image (none yet for its load block).
     try ConfigFile.save(config(active: "Music"), to: path)
     let _: ReloadResult = await onMain { done in agent.reload(completion: done) }
     let after = await onMain { done in done(agent.liveStrip()) }
     #expect(after.images.isEmpty)
+}
+
+@Test func aRedrawPushesTheLiveStripOnce() async throws {             // T-163
+    // A redraw of an N4 with three live blocks hands the agent all three images at once: the app hears one push, not
+    // three (BL-009). A later reading of one block keeps the others' images.
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-redraw-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    let path = folder.appendingPathComponent("config.json").path
+    try ConfigFile.save(AppConfig(n4: N4Section(
+        brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+        presets: [N4Preset(name: "Work", keys: [:], strip: ["1": StripBlockConfig(type: .internet),
+                                                            "2": StripBlockConfig(type: .load),
+                                                            "4": StripBlockConfig(type: .volume)])],
+        activePreset: "Work")), to: path)
+    nonisolated(unsafe) let agent = Agent(configPath: path, environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]))
+    nonisolated(unsafe) var pushes = 0
+    agent.onLiveStripChange = { pushes += 1 }
+
+    let internet = Data([0xFF, 0xD8, 0x01]), load = Data([0xFF, 0xD8, 0x02]), volume = Data([0xFF, 0xD8, 0x04])
+    let drawn = await onMain { done in
+        agent.receiveLiveImages([.internet: internet, .load: load, .volume: volume])
+        done(agent.liveStrip())
+    }
+    #expect(drawn.images == ["1": internet, "2": load, "4": volume])
+    #expect(pushes == 1)
+
+    let louder = Data([0xFF, 0xD8, 0x05])
+    let after = await onMain { done in
+        agent.receiveLiveImages([.volume: louder])
+        done(agent.liveStrip())
+    }
+    #expect(after.images == ["1": internet, "2": load, "4": louder])
+    #expect(pushes == 2)
 }
 
 @Test func restartExitsAfterTheReply() async {                       // T-104

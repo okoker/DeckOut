@@ -71,8 +71,9 @@ public final class Daemon {
 
     /// Called after a deck connects or is removed.
     var onDecksChanged: (() -> Void)?
-    /// Called with each image drawn on a live strip block (the config app shows them in its drawing).
-    var onLiveImage: ((StripBlockType, Data) -> Void)?
+    /// Called once per redraw with the images just drawn on live strip blocks, one per block type (the config app
+    /// shows them in its drawing).
+    var onLiveImages: (([StripBlockType: Data]) -> Void)?
 
     /// The decks plugged in now.
     var connectedKinds: [DeckKind] { decks.connections.map { $0.model.kind } }
@@ -196,15 +197,17 @@ public final class Daemon {
         let model = connection.model
         let plan = LayoutPlan.slots(model: model, config: config)
         if model.clearsBeforeRedraw { connection.clearAll() }
+        var live: [StripBlockType: Data] = [:]
         for (slot, content) in plan.sorted(by: { $0.key < $1.key }) {
             var jpeg: Data?
             if case .strip(let type) = content {
                 jpeg = liveImage(type)
-                if let jpeg { onLiveImage?(type, jpeg) }
+                if let jpeg { live[type] = jpeg }
             }
             connection.draw(slot: slot, jpeg: jpeg ?? LayoutPlan.render(content, slot: slot, model: model))
         }
         connection.commit()
+        if !live.isEmpty { onLiveImages?(live) }
         let ms = Int(Date().timeIntervalSince(started) * 1000)
         print("Drew \(plan.count) slots on \(model.kind.rawValue) in \(ms) ms")
     }
@@ -384,7 +387,7 @@ public final class Daemon {
     /// Redraws only the slots showing `type`, on every deck that shows it.
     private func redrawLive(_ type: StripBlockType) {
         guard !livePaused, let jpeg = liveImage(type) else { return }   // never over the lock photo
-        onLiveImage?(type, jpeg)
+        onLiveImages?([type: jpeg])
         for connection in decks.connections {
             let slots = LayoutPlan.slots(model: connection.model, config: config)
                 .filter { $0.value == .strip(type) }.keys.sorted()

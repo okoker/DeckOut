@@ -219,8 +219,9 @@ install). Without either, all other features work — brightness actions log a w
   `restart` (replies, then exits 0.3 s later; launchd's KeepAlive starts the binary now in the bundle) and
   `liveStrip` (the images the N4's live strip blocks show, keyed by block, as drawn) and `requestAccessibility` (asks
   macOS to list the agent under Accessibility; `status` reports whether it's allowed); the app hears `statusChanged`
-  on deck connect / remove, reloads and environment reads, and `liveStripChanged` with each new live block image,
-  once it has asked for `status` on that connection (asking signs it up, so a peer XPC refuses hears nothing).
+  on deck connect / remove, reloads and environment reads, and `liveStripChanged` once per redraw that gives live
+  blocks new images, once it has asked for `status` on that connection (asking signs it up, so a peer XPC refuses
+  hears nothing; with no app signed up, neither is built).
   Payloads are JSON of DeckCore's types; a request that doesn't decode gets the error "bad request".
   Only DeckOut's own app may connect, checked by
   XPC before any call runs: signed with a Developer ID, a peer with the agent's own team id and the app's bundle id;

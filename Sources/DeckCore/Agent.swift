@@ -64,7 +64,7 @@ public protocol AgentControl: AnyObject {
     func requestAccessibility() -> Bool
     /// Fires on deck connect and remove, after each reload, and after each environment read.
     var onStatusChange: (() -> Void)? { get set }
-    /// Fires when a live strip block got a new image.
+    /// Fires once per redraw that gives live strip blocks new images.
     var onLiveStripChange: (() -> Void)? { get set }
 }
 
@@ -122,7 +122,7 @@ public final class Agent: AgentControl {
     /// (`--show-lock-photo`).
     public func start(showLockPhoto: Bool) {
         daemon.onDecksChanged = { [weak self] in self?.onStatusChange?() }
-        daemon.onLiveImage = { [weak self] type, jpeg in self?.receiveLiveImage(type, jpeg) }
+        daemon.onLiveImages = { [weak self] images in self?.receiveLiveImages(images) }
         refreshEnvironment { _ in }
         daemon.start()
         if showLockPhoto { daemon.showLockPhoto(config.n4?.lockPhoto) }
@@ -197,9 +197,10 @@ public final class Agent: AgentControl {
         return LiveStrip(images: images)
     }
 
-    /// A live block type was drawn with a new image (from the Daemon, on the main thread).
-    func receiveLiveImage(_ type: StripBlockType, _ jpeg: Data) {
-        liveImages[type] = jpeg
+    /// One redraw's new live block images, one per type (from the Daemon, on the main thread): the app hears one
+    /// change. Types not in it keep their last image.
+    func receiveLiveImages(_ images: [StripBlockType: Data]) {
+        liveImages.merge(images) { _, new in new }
         onLiveStripChange?()
     }
 

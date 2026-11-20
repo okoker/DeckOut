@@ -44,9 +44,6 @@ Next free ID: BL-033
 - BL-008 [P2] [bug] The app draws the config file on disk, not the one the agent loaded: after a hand edit without a
   reload, the drawing shows icons the deck doesn't. Plan 3's save-then-reload covers the app's own edits; for hand
   edits, show the agent's config (or its file's state) instead. `AppModel.swift` (plan 2 review)
-- BL-009 [P2] [debt] The agent JSON-encodes the whole live strip (~40 KB) on every live redraw, once per strip slot in
-  `drawAll`, even when no app is connected. Skip when there are no clients; push once per redraw. `AgentXPC.swift`,
-  `Daemon.swift` (plan 2 review)
 - BL-010 [P2] [debt] The app's registration work (the not-answering hook, Try Again, the re-check when the app becomes
   active) can interleave unregister / register calls. Serialise them (one task at a time). `AppModel.swift` (plan 2
   review)

@@ -167,6 +167,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-160 | `CommandEditorTests/multiLineFieldsShowSeveralLines` | A multi-line field shows several lines at the panel's width (the rounded-border style drew it on one line) |
 | T-161 | `CommandEditorTests/fieldsDoNotAutocorrect` | With macOS's "Correct spelling automatically" forced on (this process only), a field's editor (multi-line and single-line) doesn't autocorrect: commands, hosts and URLs stay as typed |
 | T-162 | `XPCTests/onlyAConnectionThatAskedForTheStatusHearsPushes` | A connection the agent has accepted, but that hasn't asked for the status, hears no push (XPC checks the app's signature on the first message, so a refused peer would otherwise get one); once it asks, the next push reaches it (BL-006) |
+| T-163 | `XPCTests/noPushIsBuiltWithoutAnApp`, `AgentTests/aRedrawPushesTheLiveStripOnce` | With no app signed up, a status or live-strip change builds nothing (the strip is ~40 KB of JSON); signed up, a change builds the strip once and pushes it. A redraw hands the agent all its live images in one go, so the app hears one change for an N4 with three live blocks, not three; a later reading of one block keeps the others' images (BL-009) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

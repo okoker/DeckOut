@@ -19,8 +19,14 @@ private final class StubControl: AgentControl, @unchecked Sendable {
     var restarted = false
     var heardRestart: (() -> Void)?
     var accessibilityRequests = 0
+    /// How many times the status and the live strip were built: once per ask, once per push.
+    let statusBuilds = Tally()
+    let liveStripBuilds = Tally()
 
-    func status() -> AgentStatus { statusValue }
+    func status() -> AgentStatus {
+        statusBuilds.add()
+        return statusValue
+    }
     func reload(completion: @escaping (ReloadResult) -> Void) { completion(reloadValue) }
     func test(_ request: TestRequest, completion: @escaping (ActionResult) -> Void) {
         received.append(request)
@@ -35,7 +41,10 @@ private final class StubControl: AgentControl, @unchecked Sendable {
         restarted = true
         heardRestart?()
     }
-    func liveStrip() -> LiveStrip { liveStripValue }
+    func liveStrip() -> LiveStrip {
+        liveStripBuilds.add()
+        return liveStripValue
+    }
     func requestAccessibility() -> Bool {
         accessibilityRequests += 1
         return false
@@ -244,6 +253,30 @@ private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
     #expect(decode(AgentStatus.self, pushed) == harness.stub.statusValue)
     // XPC delivers one connection's messages in the order sent: a strip push sent earlier would be here by now.
     #expect(strays.count == 0)
+}
+
+@Test func noPushIsBuiltWithoutAnApp() async {                       // T-163
+    // A live block redraws every few seconds and the strip is ~40 KB of JSON: with no app signed up, a change builds
+    // neither the strip nor the status (BL-009).
+    let spy = ClientSpy()
+    let harness = Harness(exporting: spy)
+    DispatchQueue.main.async {
+        harness.stub.onStatusChange?()
+        harness.stub.onLiveStripChange?()
+    }
+    let status: Data? = await harness.call { proxy, reply in proxy.status(reply: reply) }     // signs it up
+    #expect(status != nil)
+    // The reply was built on main behind the two changes, so they have run by now; it built the one status.
+    #expect(harness.stub.statusBuilds.count == 1)
+    #expect(harness.stub.liveStripBuilds.count == 0)
+
+    // Signed up: a change builds the strip once and pushes it.
+    let pushed: Data? = await harness.call { (_: AgentXPC, reply: @escaping (Data) -> Void) in
+        spy.heardStrip = reply
+        DispatchQueue.main.async { harness.stub.onLiveStripChange?() }
+    }
+    #expect(decode(LiveStrip.self, pushed) == harness.stub.liveStripValue)
+    #expect(harness.stub.liveStripBuilds.count == 1)
 }
 
 @Test func accessibilityRequestReachesTheAgent() async {            // T-124

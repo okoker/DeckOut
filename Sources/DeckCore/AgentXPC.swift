@@ -27,7 +27,7 @@ import Foundation
 @objc public protocol AgentClientXPC {
     /// `AgentStatus`, sent on deck connect and remove, after each reload and after each environment read.
     func statusChanged(_ status: Data)
-    /// `LiveStrip`, sent when a live strip block gets a new image.
+    /// `LiveStrip`, sent once per redraw that gives live strip blocks new images.
     func liveStripChanged(_ strip: Data)
 }
 
@@ -143,16 +143,18 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
 
     // MARK: - Private
 
-    /// On the main thread (where `onLiveStripChange` fires).
+    /// On the main thread (where `onLiveStripChange` fires). With no app to hear it, nothing is built.
     private func pushLiveStrip() {
+        guard !clients.isEmpty else { return }
         let strip = Self.encode(control.liveStrip())
         for client in clients {
             (client.remoteObjectProxyWithErrorHandler { _ in } as? AgentClientXPC)?.liveStripChanged(strip)
         }
     }
 
-    /// On the main thread (where `onStatusChange` fires).
+    /// On the main thread (where `onStatusChange` fires). With no app to hear it, nothing is built.
     private func pushStatus() {
+        guard !clients.isEmpty else { return }
         let status = Self.encode(control.status())
         for client in clients {
             (client.remoteObjectProxyWithErrorHandler { _ in } as? AgentClientXPC)?.statusChanged(status)

@@ -77,11 +77,11 @@ the job definition it registered: a changed plist needs a new label.
   less than a second apart are one undo step (KI-012); up to 200 steps. Undo / Redo are greyed out with nothing to
   undo / redo, but stay on once any field has been typed in, until it's left (macOS's begin / end editing
   notices): a greyed item would swallow ⌘Z, and a field has no ⌘Z of its own. Before each change the file is read again if it changed on disk (a hand
-  edit is built on, and the undo history starts again from it, with a notice in the status line); a file that
+  edit, or a swipe's preset switch saved by the agent, is built on, and the undo history starts again from it, with a notice in the status line); a file that
   doesn't load is never saved over, the status line says why, and it is read again before every change until it
   loads. A failed save is shown; the next change tries again. Coming back to the app picks up a hand edit too.
 - **Where edits land:** keys, N3 buttons and strip blocks in the live preset; knobs, brightness on the deck. A deck
-  with no section gets one on its first edit ("Default", brightness 75).
+  with no section gets one on its first edit ("Default", brightness 75; on the N4 a swipe set to `next_preset`).
 - **Actions** (`ActionChoice`): keys, N3 buttons, knob presses and strip taps offer Nothing; Open App, Open Website,
   Open File or Folder; Keyboard Shortcut, Run a Shortcut; Play / Pause, Next Track, Previous Track; Volume Up / Down,
   Mute; Monitor Brightness Up / Down, Switch Monitor; Run Script, Run Command. Knob turns offer Nothing, Volume and

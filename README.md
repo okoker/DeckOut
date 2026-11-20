@@ -217,7 +217,7 @@ Valid knob keys: `big`, `small_1`, `small_2`. Each has `rotate` and `press` sub-
 The N4 has its own section, `decks.n4`: `brightness`; `keys` `key_1`–`key_5` (top row) and `key_6`–`key_10` (bottom
 row), each with an `action` and optional `icon`; `knobs` `knob_1`–`knob_4` with `rotate` and `press`; `strip` blocks
 `"1"`–`"4"`, each with a `type` (`internet`, `load`, `volume`, `picture` with an `icon`, or `empty`) and an optional
-tap `action`; `swipe` with one `action`; and `lock_photo`. See `config.example.json`.
+tap `action`; `swipe` with one `action` (`next_preset` steps through the presets); and `lock_photo`. See `config.example.json`.
 
 A config from v1.0.0 — `brightness`, `buttons` and `knobs` at the top level, no `decks` — still loads as the N3 section.
 

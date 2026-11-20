@@ -123,6 +123,7 @@ public final class Agent: AgentControl {
     public func start(showLockPhoto: Bool) {
         daemon.onDecksChanged = { [weak self] in self?.onStatusChange?() }
         daemon.onLiveImages = { [weak self] images in self?.receiveLiveImages(images) }
+        daemon.onNextPreset = { [weak self] deck in self?.switchToNextPreset(deck) }
         refreshEnvironment { _ in }
         daemon.start()
         if showLockPhoto { daemon.showLockPhoto(config.n4?.lockPhoto) }
@@ -204,10 +205,48 @@ public final class Agent: AgentControl {
         onLiveStripChange?()
     }
 
+    // MARK: - Next preset
+
+    /// Makes `deck`'s next preset live (menu order, wrapping round) and saves it as the file's `active_preset`, so
+    /// the app and a restart follow (BL-033). The file is read fresh, so a hand edit not yet reloaded is built on; a
+    /// file that doesn't load is never saved over. One preset, or no section for the deck: nothing is written.
+    func switchToNextPreset(_ deck: DeckKind) {
+        let name = deck.rawValue.uppercased()
+        var fresh: AppConfig
+        switch ConfigFile.load(at: configPath) {
+        case .success(let loaded): fresh = loaded
+        case .failure(let error):
+            log("Next preset: \(error.description) — preset not changed")
+            return
+        }
+        let names = deck == .n4 ? fresh.n4?.presets.map(\.name) : fresh.n3?.presets.map(\.name)
+        let live = deck == .n4 ? fresh.n4?.active.name : fresh.n3?.active.name
+        guard let names, let live else {
+            log("Next preset: no \(name) in the config")
+            return
+        }
+        guard names.count > 1 else {
+            log("Next preset: \(name) has one preset, nothing to switch to")
+            return
+        }
+        let next = names[((names.firstIndex(of: live) ?? 0) + 1) % names.count]
+        if deck == .n4 { fresh.n4?.activePreset = next } else { fresh.n3?.activePreset = next }
+        do {
+            try ConfigFile.save(fresh, to: configPath)
+        } catch {
+            let why = (error as? ConfigFile.SaveError)?.description ?? error.localizedDescription
+            log("Next preset: couldn't save (\(why)) — preset not changed")
+            return
+        }
+        log("Next preset: \(name) \(live) → \(next)")
+        _ = reloadNow(reason: "next preset")
+    }
+
     // MARK: - Reload
 
     /// Re-read the config through the same security checks; on any failure keep the previous one.
-    private func reloadNow() -> ReloadResult {
+    /// `reason` names, in the one-line log, who asked for a reload that isn't from outside.
+    private func reloadNow(reason: String = "from the app") -> ReloadResult {
         let verbose = verboseReloadPending
         verboseReloadPending = false
         if verbose { log("\nReloading config...") }
@@ -220,7 +259,7 @@ public final class Agent: AgentControl {
             config = newConfig
             configProblem = nil
             daemon.reload(newConfig, rebuildMonitors: rebuildMonitors)
-            log(verbose ? "Config reloaded." : "Config reloaded (from the app): \(Self.summary(newConfig))")
+            log(verbose ? "Config reloaded." : "Config reloaded (\(reason)): \(Self.summary(newConfig))")
             result = ReloadResult(loaded: true, problem: nil)
         case .failure(let error):
             log("\(error.description) — keeping previous config.")

@@ -45,12 +45,6 @@ Next free ID: BL-035
   paused while the Mac is locked, cut off if it hangs. What's in the folder runs unattended, so the folder gets the
   config's checks (owned by the person, not writable by others). Design with a mockup first; touches the agent,
   which runs them. `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
-- BL-033 [P2] [feature] Switch the N4's preset by swiping its strip (owner, UAT 20/11/2026: today presets switch only
-  from the app's pull-down). The N4 reports a swipe with no direction (0x39, `REQUIREMENTS.md`, Touch strip), so a
-  swipe can only step to the next preset, wrapping round; it can't go left / right. The likely shape: a "Next Preset"
-  action the swipe (or any key) can take, run by the agent, which saves the new `active_preset` so the app shows it.
-  Presets already live where the agent can read them (design: Non-goals). `ActionDispatcher.swift`, `Daemon.swift`,
-  `ActionChoice.swift`
 - BL-034 [P1] [bug] Owner's hand-check of the 20/11/2026 fixes in the real app (build 261120.165253 or later); each
   is test-proven but not clicked. BL-031: in Edit in Window…, ⌘Z past the typing leaves the deck change behind it;
   New Preset… and Rename… still open, and ⌘Z in them only undoes typing; the command window stays open through an

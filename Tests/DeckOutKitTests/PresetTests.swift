@@ -158,3 +158,14 @@ private let twoPresets = AppConfig(n4: N4Section(
         }
     }
 }
+
+@Test func aNewN4SwipesThroughPresets() {   // T-192
+    // A new N4 section made by the app swipes through its presets (BL-033); a section that already exists is never
+    // given the swipe behind the person's back.
+    var fresh = AppConfig.empty
+    fresh.setBrightness(.n4, 50)
+    #expect(fresh.n4?.swipe == ActionConfig.nextPreset)
+    var existing = twoPresets
+    existing.setBrightness(.n4, 40)
+    #expect(existing.n4?.swipe == nil)
+}

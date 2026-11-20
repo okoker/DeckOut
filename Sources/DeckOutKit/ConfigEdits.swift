@@ -46,7 +46,7 @@ extension AppConfig {
         n4 = section
     }
 
-    static let newN4 = N4Section(brightness: 75, knobs: [:], swipe: nil, lockPhoto: nil,
+    static let newN4 = N4Section(brightness: 75, knobs: [:], swipe: .nextPreset, lockPhoto: nil,
                                  presets: [N4Preset(name: "Default", keys: [:], strip: [:])], activePreset: "Default")
     static let newN3 = N3Section(brightness: 75, knobs: [:], presets: [N3Preset(name: "Default", buttons: [:])],
                                  activePreset: "Default")

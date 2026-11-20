@@ -12,7 +12,7 @@ public final class Daemon {
     /// Key icons and picture blocks, rendered again only when a file's bytes change.
     private let slotImages = SlotImageCache()
     private var keepaliveTimer: Timer?
-    private let lockMonitor = LockMonitor()
+    private let lockMonitor: LockMonitor
 
     /// A lock photo framing shown on the N4 while unlocked: the config app's photo mode, or `--show-lock-photo`.
     /// Keys and knobs work as usual; live readings pause.
@@ -58,9 +58,11 @@ public final class Daemon {
     /// The user's shell environment, shared with every dispatcher; `refresh` is the owner's business.
     private let environment: ShellEnvironment
 
-    public init(config: AppConfig, environment: ShellEnvironment) {
+    /// `lockMonitor`: tests pass one with a fixed answer; the agent uses the session's.
+    init(config: AppConfig, environment: ShellEnvironment, lockMonitor: LockMonitor = LockMonitor()) {
         self.config = config
         self.environment = environment
+        self.lockMonitor = lockMonitor
         self.dispatcher = ActionDispatcher(config: config, brightness: nil, environment: environment)
     }
 
@@ -75,6 +77,8 @@ public final class Daemon {
     /// Called once per redraw with the images it made for live strip blocks, one per block type, whether they were
     /// sent or already showing (the config app shows them in its drawing).
     var onLiveImages: (([StripBlockType: Data]) -> Void)?
+    /// Called when a control set to `next_preset` is used (not while locked): the agent owns the file.
+    var onNextPreset: ((DeckKind) -> Void)?
 
     /// The decks plugged in now.
     var connectedKinds: [DeckKind] { decks.connections.map { $0.model.kind } }
@@ -403,7 +407,7 @@ public final class Daemon {
         dispatcher.execute(ResolvedAction(action: action, step: step), completion: completion)
     }
 
-    private func handle(_ kind: DeckKind, _ input: DeckInput) {
+    func handle(_ kind: DeckKind, _ input: DeckInput) {
         switch input {
         case .keyDown, .stripTap, .swipe: lockMonitor.recheck()     // don't trust a stale "unlocked"
         default: break
@@ -421,6 +425,10 @@ public final class Daemon {
             return
         }
         print("Input \(kind.rawValue) \(input) → \(resolved.action)\(step)")
+        if resolved.action == ActionConfig.nextPreset.action {
+            onNextPreset?(kind)
+            return
+        }
         dispatcher.execute(resolved)
     }
 }

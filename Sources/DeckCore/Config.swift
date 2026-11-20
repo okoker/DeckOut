@@ -455,6 +455,9 @@ public struct ActionConfig: Codable, Equatable {
     public var action: String
     public var step: Int?
 
+    /// Makes the deck's next preset live (BL-033): the daemon hands it to the agent, which saves `active_preset`.
+    public static let nextPreset = ActionConfig(action: "next_preset")
+
     public init(action: String, step: Int? = nil) {
         self.action = action
         self.step = step

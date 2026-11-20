@@ -49,6 +49,9 @@ the executable, else `~/.config/vsd/config.json`. Read at start-up and re-read o
 - **Saving (for the config app):** written atomically (a temp file in the same folder, then `rename`) at mode 0600,
   creating the folder at 0700 if needed. The first save over an existing file copies it to
   `config.json.before-app` once, so a rollback to the v1.0.0 daemon (which can't read presets) has the old file.
+- **Saving by the agent:** only for `next_preset` (see Actions). It reads the file fresh, through the same checks,
+  changes that deck's `active_preset` and nothing else, and saves it the same way. A file that doesn't load is never
+  saved over; with one preset, or no section for the deck, nothing is written.
 
 ### Structure
 Shared settings at the top; one section per deck under `decks`. Each deck holds its presets (the keys, and on the
@@ -103,7 +106,7 @@ deck. Full example: `config.example.json`.
 - **Strip block `type`:** `internet` (`host`, default `one.one.one.one`, also for an empty or blank one; `arrow_ms`, default 2, 0 or more; `timeout_s`, default 3, 0.1–60 — out-of-range numbers are refused at load),
   `load`, `volume`, `picture` (shows `icon`), `empty`. A tap runs the block's `action`. An unknown type makes the whole
   file invalid.
-- **`swipe.action`:** one action for a swipe on the strip. **`lock_photo`:** shown across the N4 while the Mac is locked.
+- **`swipe.action`:** one action for a swipe on the strip; `next_preset` steps through the presets. **`lock_photo`:** shown across the N4 while the Mac is locked.
   Either a path (filled and centred) or `{ "path", "zoom", "offset_x", "offset_y" }`: `zoom` 1–10 on top of the fill
   (outside that range the file is invalid), offsets as fractions of the 800×464 face (positive `offset_y` moves the
   photo down). The photo always covers the face: an offset that would show an edge is clamped. Written as the object.
@@ -133,6 +136,7 @@ deck. Full example: `config.example.json`.
 | `zr7_mute_toggle` | Toggle ZR7Player mute (interface TBD) |
 | `display_brightness` | Adjust external monitor brightness by ±step per tick (DDC/CI via m1ddc) |
 | `display_brightness_cycle` | Cycle brightness target: All → per-display → All (30 s auto-revert) |
+| `next_preset` | Make the deck's next preset live (menu order, wrapping round), saved as the config's `active_preset` so the app and a restart follow; with one preset, nothing. Meant for the N4's swipe (a new N4 from the app has it); not in the app's menus |
 | `none` | No action |
 
 A bad payload (`app:` without `.app`, a relative `open:`/`script:` path, a `url:` that isn't http(s), an empty
@@ -300,5 +304,4 @@ How it works: `docs/reference/app.md`. Contracts:
 ## Non-Goals (for now)
 - No CLI config tool
 - Hot-reload supported via SIGHUP (`killall -HUP StreamDeckController` for a hand install) or `DeckOutAgent --post-reload`
-- No switching presets from the deck itself: the live preset is the config's `active_preset`
 - No Windows/Linux support

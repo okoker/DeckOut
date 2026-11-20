@@ -55,7 +55,7 @@
         "3": { "type": "empty" },
         "4": { "type": "volume" }
       },
-      "swipe": { "action": "none" },
+      "swipe": { "action": "next_preset" },
       "lock_photo": "/Users/YOUR_NAME/.config/vsd/lock.jpg"
     }
   }

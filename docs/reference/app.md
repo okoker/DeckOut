@@ -156,8 +156,10 @@ the job definition it registered: a changed plist needs a new label.
 - **Removal:** Settings → General → Stop and Remove… (confirmed) stops the link and unregisters the agent (out of
   launchd and Login Items) and shows "The deck controller is stopped" with Quit and Start Again; then the person bins
   the app. Nothing registers it again (the not-answering recovery, coming back to the app, the window opening again)
-  until Start Again. The window shows it stopped at once; a registration step already under way finishes first, then
-  the link is stopped again and the agent unregistered, last. The config stays in `~/.config/vsd` (dev: `vsd-dev`).
+  until Start Again. The window shows it stopping at once ("Stopping the deck controller…", Quit and Start Again
+  disabled) until macOS has answered the unregister: a registration step already under way finishes first, then the
+  link is stopped again and the agent unregistered, last. If macOS refuses, Settings → General says so in red, unless
+  Start Again was pressed meanwhile. The config stays in `~/.config/vsd` (dev: `vsd-dev`).
   Not verified: what macOS does when the app is binned while still registered (Stop and Remove first).
 - Brightness actions with no monitor control say why: none set up (Settings → Monitors), or set up but unreachable
   (m1ddc missing, or no monitor answered).

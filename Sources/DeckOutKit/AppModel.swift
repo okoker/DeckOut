@@ -31,6 +31,9 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var oldControllerProblem: String?
     @Published public private(set) var retiring = false
     @Published public private(set) var removed = false
+    /// Stop and Remove's unregister hasn't run yet (waiting its turn, or macOS hasn't answered): the window says the
+    /// controller is stopping and its Quit and Start Again wait, so the agent isn't left registered.
+    @Published public private(set) var removing = false
     @Published public private(set) var removalProblem: String?
     /// External monitors as m1ddc lists them now, and where each sits.
     @Published public internal(set) var monitors: [Monitor] = []
@@ -293,10 +296,11 @@ public final class AppModel: ObservableObject {
     /// first and the link stopped, so the window says so at once and nothing (the not-answering recovery, coming back
     /// to the app, the window opening again) registers it again; only Start Again does. The unregister waits its
     /// turn: a step under way finishes first, then the link is stopped again (that step may have started it) and the
-    /// agent unregistered, last.
+    /// agent unregistered, last. Until that has run, `removing` keeps the window saying it's stopping.
     public func stopAndRemove() async {
         guard let registrar else { return }
         removed = true
+        removing = true
         link?.stop()
         await inTurn {
             self.link?.stop()
@@ -305,9 +309,13 @@ public final class AppModel: ObservableObject {
                 self.removalProblem = nil
                 self.log("agent unregistered (removal)")
             } catch {
-                self.removalProblem = "macOS didn't take it out of Login Items: \(error.localizedDescription)"
+                // Start Again pressed meanwhile: the person no longer wants the removal.
+                if self.removed {
+                    self.removalProblem = "macOS didn't take it out of Login Items: \(error.localizedDescription)"
+                }
                 self.log("unregister failed: \(error.localizedDescription)")
             }
+            self.removing = false
         }
     }
 

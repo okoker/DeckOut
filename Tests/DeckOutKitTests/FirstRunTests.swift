@@ -12,16 +12,22 @@ private final class CountingService: ServiceManaging, @unchecked Sendable {
     func unregister() async throws { unregisters += 1; current = .notRegistered }
 }
 
+private struct Refused: LocalizedError { var errorDescription: String? { "Operation not permitted" } }
+
 /// A service whose unregister can be held until the test lets it go (T-164). The job goes out as unregister starts;
-/// the call returns when macOS is done. Every call is logged, in order.
+/// the call returns when macOS is done (or, failing, throws then). Every call is logged, in order.
 private final class HeldService: ServiceManaging, @unchecked Sendable {
     private let lock = NSLock()
     private var current: SMAppService.Status
+    private let failing: Bool
     private var holding = false
     private var held: [CheckedContinuation<Void, Never>] = []
     private var calls: [String] = []
 
-    init(_ status: SMAppService.Status) { current = status }
+    init(_ status: SMAppService.Status, failing: Bool = false) {
+        current = status
+        self.failing = failing
+    }
 
     var status: SMAppService.Status { lock.withLock { current } }
     var log: [String] { lock.withLock { calls } }
@@ -37,6 +43,7 @@ private final class HeldService: ServiceManaging, @unchecked Sendable {
             }
             if !wait { go.resume() }
         }
+        if failing { throw Refused() }
         lock.withLock { calls.append("unregistered") }
     }
 
@@ -140,8 +147,8 @@ private final class HeldService: ServiceManaging, @unchecked Sendable {
 
 @MainActor @Test func removalLandsLast() async throws {   // T-164
     // The agent stopped answering and its re-registration is under way (held inside its unregister) when the person
-    // clicks Stop and Remove: the window says removed at once, the removal's unregister waits its turn and lands
-    // last, and nothing registers the agent or restarts the link after it.
+    // clicks Stop and Remove: the window says removed at once, but stopping (Quit waits) until the removal's
+    // unregister has had its turn; it lands last, and nothing registers the agent or restarts the link after it.
     let home = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-home-\(UUID().uuidString)").path
     let service = HeldService(.enabled)
     let server = StubServer(agent: StubAgent(build: "t"))
@@ -161,6 +168,7 @@ private final class HeldService: ServiceManaging, @unchecked Sendable {
     #expect(app.screen == .removed)
     try await Task.sleep(nanoseconds: 200_000_000)   // time for a call that doesn't wait its turn to reach macOS
     #expect(service.log == ["unregister"], "the removal waits for the re-registration under way")
+    #expect(app.removing, "the window says it's stopping: quitting now would leave the agent registered")
 
     service.release()
     await notAnswering.value
@@ -168,8 +176,41 @@ private final class HeldService: ServiceManaging, @unchecked Sendable {
     #expect(service.log == ["unregister", "unregistered", "register", "unregister", "unregistered"])
     #expect(service.status == .notRegistered)
     #expect(app.removed)
+    #expect(!app.removing, "macOS has it out: the window says stopped")
     try await Task.sleep(nanoseconds: 300_000_000)
     #expect(link.state != .connected && link.status == nil, "the link stays stopped")
+}
+
+@MainActor @Test func startAgainDropsAFailedRemoval() async throws {   // T-164
+    // macOS refuses the removal's unregister: Settings says so. But when Start Again is pressed while that unregister
+    // is still under way (held), the person no longer wants the removal: no problem is shown, and the agent is
+    // registered again after it.
+    let home = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-home-\(UUID().uuidString)").path
+    let service = HeldService(.enabled, failing: true)
+    let app = try model(home: home, service: service)
+    await app.launch(arguments: ["DeckOut"], bundlePath: "/Users/x/Applications/DeckOut Dev.app")
+    #expect(app.registration == .enabled)
+
+    await app.stopAndRemove()
+    #expect(app.removalProblem?.contains("Operation not permitted") == true, "a failed removal says so")
+    #expect(!app.removing)
+    await app.startAgain()
+    #expect(app.removalProblem == nil)
+
+    service.hold()
+    let removal = Task { await app.stopAndRemove() }
+    #expect(await until { service.heldCalls == 1 })
+    #expect(app.removing)
+    let start = Task { await app.startAgain() }
+    #expect(await until { !app.removed })
+    service.release()
+    await removal.value
+    await start.value
+    #expect(service.log == ["unregister", "register", "unregister", "register"])
+    #expect(app.removalProblem == nil, "Start Again: the person no longer wants the removal")
+    #expect(!app.removing)
+    #expect(app.registration == .enabled)
+    #expect(app.screen != .removed)
 }
 
 @MainActor @Test func registrationStepsTakeTurns() async throws {   // T-164

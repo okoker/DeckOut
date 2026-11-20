@@ -37,6 +37,8 @@ import Testing
         ("approval", AnyView(NeedsApprovalScreen {})),
         ("problem", AnyView(AgentProblemScreen(message: AppModel.notAnsweringText) {})),
         ("starting", AnyView(StartingScreen())),
+        ("removed", AnyView(RemovedScreen(configFolder: "~/.config/vsd") {})),
+        ("stopping", AnyView(RemovedScreen(configFolder: "~/.config/vsd", stopping: true) {})),
     ]
     for (name, view) in screens {
         for dark in [false, true] {

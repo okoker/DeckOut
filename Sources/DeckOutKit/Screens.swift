@@ -147,15 +147,18 @@ struct OldControllerScreen: View {
 
 struct RemovedScreen: View {
     let configFolder: String
+    /// macOS doesn't have the agent out yet: quitting now would leave it registered.
+    var stopping = false
     let startAgain: () -> Void
 
     var body: some View {
-        MessageScreen(title: "The deck controller is stopped",
-                      message: "DeckOut is out of Login Items and your decks have stopped. To remove DeckOut, quit it and drag it to the Bin; your settings stay in \(configFolder). To use your decks again, start it.") {
+        MessageScreen(title: stopping ? "Stopping the deck controller…" : "The deck controller is stopped",
+                      message: stopping ? "DeckOut is taking it out of Login Items. Wait for it to finish before you quit."
+                                        : "DeckOut is out of Login Items and your decks have stopped. To remove DeckOut, quit it and drag it to the Bin; your settings stay in \(configFolder). To use your decks again, start it.") {
             Image(systemName: "stop.circle").font(.system(size: 50, weight: .light)).foregroundStyle(.secondary)
         } buttons: {
-            Button("Quit DeckOut") { NSApp.terminate(nil) }
-            Button("Start Again", action: startAgain).keyboardShortcut(.defaultAction)
+            Button("Quit DeckOut") { NSApp.terminate(nil) }.disabled(stopping)
+            Button("Start Again", action: startAgain).keyboardShortcut(.defaultAction).disabled(stopping)
         }
     }
 }

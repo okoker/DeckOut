@@ -2,7 +2,9 @@ import DeckCore
 import SwiftUI
 
 /// A strip block, laid out like a key: what a tap does, then what the block shows (an icon like a key's, a live
-/// reading, or nothing) and its settings. The two are independent: setting a tap never changes what it shows.
+/// reading, or nothing) and its settings. The two are independent, except that a block showing an app's own icon
+/// follows its tap to another app, as a key does (your image, text or symbol stays); setting a tap never puts an
+/// image on a block.
 struct StripEditor: View {
     @ObservedObject var model: AppModel
     let control: FaceControl

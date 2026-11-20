@@ -1,41 +1,51 @@
 # Progress
 
-## Session Handover — 20/11/2026 (early morning): ready for UAT
+## Session Handover — 20/11/2026 01:15: UAT found issues; fix them before going on
 
-**The unattended run is done: DeckOut phases 2–6 are built** on local branches, each from the one before
-(`deckout-2-app-shell` → `-3-editing` → `-4-lock-photo` → `-5-icons` → `-6-settings`); `deckout-6-settings` has it
-all (49 commits on top of main; 185 tests). Not pushed, not merged, not signed. Each plan: tests first, a live test
-session on this Mac, a fresh reviewer, fixes test-first. Plans and ledgers (every ruling made on the owner's behalf):
-`docs/superpowers/plans/2026-11-19-deckout-{2..6}-*.md`, `.superpowers/sdd/<plan>/progress.md`.
+### What was done
+- DeckOut phases 2–6 built unattended on chained local branches (`deckout-2-app-shell` → … → `deckout-6-settings`,
+  which has all: 50 commits over main, 185 tests). Not pushed, merged or signed. Rulings per plan:
+  `.superpowers/sdd/<plan>/progress.md`; deferred minors BL-006–BL-025.
+- UAT started 01:10: the owner opened `~/Applications/DeckOut Dev.app` (home folder, not `/Applications`) and clicked
+  **Retire It**. The owner found issues (list below) and asked to fix them before UAT goes on.
 
-### UAT (owner)
-- The app is `~/Applications/DeckOut Dev.app` (the dev variant: its own config `~/.config/vsd-dev/config.json`, a
-  copy of the live one; its own logs). The installed daemon is running as before (pid 40245).
-- Open it. It first asks about the hand-installed controller: **Retire It** stops it and moves its plist aside
-  (rollback: move `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` back and
-  `launchctl bootstrap gui/$(id -u) <plist>`), **Not Now** runs both (presses fire twice). macOS shows "background
-  item added".
-- Check by hand (the sessions couldn't): plug / unplug decks with the window open; key presses on both decks; every
-  editor (shortcut recorder, app / file / script pickers, Run a Shortcut, Text and Library icons: does the popover open
-  on the first click, does a multi-line text show its lines, ⌥↩ for a new line); presets (does Rename get focus;
-  the preset pop-up looked greyed in snapshots); ⌘Z / ⇧⌘Z, also inside a text field; Accessibility (Allow… on a
-  shortcut key); lock photo mode (drag, pinch, scroll feel; lock the Mac); Settings (monitors, names, order, the
-  Switch Monitor key; Read Again; Stop and Remove → Start Again).
-- After UAT: merge (merging `deckout-6-settings` brings all five), the first signed build (check which authority
-  issued the Developer ID certificate first: only builds after 01/02/2027 need a G2 one), release.
+### UAT issues (owner) — to fix first
+- (the owner's list goes here)
+
+### Environment state — the decks now run on DeckOut Dev
+- The hand install is retired: `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` (its
+  program is still in `~/Library/Application Support/StreamDeckController/`). The dev agent is registered and drives
+  both decks (`io.github.okoker.deckout.dev.agent`, debug build, ad hoc; config `~/.config/vsd-dev/config.json`, a copy
+  of the live one; log `~/Library/Logs/DeckOut Dev/agent.log`). Accessibility for it is probably not granted yet.
+- Rollback to the hand install: DeckOut Dev → Settings → Stop and Remove; then `mv` the `.retired-by-deckout` plist
+  back and `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.streamdeck.controller.plist`.
+- Test sessions change: the dev agent is now the live controller. `make install-dev` replaces what runs the owner's
+  decks (the app restarts the agent on the new build); there's no hand-install daemon to stop and restart unless
+  the owner rolls back. Ask the owner which way before the next session.
+
+### Gotchas
+- KI-008: installing over an unregistered dev agent then registering kills the first start; the app now unregisters
+  and registers afresh by itself after 10 s ("registered again" in its output). Reinstalling while registered is fine.
+- `--selftest` ends with Stop and Remove (it leaves the dev agent unregistered): don't run it while the owner uses
+  DeckOut Dev for their decks.
+- Tests: `ImageRenderer` draws AppKit controls as yellow placeholders (use `Snapshot.windowPNG`); read tile pixels as
+  sRGB bytes (`NSBitmapImageRep.colorAt` goes through generic RGB); `#expect` can't take mutating calls or deep
+  double-optionals; snapshot tests starve the main thread, so XPC / link waits are 10 s.
 
 ### Recorded only here (still open)
-- Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M2 `ConfigFile.save`
-  doesn't parse-check what it writes (plan 3 Task 1); M3 `showLockPhoto` isn't merged and re-reads the photo per call
-  (plan 4's drag); M6 `--show-lock-photo` ignores reloads; M8 each reload logs the whole config (plan 3 Task 2); M10
-  `NSXPCListener(machServiceName:)` with a name the job doesn't own may crash-loop under KeepAlive (unverified; the
-  plist and the argument come from one Makefile variable); M11 unverified: a `.zshrc` touching Documents / Desktop /
-  iCloud prompts in the daemon's name.
-- Older: `Daemon` / `DeckManager` have no teardown (only matters if the app ever embeds a `Daemon`; it doesn't); the
-  volume tile shows "0%" on outputs with no volume control; knob inputs skip the lock recheck (≤5 s window); a deck
-  reconnecting at the lock screen shows its layout ≤5 s before the photo; an unplug mid-redraw logs up to 15 warnings.
-- Signing: before the first signed build the owner checks which authority issued the Developer ID certificate. Not
-  urgent: only builds after 01/02/2027 would need a G2 certificate, and the team id (what the checks use) stays.
+- Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M6 `--show-lock-photo`
+  ignores reloads; M10 unverified: `NSXPCListener(machServiceName:)` with a name the job doesn't own may crash-loop
+  under KeepAlive; M11 unverified: a `.zshrc` touching Documents / Desktop / iCloud prompts in the agent's name.
+- Older: the volume tile shows "0%" on outputs with no volume control; knob inputs skip the lock recheck (≤5 s
+  window); a deck reconnecting at the lock screen shows its layout ≤5 s before the photo; an unplug mid-redraw logs
+  up to 15 warnings.
+- Signing: check which authority issued the Developer ID certificate before the first signed build (only builds after
+  01/02/2027 need a G2 one).
+
+### What's next
+1. Fix the UAT issues on a new branch from `deckout-6-settings` (e.g. `deckout-7-uat-fixes`), tests first.
+2. Back to UAT (checklist: plug / unplug; every editor; presets; ⌘Z in fields; Accessibility; lock photo gestures;
+   Settings), then merge, signing, release.
 
 ## Current Status
 One launchd daemon drives the TreasLin N3 and the MiraBox N4 (DeckOut plan 1 build, installed 19/11/2026). The DeckOut

@@ -36,7 +36,8 @@ the job definition it registered: a changed plist needs a new label.
 2. **Registration** (`AgentRegistrar`, `SMAppService.agent`): not registered → register; not found → unregister once,
    register, retry up to 10 × 1 s; switched off in Login Items → "Allow DeckOut in Login Items" with a button to the
    settings pane, re-checked whenever the app becomes active; other errors → "The deck controller isn't running" with
-   Try Again.
+   Try Again. The registration steps (launch, Try Again, the not-answering recovery, the re-check when the app becomes
+   active, Retire It / Not Now, Stop and Remove, Start Again) run one at a time, in the order they were asked for.
 3. **Link** (`AgentLink`): an XPC connection to the agent's Mach service, checked against its signature (by team when
    signed, by identifier when ad hoc). Asks `status` and `liveStrip`, hears `statusChanged` and `liveStripChanged`,
    reconnects when the agent goes away, waiting 1 s, then twice as long after each failed try, up to 30 s. While it
@@ -147,8 +148,9 @@ the job definition it registered: a changed plist needs a new label.
 - **Removal:** Settings → General → Stop and Remove… (confirmed) stops the link and unregisters the agent (out of
   launchd and Login Items) and shows "The deck controller is stopped" with Quit and Start Again; then the person bins
   the app. Nothing registers it again (the not-answering recovery, coming back to the app, the window opening again)
-  until Start Again. The config stays in `~/.config/vsd` (dev: `vsd-dev`). Not verified: what macOS does when the
-  app is binned while still registered (Stop and Remove first).
+  until Start Again. The window shows it stopped at once; a registration step already under way finishes first, then
+  the link is stopped again and the agent unregistered, last. The config stays in `~/.config/vsd` (dev: `vsd-dev`).
+  Not verified: what macOS does when the app is binned while still registered (Stop and Remove first).
 - Brightness actions with no monitor control say why: none set up (Settings → Monitors), or set up but unreachable
   (m1ddc missing, or no monitor answered).
 

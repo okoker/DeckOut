@@ -99,7 +99,7 @@ public final class AppModel: ObservableObject {
         self.link = link
         self.store = store
         self.registrar = registrar
-        link?.onNotAnswering = { [weak self] in await self?.registerAgain() }
+        link?.onNotAnswering = { [weak self] in await self?.tryAgain() }   // as Try Again does, in turn
         store?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &watchers)
         store?.$config.sink { [weak self] config in   // the store publishes on the main actor
             guard let self, config != self.config else { return }
@@ -197,6 +197,23 @@ public final class AppModel: ObservableObject {
 
     // MARK: - Launch and registration
 
+    /// The registration step asked for last. Each step waits for the one before it, so they run one at a time, in
+    /// the order they were asked for (BL-010): a re-registration under way finishes before Stop and Remove unregisters.
+    private var lastStep: Task<Void, Never>?
+
+    /// Runs `step` once every step asked for before it has run, and returns when it has run too. Only the public
+    /// entry points call this. A step never calls an entry point: it would wait for itself, and no registration step
+    /// would run again until the app quits.
+    private func inTurn(_ step: @escaping @MainActor () async -> Void) async {
+        let before = lastStep
+        let mine = Task {
+            await before?.value
+            await step()
+        }
+        lastStep = mine
+        await mine.value
+    }
+
     /// Location check, registration, then the link. Debug builds also take `--unregister` (take the agent out of
     /// launchd and Login Items, then quit), for test sessions.
     public func launch(arguments: [String] = CommandLine.arguments, bundlePath: String = Bundle.main.bundlePath) async {
@@ -232,11 +249,11 @@ public final class AppModel: ObservableObject {
             log("found the hand-installed controller; asking before registering")
             return
         }
-        await register()
+        await inTurn { await self.register() }
     }
 
-    /// Registers the agent with macOS, then starts the link. Never while removed.
-    func register() async {
+    /// Registers the agent with macOS, then starts the link. Never while removed. A step: only through `inTurn`.
+    private func register() async {
         guard let registrar, !removed else { return }
         let state = await registrar.ensureRegistered()
         registration = state
@@ -262,42 +279,48 @@ public final class AppModel: ObservableObject {
         oldControllerProblem = nil
         oldControllerPending = false
         log("retired the hand-installed controller")
-        await register()
+        await inTurn { await self.register() }
     }
 
     /// Not Now: DeckOut registers its own anyway; the status line keeps saying both are installed.
     public func keepOldController() async {
         oldControllerPending = false
         keptOldController = true
-        await register()
+        await inTurn { await self.register() }
     }
 
     /// Stops the deck controller and takes it out of Login Items (the first step of removing DeckOut). Removed is set
-    /// first and the link stopped, so nothing (the not-answering recovery, coming back to the app, the window opening
-    /// again) registers it again; only Start Again does.
+    /// first and the link stopped, so the window says so at once and nothing (the not-answering recovery, coming back
+    /// to the app, the window opening again) registers it again; only Start Again does. The unregister waits its
+    /// turn: a step under way finishes first, then the link is stopped again (that step may have started it) and the
+    /// agent unregistered, last.
     public func stopAndRemove() async {
         guard let registrar else { return }
         removed = true
         link?.stop()
-        do {
-            try await registrar.unregister()
-            removalProblem = nil
-            log("agent unregistered (removal)")
-        } catch {
-            removalProblem = "macOS didn't take it out of Login Items: \(error.localizedDescription)"
-            log("unregister failed: \(error.localizedDescription)")
+        await inTurn {
+            self.link?.stop()
+            do {
+                try await registrar.unregister()
+                self.removalProblem = nil
+                self.log("agent unregistered (removal)")
+            } catch {
+                self.removalProblem = "macOS didn't take it out of Login Items: \(error.localizedDescription)"
+                self.log("unregister failed: \(error.localizedDescription)")
+            }
         }
     }
 
     public func startAgain() async {
         removed = false
         removalProblem = nil
-        await register()
+        await inTurn { await self.register() }
     }
 
     /// The app became active (back from System Settings, say): if the agent isn't registered and answering, look
-    /// again. Switched off in Login Items while the window was open shows up here as needing approval.
-    public func recheckRegistration() async {
+    /// again. Switched off in Login Items while the window was open shows up here as needing approval. A step: only
+    /// through `inTurn`.
+    private func recheckRegistration() async {
         guard let registrar, registration != nil, !removed, !oldControllerPending, link?.state != .connected else { return }
         let state = await registrar.ensureRegistered()
         let was = registration
@@ -306,10 +329,12 @@ public final class AppModel: ObservableObject {
         if state == .enabled, was != .enabled { link?.start() }
     }
 
+    /// Try Again, and the link's not-answering hook: take the agent out and register it afresh.
     public func tryAgain() async {
-        await registerAgain()
+        await inTurn { await self.registerAgain() }
     }
 
+    /// A step: only through `inTurn`.
     private func registerAgain() async {
         guard let registrar, !removed else { return }
         let state = await registrar.registerAgain()
@@ -407,7 +432,7 @@ public final class AppModel: ObservableObject {
     /// down.
     public func becameActive() async {
         store?.externalChange()
-        await recheckRegistration()
+        await inTurn { await self.recheckRegistration() }
     }
 
     public nonisolated static func statusLine(screen: Screen, linkState: AgentLink.State, status: AgentStatus?,

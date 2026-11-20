@@ -109,13 +109,16 @@ the job definition it registered: a changed plist needs a new label.
 - **The deck** shows the photo across its 14 screens as they cut it: the app draws `LockPhoto.panel`, the same
   picture the agent slices. "Show hidden parts" draws the whole panel faintly under the screens. Drag to move (400 pt
   of drag = the face's width), pinch, scroll or the slider to zoom (100–400 % on the slider, up to 1000 % by pinch).
-- **Framing** is kept within its limits (`LockPhoto.clamped`): the photo always covers the face, and a drag past the
-  edge comes back at once. A drag or zoom gesture is one undo step; Reset centres it at 100 %; Remove Photo takes it
-  off (undoable).
-- **Choose…** copies the photo into the config folder as `lock-photo-<hash>.<ext>` (0600), after checking it's a
-  picture; the original can go.
-- **Show on the deck** (on by default): the real N4 shows the framing as it changes (at most every 50 ms, the last
-  one always), and goes back to its keys on Done; the agent decodes the photo once per preview.
+- **Framing** is kept within its limits (`LockPhoto.clamped`): the photo always covers the face. A drag applies each
+  move's change to where the photo is, so past the edge and back it follows at once. Moves (or zooms) less than a
+  second apart are one undo step (BL-019: by gesture); Reset centres it at 100 %; Remove Photo takes it off
+  (undoable). Scroll zoom is exponential and ignores momentum.
+- **Choose…** saves the photo in the config folder as `lock-photo-<hash>.jpg` (0600), at most 3200 px on a side,
+  read through ImageIO; a file over 100 MB or one that isn't a picture is refused with a message. The original can
+  go.
+- **Show on the deck** (on by default): the real N4 shows what the window shows, whatever changed it (a move, undo,
+  a hand edit, a reconnect), at most every 50 ms with the last one always sent; it goes back to its keys on Done, and
+  when the only deck goes away. The agent decodes the photo once per preview.
 
 ## Debug builds
 - `--unregister`: take the agent out of launchd and Login Items, then quit (test sessions).

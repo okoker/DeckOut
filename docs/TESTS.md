@@ -139,10 +139,10 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-132 | `PresetTests/presetOperations` | Presets from the toolbar: switch, New ("Preset N", blank, live), Duplicate ("Work copy", "copy 2", live), Rename (never empty or taken; stays live); a deck with no section gets one; brightness 0–100 per deck |
 | T-133 | `PresetTests/deleteLiveFallsBackAndUndoes` | The last preset can't be deleted; deleting the live one makes the first left live; undo brings it back, live again, on disk |
 | T-134 | `LockTests/panelIsWhatSlicesCut` | The app's drawing of the lock photo (the framed panel) is exactly what the deck's slices cut, each slice its rectangle turned 180° |
-| T-135 | `LockTests/offsetsClampToTheEdge` | The photo's offsets have limits at each zoom; clamped to them, the photo sits where it did, so a drag past the edge and back moves it at once (no dead zone); zoom stays 1–10 |
+| T-135 | `LockTests/offsetsClampToTheEdge`, `LockPhotoModeTests/dragBackMovesAtOnce` | The photo's offsets have limits at each zoom; clamped to them, the photo sits where it did, and a drag applies each move to where the photo is, so past the edge and back (in one drag or two) it moves at once; zoom stays 1–10 |
 | T-136 | `LockTests/previewDecodesOnce` | While the app's preview is up, the agent decodes the photo once, not per framing sent during a drag |
-| T-137 | `LockPhotoModeTests/choosingCopiesAndChecks` | A chosen lock photo is copied into the config folder (`lock-photo-<hash>`, 0600) and starts centred at zoom 1; a file that isn't a picture is refused with a message and the config keeps its photo |
-| T-138 | `LockPhotoModeTests/framingIsClampedAndUndoable` | Moving the photo is clamped at its edge and a whole drag is one undo step; zoom stays 1–10; Reset centres it; Remove takes it off and undo brings it back |
+| T-137 | `LockPhotoModeTests/choosingCopiesAndChecks`, `hugePhotosAreBounded` | A chosen lock photo is saved in the config folder (`lock-photo-<hash>.jpg`, 0600, at most 3200 px) and starts centred at zoom 1; a file that isn't a picture, or one over the size limit, is refused with a message and the config keeps its photo |
+| T-138 | `LockPhotoModeTests/framingIsClampedAndUndoable`, `theN4FollowsTheWindow` | Moving the photo is clamped at its edge and a whole drag is one undo step; zoom stays 1–10; Reset centres it; Remove takes it off and undo brings it back; the real N4 shows what the window shows after a move, undo and Remove, and is told to drop the photo when the only deck goes |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

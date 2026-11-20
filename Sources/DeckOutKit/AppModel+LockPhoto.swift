@@ -23,7 +23,7 @@ extension AppModel {
     /// Done: back to the keys; the N4 goes back to its layout.
     public func leavePhotoMode() {
         photoMode = false
-        link?.call({ proxy in proxy.showLockPhoto(nil) {} })
+        tellDeck(nil)
     }
 
     /// Copies the chosen photo into the config folder and starts it centred at zoom 1. False, with `photoProblem`
@@ -43,7 +43,6 @@ extension AppModel {
             config.ensureDeck(.n4)
             config.n4?.lockPhoto = LockPhotoConfig(path: path)
         }
-        sendPreview(force: true)
         return true
     }
 
@@ -55,18 +54,23 @@ extension AppModel {
                                      offsetX: offsetX ?? current.offsetX, offsetY: offsetY ?? current.offsetY)
         let framing = LockPhoto.clamped(wanted, photo: CGSize(width: image.width, height: image.height))
         store?.change(name, coalescing: true) { $0.n4?.lockPhoto = framing }
-        sendPreview()
+    }
+
+    /// Moves the photo by a drag's change since its last event, from where the photo is now: past the edge and
+    /// back, it follows at once (moving from the drag's start would leave a dead zone).
+    public func moveLockPhoto(by delta: CGSize) {
+        guard let current = lockPhoto else { return }
+        setFraming(offsetX: current.offsetX + delta.width / (LockPhoto.canvas.width / 2),
+                   offsetY: current.offsetY + delta.height / (LockPhoto.canvas.height / 2), name: "Move Lock Photo")
     }
 
     public func resetFraming() {
         guard let current = lockPhoto else { return }
         store?.change("Reset Lock Photo") { $0.n4?.lockPhoto = LockPhotoConfig(path: current.path) }
-        sendPreview(force: true)
     }
 
     public func removePhoto() {
         store?.change("Remove Lock Photo") { $0.n4?.lockPhoto = nil }
-        sendPreview(force: true)
     }
 
     /// Puts the current framing on the N4 (or takes it off), at most every 50 ms during a drag; the last one is
@@ -76,9 +80,7 @@ extension AppModel {
         let wait = 0.05 - Date().timeIntervalSince(lastPreviewSent)
         if force || wait <= 0 {
             lastPreviewSent = Date()
-            let framing = showOnDeck ? lockPhoto : nil
-            let data = framing.flatMap { try? JSONEncoder().encode($0) }
-            link?.call({ proxy in proxy.showLockPhoto(data) {} })
+            tellDeck(showOnDeck ? lockPhoto : nil)
         } else if !previewScheduled {
             previewScheduled = true
             DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
@@ -87,5 +89,12 @@ extension AppModel {
                 self.sendPreview(force: true)
             }
         }
+    }
+
+    /// Puts `framing` on the N4, or its keys back for nil, and remembers what it was told.
+    private func tellDeck(_ framing: LockPhotoConfig?) {
+        deckPreview = .some(framing)
+        let data = framing.flatMap { try? JSONEncoder().encode($0) }
+        link?.call({ proxy in proxy.showLockPhoto(data) {} })
     }
 }

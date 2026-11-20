@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-016
+Next free ID: BL-020
 
 ---
 
@@ -74,3 +74,15 @@ Next free ID: BL-016
 - BL-015 [P2] [debt] Small loose ends from the plan 3 review: the Undo / Redo menu items are never greyed out; each
   Allow… click schedules its own 30 status checks; a slider pause of over a second mid-drag makes two undo steps
   (bracket with `onEditingChanged` instead of a time gap). `Toolbar.swift`, `AppModel+Editing.swift`
+- BL-016 [P2] [bug] When the lock-photo preview's file can't be read, the agent tries to load it twice per draw
+  (cache miss, then the fallback load): two warnings per move and reload. Return early on a failed preview load.
+  `Daemon.swift` (`drawLockPhoto`), `LockPhoto.swift` (plan 4 review)
+- BL-017 [P2] [bug] The app's lock-photo cache is never cleared: a hand-set photo path (v1.0.0 string form) whose file
+  is replaced keeps showing, and clamping with, the old picture. Key the cache by path and modification date.
+  `AppModel.swift` (plan 4 review)
+- BL-018 [P2] [debt] Chosen lock photos (and pictures) are never deleted: every Choose leaves a file in the config
+  folder. Clean up at quit, keeping anything the config or the undo history still names. `IconFiles.swift`
+  (plan 4 review)
+- BL-019 [P2] [bug] Undo groups moves, zooms and slider steps by a one-second gap, not by gesture: a pause mid-drag
+  makes two steps, two quick drags one. Pass a per-gesture token through `ConfigStore.change` (with BL-015's
+  slider). `ConfigStore.swift`, `PhotoStage.swift` (plan 4 review)

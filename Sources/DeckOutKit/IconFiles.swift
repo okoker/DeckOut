@@ -25,11 +25,13 @@ public enum IconFiles {
     public enum ImportError: Error, Equatable, CustomStringConvertible {
         case notAnImage
         case notSaved
+        case tooLarge
 
         public var description: String {
             switch self {
             case .notAnImage: return "That file isn't a picture DeckOut can read."
             case .notSaved: return "The picture couldn't be saved in DeckOut's folder."
+            case .tooLarge: return "That file is too large for a lock photo (over 100 MB). Pick a smaller one."
             }
         }
     }
@@ -52,19 +54,27 @@ public enum IconFiles {
         return path
     }
 
-    /// The N4's lock photo, copied into the config folder as it is (the agent downscales on decode):
-    /// `<config folder>/lock-photo-<hash>.<ext>`. Throws for a file that isn't a picture.
-    public static func importLockPhoto(from source: String, configPath: String) throws -> String {
-        guard let data = FileManager.default.contents(atPath: source),
-              let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
-              CGImageSourceGetCount(imageSource) > 0,
-              CGImageSourceCreateThumbnailAtIndex(imageSource, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
-                                                                   kCGImageSourceThumbnailMaxPixelSize: 64] as CFDictionary) != nil
+    /// The N4's lock photo, saved in the config folder at most 3200 px on a side as a JPEG (the agent decodes it on
+    /// every lock; the face is 800 × 464, so zoom has room): `<config folder>/lock-photo-<hash>.jpg`. Read through
+    /// ImageIO, never whole into memory; a file over `maxBytes` is refused before it's read; one that isn't a
+    /// picture is refused.
+    public static func importLockPhoto(from source: String, configPath: String, maxBytes: Int = 100_000_000) throws -> String {
+        guard let size = (try? FileManager.default.attributesOfItem(atPath: source))?[.size] as? Int else {
+            throw ImportError.notAnImage
+        }
+        guard size <= maxBytes else { throw ImportError.tooLarge }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 3200,
+        ]
+        guard let imageSource = CGImageSourceCreateWithURL(URL(fileURLWithPath: source) as CFURL, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, options as CFDictionary),
+              let jpeg = NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.92])
         else { throw ImportError.notAnImage }
         let folder = (configPath as NSString).deletingLastPathComponent
-        let ext = (source as NSString).pathExtension.lowercased()
-        let path = folder + "/lock-photo-\(hash(data)).\(ext.isEmpty ? "jpg" : ext)"
-        guard write(data, to: path, folder: folder) else { throw ImportError.notSaved }
+        let path = folder + "/lock-photo-\(hash(jpeg)).jpg"
+        guard write(jpeg, to: path, folder: folder) else { throw ImportError.notSaved }
         return path
     }
 

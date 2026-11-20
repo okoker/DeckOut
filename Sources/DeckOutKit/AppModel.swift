@@ -37,6 +37,8 @@ public final class AppModel: ObservableObject {
     @Published public var photoProblem: String?
     /// The lock photo decoded for the drawing (by path; downscaled like the agent's).
     let photoCache = LockPhoto.PreviewCache()
+    /// What the N4 was last told: nil never; `.some(nil)` its keys; `.some(framing)` that photo.
+    @Published public internal(set) var deckPreview: LockPhotoConfig??
     var lastPreviewSent = Date.distantPast
     var previewScheduled = false
     /// The deck on screen; nil on "Plug in your deck" and "Pick a deck".
@@ -83,6 +85,13 @@ public final class AppModel: ObservableObject {
             guard let self, config != self.config else { return }
             self.config = config
             self.rebuildStaticImagesIfNeeded()
+            // Whatever changed the photo (a move, undo, a hand edit), the N4 shows what the window shows.
+            if self.photoMode { self.sendPreview() }
+        }.store(in: &watchers)
+        link?.$state.sink { [weak self] state in
+            // A reconnect drops the agent's preview (it ends with the old connection): put it back.
+            guard let self, state == .connected, self.photoMode else { return }
+            DispatchQueue.main.async { self.sendPreview(force: true) }
         }.store(in: &watchers)
         store?.$problem.sink { [weak self] in self?.configProblem = $0 }.store(in: &watchers)
         store?.$notice.sink { [weak self] in self?.configNotice = $0 }.store(in: &watchers)
@@ -144,7 +153,11 @@ public final class AppModel: ObservableObject {
     }
 
     private func followDecks() {
-        if case .deck(let deck) = Self.deckScreen(shown: shown, connected: connectedDecks) {
+        followDecks(connected: connectedDecks)
+    }
+
+    func followDecks(connected: Set<DeckKind>) {
+        if case .deck(let deck) = Self.deckScreen(shown: shown, connected: connected) {
             if deck != shown {
                 if photoMode { leavePhotoMode() }
                 shown = deck
@@ -152,7 +165,7 @@ public final class AppModel: ObservableObject {
                 rebuildStaticImages()
             }
         } else {
-            photoMode = false          // no N4 to preview on
+            if photoMode { leavePhotoMode() }   // tells the agent too: the N4 shows its keys when it's back
             shown = nil
             selection = nil
         }

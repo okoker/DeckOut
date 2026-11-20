@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import DeckCore
 import Foundation
 import SwiftUI
@@ -104,4 +105,72 @@ private func scenicPhoto() throws -> String {
         let png = try Snapshot.windowPNG(view, size: MainWindow.size, dark: dark)
         try png.write(to: snapshotFolder.appendingPathComponent("photo-\(hidden ? "hidden" : "plain")-\(dark ? "dark" : "light").png"))
     }
+}
+
+@MainActor @Test func dragBackMovesAtOnce() throws {   // T-135 (review I1)
+    // Within one drag: past the edge, then back 50 pt: the photo follows at once (no dead zone).
+    let model = try previewModel(n4Config(), deck: .n4, selection: nil)
+    #expect(model.choosePhoto(try photoFile(width: 1600, height: 400)))
+    model.moveLockPhoto(by: CGSize(width: 400, height: 0))
+    let atEdge: Double = model.lockPhoto?.offsetX ?? 0
+    #expect(abs(atEdge - 0.66) < 1e-6)
+    model.moveLockPhoto(by: CGSize(width: -50, height: 0))
+    let back: Double = model.lockPhoto?.offsetX ?? 0
+    let expected: Double = 0.66 - 50.0 / 400.0
+    #expect(abs(back - expected) < 1e-6)
+}
+
+/// What the N4 was last told, in words.
+@MainActor private func deck(_ model: AppModel) -> String {
+    switch model.deckPreview {
+    case .none: return "never told"
+    case .some(.none): return "keys"
+    case .some(.some(let framing)): return "photo at \(framing.offsetX)"
+    }
+}
+
+@MainActor private func window(_ model: AppModel) -> String {
+    model.lockPhoto.map { "photo at \($0.offsetX)" } ?? "keys"
+}
+
+@MainActor @Test func theN4FollowsTheWindow() async throws {   // T-138 (review I2, I3)
+    let model = try previewModel(n4Config(), deck: .n4, selection: nil)
+    let store = try #require(model.store)
+    #expect(model.choosePhoto(try photoFile(width: 1600, height: 400)))
+    model.enterPhotoMode()
+    model.moveLockPhoto(by: CGSize(width: 100, height: 0))
+    try await Task.sleep(nanoseconds: 120_000_000)
+    #expect(deck(model) == window(model))
+    #expect(deck(model) != "photo at 0.0")
+    // Undo: the N4 shows what the window shows.
+    store.undo()
+    try await Task.sleep(nanoseconds: 120_000_000)
+    #expect(window(model) == "photo at 0.0")
+    #expect(deck(model) == window(model))
+    // Remove, undo: the deck follows too.
+    model.removePhoto()
+    try await Task.sleep(nanoseconds: 120_000_000)
+    #expect(deck(model) == "keys")
+    store.undo()
+    try await Task.sleep(nanoseconds: 120_000_000)
+    #expect(deck(model) == window(model))
+    #expect(deck(model) != "keys")
+    // The only deck goes: photo mode ends and the N4 is told to drop the photo (it shows its keys on return).
+    model.followDecks(connected: [])
+    #expect(!model.photoMode)
+    #expect(deck(model) == "keys")
+}
+
+@MainActor @Test func hugePhotosAreBounded() throws {   // T-137 (review I4)
+    let model = try previewModel(n4Config(), deck: .n4, selection: nil)
+    let store = try #require(model.store)
+    // A big photo is saved downscaled (at most 3200 px), as a JPEG: the agent decodes it on every lock.
+    let path = try IconFiles.importLockPhoto(from: try photoFile(width: 4000, height: 3000), configPath: store.path)
+    #expect(path.hasSuffix(".jpg"))
+    let source = try #require(CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil))
+    let props = try #require(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+    #expect(props[kCGImagePropertyPixelWidth] as? Int == 3200)
+    // A file over the size limit is refused before it is read.
+    let big = try photoFile(width: 400, height: 300)
+    #expect(throws: IconFiles.ImportError.tooLarge) { try IconFiles.importLockPhoto(from: big, configPath: store.path, maxBytes: 100) }
 }

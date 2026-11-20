@@ -6,8 +6,10 @@ import SwiftUI
 /// pinch or scroll to zoom (mockup `docs/assets/config_app_lock_photo.html`).
 struct PhotoStage: View {
     @ObservedObject var model: AppModel
-    @State private var dragStart: LockPhotoConfig?
-    @State private var zoomStart: Double?
+    /// The drag's and pinch's last values: each event applies only its change since the last (no dead zone at the
+    /// edge; a cancelled gesture resets them).
+    @GestureState private var dragged: CGSize = .zero
+    @GestureState private var pinched: CGFloat = 1
 
     private let face = DeckFace.of(.n4)
 
@@ -33,7 +35,7 @@ struct PhotoStage: View {
             .frame(width: face.size.width, height: face.size.height)
             .contentShape(Rectangle())
             .gesture(drag.simultaneously(with: pinch))
-            .overlay(ScrollZoom { delta in zoom(by: 1 + delta * 0.01) })
+            .overlay(ScrollZoom { delta in zoom(by: exp(delta * 0.01)) })
             Text("What the N4 shows while your Mac is locked")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
@@ -54,26 +56,21 @@ struct PhotoStage: View {
     /// The face is drawn at half scale: a drag of 400 points is the whole face's width (offset 1.0).
     private var drag: some Gesture {
         DragGesture(minimumDistance: 1)
-            .onChanged { value in
-                guard let current = model.lockPhoto else { return }
-                let start = dragStart ?? current
-                if dragStart == nil { dragStart = current }
-                model.setFraming(offsetX: start.offsetX + value.translation.width / (LockPhoto.canvas.width / 2),
-                                 offsetY: start.offsetY + value.translation.height / (LockPhoto.canvas.height / 2),
-                                 name: "Move Lock Photo")
+            .updating($dragged) { value, last, _ in
+                let delta = CGSize(width: value.translation.width - last.width,
+                                   height: value.translation.height - last.height)
+                last = value.translation
+                DispatchQueue.main.async { model.moveLockPhoto(by: delta) }
             }
-            .onEnded { _ in dragStart = nil }
     }
 
     private var pinch: some Gesture {
         MagnifyGesture()
-            .onChanged { value in
-                guard let current = model.lockPhoto else { return }
-                let start = zoomStart ?? current.zoom
-                if zoomStart == nil { zoomStart = current.zoom }
-                model.setFraming(zoom: start * value.magnification, name: "Zoom Lock Photo")
+            .updating($pinched) { value, last, _ in
+                let factor = value.magnification / last
+                last = value.magnification
+                DispatchQueue.main.async { zoom(by: factor) }
             }
-            .onEnded { _ in zoomStart = nil }
     }
 
     private func zoom(by factor: Double) {
@@ -100,7 +97,10 @@ struct ScrollZoom: NSViewRepresentable {
             super.init(frame: .zero)
         }
         required init?(coder: NSCoder) { nil }
-        override func scrollWheel(with event: NSEvent) { zoom(Double(event.scrollingDeltaY)) }
+        override func scrollWheel(with event: NSEvent) {
+            guard event.momentumPhase.isEmpty else { return }       // no zooming on after the fingers lift
+            zoom(Double(event.scrollingDeltaY) * (event.hasPreciseScrollingDeltas ? 1 : 8))
+        }
         override func hitTest(_ point: NSPoint) -> NSView? {
             NSApp.currentEvent?.type == .scrollWheel ? self : nil
         }

@@ -1,7 +1,7 @@
 # DeckOut app — reference
 
 How the DeckOut app works now. Design and its reasons: `docs/design/config_app.md`. Build plans: plan 2 (the shell),
-plan 3 (editing).
+plan 3 (editing), plan 4 (lock photo).
 
 ## Bundle and identity
 - `make app` builds `build/DeckOut Dev.app` (dev variant, debug build); `make app VARIANT=release` builds
@@ -103,9 +103,25 @@ the job definition it registered: a changed plist needs a new label.
   Allow…: the agent asks macOS to list it, the Accessibility pane opens, and the app checks again every 2 s for a
   minute.
 
+## Lock photo mode (N4)
+- **Lock Photo…** in the toolbar (N4 on screen) switches the window into photo mode; Done (or switching deck,
+  or the N4 going) switches back. The preset menu is dimmed meanwhile.
+- **The deck** shows the photo across its 14 screens as they cut it: the app draws `LockPhoto.panel`, the same
+  picture the agent slices. "Show hidden parts" draws the whole panel faintly under the screens. Drag to move (400 pt
+  of drag = the face's width), pinch, scroll or the slider to zoom (100–400 % on the slider, up to 1000 % by pinch).
+- **Framing** is kept within its limits (`LockPhoto.clamped`): the photo always covers the face, and a drag past the
+  edge comes back at once. A drag or zoom gesture is one undo step; Reset centres it at 100 %; Remove Photo takes it
+  off (undoable).
+- **Choose…** copies the photo into the config folder as `lock-photo-<hash>.<ext>` (0600), after checking it's a
+  picture; the original can go.
+- **Show on the deck** (on by default): the real N4 shows the framing as it changes (at most every 50 ms, the last
+  one always), and goes back to its keys on Done; the agent decodes the photo once per preview.
+
 ## Debug builds
 - `--unregister`: take the agent out of launchd and Login Items, then quit (test sessions).
-- `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--after <s>]`: draw the real window to a PNG and quit.
+- `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--photo] [--after <s>]`: draw the real window to a
+  PNG and quit (`--photo`: in photo mode, without previewing on the N4).
 - `--selftest`: sets a key, runs Test (`echo`) in the agent, makes, shows and deletes a preset, drags brightness,
-  undoes everything and checks the config is back; prints `SELFTEST PASSED` or `FAILED` and quits.
+  chooses a generated lock photo and moves it with the N4 previewing it, undoes everything and checks the config is
+  back; prints `SELFTEST PASSED` or `FAILED` and quits.
 - Window "Agent Status": the status JSON and the link's state.

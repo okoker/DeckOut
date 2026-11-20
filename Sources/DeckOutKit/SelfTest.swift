@@ -18,6 +18,22 @@ enum SelfTest {
         }
     }
 
+    /// A 1200 × 800 picture with stripes, in the temp folder.
+    private static func testPhoto() -> String? {
+        let w = 1200, h = 800
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        for i in 0..<12 {
+            ctx.setFillColor(red: CGFloat(i) / 12, green: 0.4, blue: 1 - CGFloat(i) / 12, alpha: 1)
+            ctx.fill(CGRect(x: i * 100, y: 0, width: 100, height: h))
+        }
+        guard let image = ctx.makeImage(),
+              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { return nil }
+        let path = NSTemporaryDirectory() + "deckout-selftest-photo.png"
+        return (try? png.write(to: URL(fileURLWithPath: path))) != nil ? path : nil
+    }
+
     private static func run(_ model: AppModel) async -> Bool {
         var ok = true
         func check(_ condition: Bool, _ what: String) {
@@ -63,6 +79,25 @@ enum SelfTest {
         check(model.brightness == max(0, brightness - 20) || brightness < 5, "brightness dragged")
         store.undo()
         check(model.brightness == brightness, "one undo puts the brightness back")
+
+        // Lock photo (N4): choose a generated picture, preview it on the deck, drag it, Done.
+        if model.connectedDecks.contains(.n4) {
+            model.show(.n4)
+            await wait(0.5)
+            let photo = testPhoto()
+            check(photo.map { model.choosePhoto($0) } == true, "lock photo chosen and copied")
+            model.enterPhotoMode()
+            model.setFraming(zoom: 1.5, name: "Zoom Lock Photo")   // a 3:2 picture fills the face's width at zoom 1
+            for step in 1...10 {
+                model.setFraming(offsetX: Double(step) * 0.02, name: "Move Lock Photo")
+                await wait(0.03)
+            }
+            await wait(0.5)
+            check(model.lockPhoto?.offsetX ?? 0 > 0, "photo moved (offset \(model.lockPhoto?.offsetX ?? 0))")
+            model.leavePhotoMode()
+            check(!model.photoMode, "Done: back to the keys")
+            await wait(0.5)
+        }
 
         // Undo everything: the file is back, byte for byte.
         while store.canUndo { store.undo() }

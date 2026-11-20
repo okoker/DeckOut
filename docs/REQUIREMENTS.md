@@ -266,6 +266,8 @@ How it works: `docs/reference/app.md`. Contracts:
   they show + tap); presets (switch, new, duplicate, rename, delete) and brightness from the toolbar. Knob turns offer
   only stepped actions. The app asks for Accessibility when a shortcut or media key is set up; the agent never asks
   on its own
+- The N4's lock photo is chosen, moved and zoomed in the window's photo mode, previewed on the real N4 while editing;
+  the app keeps its own copy of the photo in the config folder
 - Every change in the app is saved whole and atomically, then the agent is asked to reload; undo puts back the whole
   previous config. A config that wouldn't load back is never written. A hand edit made while the app is open is built
   on, not overwritten; a hand edit that doesn't load is never saved over

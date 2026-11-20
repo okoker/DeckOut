@@ -81,7 +81,11 @@ the job definition it registered: a changed plist needs a new label.
   Mute; Monitor Brightness Up / Down, Switch Monitor; Run Script, Run Command. Knob turns offer Nothing, Volume and
   Monitor Brightness, with a step per click. ZR7 and unknown strings show as "set by hand" until replaced. Fields
   apply when finished (Return, leaving the field, a file chosen); the agent's own reason a string wouldn't run shows
-  under the fields.
+  under the fields. Multi-line fields (a command, a text icon) wrap and grow; Option-Return starts a new line. The
+  editor panel scrolls when its content is taller than the window.
+- **Run Command:** the command spans the panel (3–10 lines, then it scrolls). Edit in Window… applies what was
+  typed in the panel, then opens a 640 × 380 editor: monospaced, wrapped, and typed exactly (smart quotes, dashes,
+  text replacements and spelling fixes off whatever the macOS settings); ⌘Return saves, Esc cancels.
 - **Keyboard shortcuts** are recorded by pressing them; only keys in the agent's own table (`KeyNames`) are taken.
 - **Apple Shortcuts** come from `shortcuts list` (run by the app, as an argument array); a text field if none.
 - **Icons** ([App | Image | Text | Library], and No Icon): the app's own icon for Open App (rendered to a 256 px PNG
@@ -93,18 +97,24 @@ the job definition it registered: a changed plist needs a new label.
   unless chosen; a `tile` that doesn't read is ignored) with the key's `tile` recording how, so it opens
   for editing again; changing the key's action keeps it. The library is Phosphor 2.1.2 (1,530 symbols, Bold and
   Fill, MIT), searched in a popover. The preview is the key as the deck shows it.
-- **Strip blocks:** Internet latency (host, arrow threshold in ms, red after s), CPU and memory, Volume, a picture
-  (imported like a key's), or nothing; plus what a tap does.
+- **Strip blocks** are laid out like a key: **Tap** (the key's actions) first, then **Shows**: An image (the key's
+  [App | Image | Text | Library], App only for an Open App tap; text and symbols drawn at 352 × 224, 2× the block's
+  176 × 112, text sizes scaled to the shorter side, with the block's own `tile`), Internet latency (host, arrow
+  threshold in ms, red after s), CPU and memory, Volume, or Nothing. The two are independent: setting a tap never
+  changes what a block shows (a new block stays blank until its image is picked); a live reading drops the image.
 - **Files that are gone:** keys, presses and taps whose app, file, folder, script, icon or picture is missing get a
   red mark on the drawing and the reason in the editor; a script that isn't executable gets Make Executable (adds
   the owner's execute bit); a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS
   will ask the first time.
 - **Test** runs the action in the agent exactly as a press would (minus the lock check) and shows the exit status,
   output or error; commands stop at 30 s.
-- **Presets:** the pull-down lists the deck's presets (✓ on the live one), then New Preset ("Preset N", blank, live)
-  and Rename (edited in place in the toolbar; Return applies, Esc cancels, an empty or taken name beeps), Duplicate
-  ("<name> copy", live) and Delete (not the last; deleting the live one makes the first left live; ⌘Z brings it
-  back). Picking one makes it live on the deck.
+- **Presets:** the pull-down shows the live preset and never leaves the toolbar. Its menu (owner, 20/11/2026): the
+  live preset (✓), then Default (the first preset in the file, whatever it's called) when another is live; New
+  Preset…, Rename "‹live›"…, Duplicate "‹live›" ("<name> copy", live, no question), Delete "‹live›" (not the last;
+  deleting the live one makes the first left live; ⌘Z brings it back); a line; the other presets in file order.
+  New Preset… and Rename… open a sheet with the name ("Preset N" offered for a new one): Cancel (Esc) changes
+  nothing; Create / Rename (Return) is greyed out, with the reason, while the name is empty or taken. A new preset
+  is blank and live; Rename renames the preset the sheet was opened for. Picking one makes it live on the deck.
 - **Accessibility:** a keyboard shortcut or media key on a control, with the agent not allowed, shows a note with
   Allow…: the agent asks macOS to list it, the Accessibility pane opens, and the app checks again every 2 s for a
   minute.

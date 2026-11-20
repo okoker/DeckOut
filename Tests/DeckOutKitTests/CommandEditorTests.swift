@@ -56,3 +56,26 @@ let longCommand = #"osascript -e 'tell application "iTerm2" to create window wit
     let heights = textFields(in: host).map(\.frame.height)
     #expect(heights.max() ?? 0 > 40, "field heights \(heights)")   // one line is ~22 pt; three are ~45
 }
+
+// Fields hold commands, hosts, URLs and names: macOS's "Correct spelling automatically" must not change what's typed
+// (a "corrected" word in a command applies on Return and the key silently fails). The setting is forced on for this
+// process only (the volatile argument domain, as a launch argument would), so the test means the same on any Mac.
+@MainActor @Test func fieldsDoNotAutocorrect() throws {   // T-161 (review)
+    let defaults = UserDefaults.standard
+    let saved = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
+    defaults.setVolatileDomain(saved.merging(["NSAutomaticSpellingCorrectionEnabled": true]) { $1 },
+                               forName: UserDefaults.argumentDomain)
+    defer { defaults.setVolatileDomain(saved, forName: UserDefaults.argumentDomain) }
+    for multiline in [true, false] {
+        let field = CommitTextField(value: "osascript", placeholder: "", multiline: multiline, monospaced: multiline) { _ in }
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 264, height: 200), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        let host = NSHostingView(rootView: field.frame(width: 264))
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        let textField = try #require(textFields(in: host).first)
+        #expect(window.makeFirstResponder(textField))
+        let editor = try #require(window.firstResponder as? NSTextView, "the field editor is typing")
+        #expect(!editor.isAutomaticSpellingCorrectionEnabled, "multiline \(multiline)")
+    }
+}

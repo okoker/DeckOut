@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-030
+Next free ID: BL-033
 
 ---
 
@@ -57,10 +57,6 @@ Next free ID: BL-030
 - BL-010 [P2] [debt] The app's registration work (the not-answering hook, Try Again, the re-check when the app becomes
   active) can interleave unregister / register calls. Serialise them (one task at a time). `AppModel.swift` (plan 2
   review)
-- BL-011 [P2] [bug] Preset rename in the toolbar drops the typed name when focus leaves the field (Finder and Xcode
-  apply it), and it renames whichever preset is live when committed, so ⌘Z right after New Preset makes the rename
-  hit the previous preset. Apply on focus loss; rename the preset that was live when editing began. `Toolbar.swift`
-  (plan 3 review)
 - BL-012 [P2] [bug] Make Executable does nothing visible when it fails (e.g. a script the person doesn't own). Show
   why. `AppModel+Editing.swift` (plan 3 review)
 - BL-013 [P2] [bug] An emptied Host field on an internet strip block saves an empty host, and the block stays red,
@@ -100,19 +96,6 @@ Next free ID: BL-030
   (plan 6 review)
 - BL-025 [P2] [debt] `AppModel.m1ddcPath` repeats `BrightnessControl.findM1DDC`'s search. Make the DeckCore one
   public and use it. `AppModel+Settings.swift`, `BrightnessControl.swift` (plan 6 review)
-- BL-026 [P1] [bug] The Run Command field can't be read: beside its label in the 300 px editor it shows about 27
-  monospaced characters a line and at most 6 lines, so a long command (the strip's iTerm `osascript` one) scrolls
-  inside the field and can only be read by copying it out. Give it the editor's full width, more lines, and room to
-  read a long one. `ActionFields.swift`, `EditorKit.swift` (`CommitTextField`) (UAT, 20/11/2026)
-- BL-027 [P1] [feature] A strip block can't get an icon the way a key can: "A picture" takes only an image file (no
-  Text or Library tile), and the editor puts what the block shows above what a tap does, so adding a script or
-  command with its own icon to the strip isn't something a person finds. Give strip blocks the keys' icon choices,
-  drawn at the strip's 176 × 112, and lay the editor out like a key's. `StripEditor.swift`, `IconRow.swift`,
-  `TileRenderer.swift`, `StripBlockConfig` (UAT, 20/11/2026)
-- BL-028 [P1] [bug] After New Preset the preset pull-down vanished and there was no way back (the N4 was left live
-  on a blank "Preset 2"). Likely cause, not yet reproduced: New Preset and Rename swap the pull-down for a name
-  field in the toolbar that only goes away on Return, Esc or losing focus, and nothing tells a person so.
-  `Toolbar.swift` (`PresetMenu`) (UAT, 20/11/2026)
 - BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three
   live readings (internet, CPU and memory, volume) are written into the agent, so each new one needs code. Owner
   (20/11/2026): new kinds are not built into the app. They live in a folder people put them into, in a documented
@@ -121,3 +104,18 @@ Next free ID: BL-030
   paused while the Mac is locked, cut off if it hangs. What's in the folder runs unattended, so the folder gets the
   config's checks (owned by the person, not writable by others). Design with a mockup first; touches the agent,
   which runs them. `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
+- BL-030 [P2] [bug] A strip block's App image doesn't follow its tap's app: change an Open App tap from Notes to
+  Safari and the block keeps Notes' icon, still marked App ("The app's own icon"); a key follows. The owner's rule
+  is that a tap never changes what a block shows, so: either an image that already is the app's follows (as on a
+  key), or the caption changes. Owner's call. `IconRow.swift`, `AppModel+Editing.swift` (plan 7 review, 20/11/2026)
+- BL-031 [P2] [bug] Sheets and undo: ⌘Z in the command window or a preset sheet, with nothing left to undo in its
+  field, undoes the last deck change behind it (the command window can then close, its typing gone); the command
+  window also closes, losing its text, when the deck on screen changes (unplug, agent restart). Skip the store's
+  undo while a sheet is key (`NSApp.keyWindow?.sheetParent != nil`); host the command sheet on the main window like
+  the preset sheet. `Toolbar.swift` (`UndoCommands`), `CommandEditor.swift` (plan 7 review, 20/11/2026)
+- BL-032 [P2] [debt] Loose ends from the plan 7 review: Clear Key / Block / Knob sits under Test, not at the panel's
+  bottom (the scrolling panel collapses the spacer; the mockup has it at the bottom: a `GeometryReader` minimum
+  height); a strip block with no tap starts a text image as "Key"; Save in the command window is a plain button
+  (looks like Cancel); tests: T-153's `insertText` half can't fail (its flag checks carry it), T-156's hashes tie
+  the suite to this macOS's font drawing (an OS update can fail it with no code change), T-157 checks undo for one
+  edit only. `EditorPanel.swift`, `IconRow.swift`, `CommandEditor.swift` (plan 7 review, 20/11/2026)

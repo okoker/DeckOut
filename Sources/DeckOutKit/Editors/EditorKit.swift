@@ -65,6 +65,7 @@ struct CommitTextField: View {
             }
         }
         .font(monospaced ? .system(size: 11.5, design: .monospaced) : .system(size: 12.5))
+        .autocorrectionDisabled()      // commands, hosts, URLs, names: a "corrected" word breaks them silently
         .focused($focused)
         .onSubmit(apply)
         .onChange(of: focused) { _, isFocused in if !isFocused { apply() } }

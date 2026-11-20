@@ -43,17 +43,24 @@ extension AppModel {
 
     /// Draws the tile into the icons folder and puts it on the key, remembering how it was made.
     public func setTile(_ tile: IconTile, button id: String, on deck: DeckKind, library: SymbolLibrary? = nil) {
-        guard let store else { return }
-        let library = library ?? symbolLibrary
-        guard let path = IconFiles.tile(tile, library: library, folder: IconFiles.folder(forConfig: store.path)) else {
-            iconProblem = tile.kind == .text ? "Type some text for the key." : "That symbol couldn't be drawn."
-            return
-        }
-        iconProblem = nil
+        guard let store, let path = drawTile(tile, library: library, width: TileRenderer.size, height: TileRenderer.size)
+        else { return }
         store.change(tile.kind == .text ? "Change Text Icon" : "Change Symbol Icon") { config in
             let current = config.button(deck, id) ?? ButtonConfig(action: "none")
             config.setButton(deck, id, ButtonConfig(action: current.action, icon: path, step: current.step, tile: tile))
         }
+    }
+
+    /// The tile drawn into the icons folder; nil, with `iconProblem` saying why, when there's nothing to draw.
+    private func drawTile(_ tile: IconTile, library: SymbolLibrary?, width: Int, height: Int) -> String? {
+        guard let store else { return nil }
+        guard let path = IconFiles.tile(tile, library: library ?? symbolLibrary, folder: IconFiles.folder(forConfig: store.path),
+                                        width: width, height: height) else {
+            iconProblem = tile.kind == .text ? "Type some text for the icon." : "That symbol couldn't be drawn."
+            return nil
+        }
+        iconProblem = nil
+        return path
     }
 
     public func clearButton(_ id: String, on deck: DeckKind) {
@@ -176,7 +183,8 @@ extension AppModel {
                 return
             }
             config.setStripBlock(id, StripBlockConfig(type: type, action: old?.action, step: old?.step,
-                                                      icon: type == .picture ? old?.icon : nil))
+                                                      icon: type == .picture ? old?.icon : nil,
+                                                      tile: type == .picture ? old?.tile : nil))
         }
     }
 
@@ -192,6 +200,26 @@ extension AppModel {
         editStripBlock(id, "Change Tap") { block in
             block.action = choice == .nothing ? nil : choice.action
             block.step = choice.step
+        }
+    }
+
+    /// An image (or none) on a strip block: it shows an icon from now on, and keeps its tap.
+    public func setStripIcon(_ path: String?, block id: String) {
+        editStripBlock(id, "Change Icon") { block in
+            block.type = .picture
+            block.icon = path
+            block.tile = nil
+        }
+    }
+
+    /// Draws the tile at the strip's shape and puts it on the block, remembering how it was made.
+    public func setStripTile(_ tile: IconTile, block id: String, library: SymbolLibrary? = nil) {
+        guard let path = drawTile(tile, library: library, width: TileRenderer.stripWidth, height: TileRenderer.stripHeight)
+        else { return }
+        editStripBlock(id, tile.kind == .text ? "Change Text Icon" : "Change Symbol Icon") { block in
+            block.type = .picture
+            block.icon = path
+            block.tile = tile
         }
     }
 

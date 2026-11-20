@@ -288,3 +288,19 @@ private let presetsConfig = """
     let old = #"{"decks":{"n4":{"brightness":75,"keys":{"key_1":{"action":"none","icon":"/i.png"}}}}}"#
     #expect(try AppConfig.parse(Data(old.utf8)).n4?.keys["key_1"]?.tile == nil)
 }
+
+@Test func stripBlockKeepsItsTile() throws {                        // T-155
+    // A strip block's generated icon remembers how it was made, as a key's does; the agent only draws `icon`.
+    let tile = IconTile(kind: .text, text: "Weather", symbol: nil, style: nil, background: "#0A84FF", foreground: nil)
+    let block = StripBlockConfig(type: .picture, action: "shell:echo hi", icon: "/icons/tile-1.png", tile: tile)
+    let config = AppConfig(n4: N4Section(brightness: 75, knobs: [:], swipe: nil, lockPhoto: nil,
+                                         presets: [N4Preset(name: "Default", keys: [:], strip: ["3": block])],
+                                         activePreset: "Default"))
+    #expect(try AppConfig.parse(config.encoded()) == config)
+    // A tile that doesn't read (a hand-edit typo, a newer app) reads as none; the block and the file still load.
+    let odd = #"{"decks":{"n4":{"brightness":75,"strip":{"3":{"type":"picture","icon":"/i.png","action":"shell:echo hi","tile":{"kind":"sparkle"}}}}}}"#
+    #expect(try AppConfig.parse(Data(odd.utf8)).n4?.strip["3"] == StripBlockConfig(type: .picture, action: "shell:echo hi", icon: "/i.png"))
+    // A block without one (every file today) writes no `tile`.
+    let plain = String(decoding: try JSONEncoder().encode(StripBlockConfig(type: .picture, icon: "/i.png")), as: UTF8.self)
+    #expect(!plain.contains("tile"))
+}

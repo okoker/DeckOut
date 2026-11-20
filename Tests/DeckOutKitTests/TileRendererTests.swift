@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import DeckCore
 import Testing
 @testable import DeckOutKit
@@ -19,17 +20,37 @@ private func srgb(_ image: CGImage, _ x: CGFloat, _ y: CGFloat) -> (r: Int, g: I
     return (Int(bytes[i]), Int(bytes[i + 1]), Int(bytes[i + 2]))
 }
 
-/// Every pixel in a band along the edges is the background: nothing drawn is cut off.
+/// Every pixel in a band along the edges is the background: nothing drawn is cut off. Any shape of tile.
 private func edgesAreBackground(_ image: CGImage, _ bg: (r: Int, g: Int, b: Int), band: Int = 6) -> Bool {
-    for i in stride(from: 0, to: image.width, by: 4) {
-        for d in 0..<band {
-            for (x, y) in [(i, d), (i, image.height - 1 - d), (d, i), (image.width - 1 - d, i)] {
-                let p = srgb(image, CGFloat(x), CGFloat(y))
-                if abs(p.r - bg.r) > 12 || abs(p.g - bg.g) > 12 || abs(p.b - bg.b) > 12 { return false }
-            }
-        }
+    var points: [(Int, Int)] = []
+    for d in 0..<band {
+        for x in stride(from: 0, to: image.width, by: 4) { points += [(x, d), (x, image.height - 1 - d)] }
+        for y in stride(from: 0, to: image.height, by: 4) { points += [(d, y), (image.width - 1 - d, y)] }
+    }
+    for (x, y) in points {
+        let p = srgb(image, CGFloat(x), CGFloat(y))
+        if abs(p.r - bg.r) > 12 || abs(p.g - bg.g) > 12 || abs(p.b - bg.b) > 12 { return false }
     }
     return true
+}
+
+/// The box around every near-white pixel (decoded once); nil if there are none.
+private func whiteBounds(_ image: CGImage) -> CGRect? {
+    let w = image.width, h = image.height
+    var bytes = [UInt8](repeating: 0, count: w * h * 4)
+    let ctx = CGContext(data: &bytes, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+    var minX = w, minY = h, maxX = -1, maxY = -1
+    for y in 0..<h {
+        for x in 0..<w {
+            let i = (y * w + x) * 4
+            guard bytes[i] > 220, bytes[i + 1] > 220, bytes[i + 2] > 220 else { continue }
+            minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+        }
+    }
+    return maxX < 0 ? nil : CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
 }
 
 private func centreHas(_ image: CGImage, where match: ((r: Int, g: Int, b: Int)) -> Bool) -> Bool {
@@ -194,4 +215,26 @@ private func ink(_ image: CGImage, background bg: (r: Int, g: Int, b: Int)) -> C
     #expect(IconRow.defaultText(.nothing) == "Key")
     #expect(IconRow.defaultText(.playPause) == "Play / Pause")
     #expect(IconRow.defaultText(.openWebsite("https://www.github.com/okoker")) == "github.com")
+}
+
+@Test func stripTileFillsTheBlock() throws {   // T-156
+    let library = try #require(SymbolLibrary(folder: resourcesFolder))
+    #expect(TileRenderer.stripWidth == 352 && TileRenderer.stripHeight == 224)   // 2× the block's 176 × 112
+    let text = IconTile(kind: .text, text: "Network detail", symbol: nil, style: nil, background: "#0F8A7E", foreground: nil)
+    let widePNG = try #require(TileRenderer.render(text, library: nil, width: 352, height: 224))
+    let wide = try decode(widePNG)
+    #expect(wide.width == 352 && wide.height == 224)
+    #expect(edgesAreBackground(wide, (0x0F, 0x8A, 0x7E), band: 13), "nothing within 6 % of an edge")
+    // It uses the width: white text both left of x = 88 and right of x = 264.
+    let words = try #require(whiteBounds(wide))
+    #expect(words.minX < 88 && words.maxX > 264, "text spans \(words)")
+    // A symbol sits in the middle of the wide block.
+    let symbol = IconTile(kind: .symbol, text: nil, symbol: "cloud-sun", style: "fill", background: "#5E5CE6", foreground: nil)
+    let symbolPNG = try #require(TileRenderer.render(symbol, library: library, width: 352, height: 224))
+    let mark = try #require(whiteBounds(try decode(symbolPNG)))
+    #expect(abs(mark.midX - 176) <= 4 && abs(mark.midY - 112) <= 4, "symbol at \(mark)")
+    // Keys are untouched: the same bytes as before tiles had a size (hashes taken 20/11/2026, before the change).
+    func sha(_ data: Data?) -> String { data.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? "" }
+    #expect(sha(TileRenderer.render(text, library: library)) == "ac56bee9eeab6f681473ec0a3eb447163b933044271d0a0d1441616a2ae2636f")
+    #expect(sha(TileRenderer.render(symbol, library: library)) == "7bfd2aa90a217be41d4657f98d2597fd697ecf9a2cd5ee575031c11dc5b35c86")
 }

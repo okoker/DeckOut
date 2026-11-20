@@ -2,23 +2,26 @@ import AppKit
 import CoreText
 import DeckCore
 
-/// Draws generated key icons: text, or a library symbol, on a colour, edge to edge, 256 × 256 PNG. The deck shrinks
-/// it to its key (112 or 85 px), so text is set large and bold.
+/// Draws generated icons: text, or a library symbol, on a colour, edge to edge, as a PNG: 256 × 256 for a key (the
+/// deck shrinks it to 112 or 85 px, so text is set large and bold), 352 × 224 for a strip block (2× its 176 × 112).
 public enum TileRenderer {
     public static let size = 256
+    public static let stripWidth = 352
+    public static let stripHeight = 224
     /// Text and symbols keep inside this share of the tile.
     private static let fill: CGFloat = 0.82
 
-    public static func render(_ tile: IconTile, library: SymbolLibrary?) -> Data? {
+    /// Sizes (text, symbol) scale with the shorter side, so a key's 256 × 256 tile is as it always was.
+    public static func render(_ tile: IconTile, library: SymbolLibrary?, width: Int = size, height: Int = size) -> Data? {
         guard let background = color(hex: tile.background) else { return nil }
         let foreground = tile.foreground.flatMap(color(hex:)) ?? readable(on: background)
-        let side = CGFloat(size)
+        let canvas = CGSize(width: width, height: height)
         // sRGB, so the saved colour is the one picked (#RRGGBB means sRGB).
-        guard let ctx = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: size * 4,
+        guard let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
                                   space: CGColorSpace(name: CGColorSpace.sRGB)!,
                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         ctx.setFillColor(background)
-        ctx.fill(CGRect(x: 0, y: 0, width: side, height: side))
+        ctx.fill(CGRect(origin: .zero, size: canvas))
 
         switch tile.kind {
         case .text:
@@ -26,11 +29,13 @@ public enum TileRenderer {
             let paragraphs = (tile.text ?? "").split(whereSeparator: \.isNewline)
                 .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
             guard !paragraphs.isEmpty else { return nil }
-            drawText(paragraphs, in: ctx, color: foreground)
+            drawText(paragraphs, in: ctx, canvas: canvas, color: foreground)
         case .symbol:
             guard let library, let name = tile.symbol, let character = library.character(name) else { return nil }
             let style = SymbolLibrary.Style(rawValue: tile.style ?? "bold") ?? .bold
-            drawSymbol(character, font: library.font(style, size: side * 0.62), in: ctx, color: foreground)
+            let scale = min(canvas.width, canvas.height) / CGFloat(size)
+            drawSymbol(character, font: library.font(style, size: CGFloat(size) * scale * 0.62), in: ctx, canvas: canvas,
+                       color: foreground)
         }
         guard let image = ctx.makeImage() else { return nil }
         return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
@@ -59,8 +64,9 @@ public enum TileRenderer {
     /// Up to three lines in the rounded bold system font, as large as fits: words wrap at spaces before the size
     /// shrinks, and the size never goes below a readable minimum; what still doesn't fit ends in an ellipsis (never
     /// clipped). Lines are centred across, and the block on the capitals' height, so a single "A" sits in the middle.
-    private static func drawText(_ paragraphs: [String], in ctx: CGContext, color: CGColor) {
-        let side = CGFloat(size), box = side * fill
+    private static func drawText(_ paragraphs: [String], in ctx: CGContext, canvas: CGSize, color: CGColor) {
+        let box = canvas.width * fill, boxHeight = canvas.height * fill
+        let scale = min(canvas.width, canvas.height) / CGFloat(size)
         func font(_ size: CGFloat) -> CTFont {
             let base = NSFont.systemFont(ofSize: size, weight: .bold)
             let rounded = base.fontDescriptor.withDesign(.rounded).flatMap { NSFont(descriptor: $0, size: size) }
@@ -88,13 +94,13 @@ public enum TileRenderer {
                 return current.isEmpty ? lines : lines + [current]
             }
         }
-        let largest: CGFloat = paragraphs.count == 1 && paragraphs[0].count <= 2 ? 150 : 110
-        let smallest: CGFloat = 30          // ~13 px on the N4's key: still readable
+        let largest: CGFloat = (paragraphs.count == 1 && paragraphs[0].count <= 2 ? 150 : 110) * scale
+        let smallest: CGFloat = 30 * scale  // ~13 px on the N4's key or strip: still readable
         var size = largest
         var lines = wrap(font(size))
         while size > smallest {
             let f = font(size)
-            if lines.count <= 3, lines.allSatisfy({ width($0, f) <= box }), CGFloat(lines.count) * size * 1.12 <= box { break }
+            if lines.count <= 3, lines.allSatisfy({ width($0, f) <= box }), CGFloat(lines.count) * size * 1.12 <= boxHeight { break }
             size -= 2
             lines = wrap(font(size))
         }
@@ -107,24 +113,23 @@ public enum TileRenderer {
             return width(text, f) <= box ? full : (CTLineCreateTruncatedLine(full, Double(box), .end, ellipsis) ?? full)
         }
         let cap = CTFontGetCapHeight(f), lineHeight = size * 1.12
-        var baseline = side / 2 + (CGFloat(ctLines.count - 1) * lineHeight + cap) / 2 - cap
+        var baseline = canvas.height / 2 + (CGFloat(ctLines.count - 1) * lineHeight + cap) / 2 - cap
         for ctLine in ctLines {
             let advance = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
-            ctx.textPosition = CGPoint(x: side / 2 - advance / 2, y: baseline)
+            ctx.textPosition = CGPoint(x: canvas.width / 2 - advance / 2, y: baseline)
             CTLineDraw(ctLine, ctx)
             baseline -= lineHeight
         }
     }
 
     /// The symbol centred on its own outline (Phosphor's glyphs don't sit in the middle of their advance box).
-    private static func drawSymbol(_ character: String, font: CTFont, in ctx: CGContext, color: CGColor) {
-        let side = CGFloat(size)
+    private static func drawSymbol(_ character: String, font: CTFont, in ctx: CGContext, canvas: CGSize, color: CGColor) {
         var unichars = Array(character.utf16)
         var glyphs = [CGGlyph](repeating: 0, count: unichars.count)
         guard CTFontGetGlyphsForCharacters(font, &unichars, &glyphs, unichars.count), let glyph = glyphs.first,
               let outline = CTFontCreatePathForGlyph(font, glyph, nil) else { return }
         let bounds = outline.boundingBoxOfPath
-        var position = CGPoint(x: side / 2 - bounds.midX, y: side / 2 - bounds.midY)
+        var position = CGPoint(x: canvas.width / 2 - bounds.midX, y: canvas.height / 2 - bounds.midY)
         ctx.setFillColor(color)
         CTFontDrawGlyphs(font, [glyph], &position, 1, ctx)
     }
@@ -132,8 +137,9 @@ public enum TileRenderer {
 
 extension IconFiles {
     /// The tile rendered and written as `icons/tile-<hash of the picture>.png`; the same look, the same file.
-    public static func tile(_ tile: IconTile, library: SymbolLibrary?, folder: String) -> String? {
-        guard let png = TileRenderer.render(tile, library: library) else { return nil }
+    public static func tile(_ tile: IconTile, library: SymbolLibrary?, folder: String,
+                            width: Int = TileRenderer.size, height: Int = TileRenderer.size) -> String? {
+        guard let png = TileRenderer.render(tile, library: library, width: width, height: height) else { return nil }
         let path = folder + "/tile-\(contentHash(png)).png"
         if FileManager.default.fileExists(atPath: path) { return path }
         return writeFile(png, to: path, folder: folder) ? path : nil

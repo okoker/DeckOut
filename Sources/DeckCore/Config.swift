@@ -316,9 +316,11 @@ public struct StripBlockConfig: Codable, Equatable {
     public var host: String             // `internet` blocks
     public var arrowMs: Double          // `internet`: change that shows an arrow
     public var timeoutS: Double         // `internet`: no answer within this turns the block red
+    /// `picture` blocks: how the app made `icon`, so it can edit it again. The agent ignores it and draws `icon`.
+    public var tile: IconTile?
 
     public init(type: StripBlockType, action: String? = nil, step: Int? = nil, icon: String? = nil,
-                host: String = "one.one.one.one", arrowMs: Double = 2, timeoutS: Double = 3) {
+                host: String = "one.one.one.one", arrowMs: Double = 2, timeoutS: Double = 3, tile: IconTile? = nil) {
         self.type = type
         self.action = action
         self.step = step
@@ -326,10 +328,11 @@ public struct StripBlockConfig: Codable, Equatable {
         self.host = host
         self.arrowMs = arrowMs
         self.timeoutS = timeoutS
+        self.tile = tile
     }
 
     private enum CodingKeys: String, CodingKey {
-        case type, action, step, icon, host
+        case type, action, step, icon, host, tile
         case arrowMs = "arrow_ms"
         case timeoutS = "timeout_s"
     }
@@ -343,6 +346,7 @@ public struct StripBlockConfig: Codable, Equatable {
         host = try c.decodeIfPresent(String.self, forKey: .host) ?? "one.one.one.one"
         arrowMs = try c.decodeIfPresent(Double.self, forKey: .arrowMs) ?? 2
         timeoutS = try c.decodeIfPresent(Double.self, forKey: .timeoutS) ?? 3
+        tile = (try? c.decodeIfPresent(IconTile.self, forKey: .tile)) ?? nil     // one that doesn't read: none
         // Refuse impossible numbers here, at load: the probe turns timeout_s into nanoseconds and
         // milliseconds with integer conversions that would crash on them.
         guard (0.1...60).contains(timeoutS) else {
@@ -362,6 +366,7 @@ public struct StripBlockConfig: Codable, Equatable {
         try c.encodeIfPresent(action, forKey: .action)
         try c.encodeIfPresent(step, forKey: .step)
         try c.encodeIfPresent(icon, forKey: .icon)
+        try c.encodeIfPresent(tile, forKey: .tile)
         if type == .internet {
             try c.encode(host, forKey: .host)
             try c.encode(arrowMs, forKey: .arrowMs)

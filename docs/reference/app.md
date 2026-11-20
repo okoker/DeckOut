@@ -71,7 +71,9 @@ the job definition it registered: a changed plist needs a new label.
   `.before-app`), then the agent is asked to reload (it logs one line per app reload). Undo / redo (Edit menu, ⌘Z /
   ⇧⌘Z, named for the change) put back whole configs; a text field being edited undoes its typing first; a slider
   drag is one undo step; up to 200 steps. Before each change the file is read again if it changed on disk (a hand
-  edit is built on); a file that doesn't load is never saved over, and the status line says why.
+  edit is built on, and the undo history starts again from it, with a notice in the status line); a file that
+  doesn't load is never saved over, the status line says why, and it is read again before every change until it
+  loads. A failed save is shown; the next change tries again. Coming back to the app picks up a hand edit too.
 - **Where edits land:** keys, N3 buttons and strip blocks in the live preset; knobs, brightness on the deck. A deck
   with no section gets one on its first edit ("Default", brightness 75).
 - **Actions** (`ActionChoice`): keys, N3 buttons, knob presses and strip taps offer Nothing; Open App, Open Website,
@@ -83,10 +85,10 @@ the job definition it registered: a changed plist needs a new label.
 - **Keyboard shortcuts** are recorded by pressing them; only keys in the agent's own table (`KeyNames`) are taken.
 - **Apple Shortcuts** come from `shortcuts list` (run by the app, as an argument array); a text field if none.
 - **Icons:** the app's own icon for Open App (rendered to a 256 px PNG in `<config folder>/icons/`, following the app
-  unless you chose an image), an image you choose (copied into `icons/`), or none; the preview is the key as the deck
-  shows it.
+  unless you chose an image), a picture you choose (decoded and saved as a PNG at most 512 px on a side in `icons/`;
+  a file that isn't a picture is refused with a message), or none; the preview is the key as the deck shows it.
 - **Strip blocks:** Internet latency (host, arrow threshold in ms, red after s), CPU and memory, Volume, a picture
-  (copied into `icons/`), or nothing; plus what a tap does.
+  (imported like a key's), or nothing; plus what a tap does.
 - **Files that are gone:** keys, presses and taps whose app, file, folder, script, icon or picture is missing get a
   red mark on the drawing and the reason in the editor; a script that isn't executable gets Make Executable (adds
   the owner's execute bit); a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS

@@ -24,9 +24,12 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var registration: RegistrationState?
     @Published public private(set) var config: AppConfig?
     @Published public private(set) var configProblem: String?
+    @Published public private(set) var configNotice: String?
+    /// Why the last chosen picture wasn't used.
+    @Published public var iconProblem: String?
     /// The deck on screen; nil on "Plug in your deck" and "Pick a deck".
     @Published public internal(set) var shown: DeckKind?
-    @Published public var selection: String?
+    @Published public var selection: String? { didSet { iconProblem = nil } }
     /// Upright images of the shown deck's keys and picture blocks, rebuilt when the config changes.
     @Published public private(set) var staticImages: [String: CGImage] = [:]
     /// Upright images of the live strip blocks, rebuilt with each push.
@@ -67,9 +70,10 @@ public final class AppModel: ObservableObject {
         store?.$config.sink { [weak self] config in   // the store publishes on the main actor
             guard let self, config != self.config else { return }
             self.config = config
-            self.rebuildStaticImages()
+            self.rebuildStaticImagesIfNeeded()
         }.store(in: &watchers)
         store?.$problem.sink { [weak self] in self?.configProblem = $0 }.store(in: &watchers)
+        store?.$notice.sink { [weak self] in self?.configNotice = $0 }.store(in: &watchers)
         link?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &watchers)
         // Every status push follows a reload or a deck coming or going: re-read the config, follow the decks.
         link?.$status.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
@@ -207,7 +211,34 @@ public final class AppModel: ObservableObject {
         store?.externalChange()
     }
 
+    /// How many times the key images were made (tests: a slider drag mustn't remake them).
+    private(set) var staticImageBuilds = 0
+    /// What the key images were last made from: deck and control → icon file.
+    private var staticImageInputs: (deck: DeckKind?, icons: [String: String])?
+
+    /// The icon files the shown deck's drawing uses, by control.
+    private func imageInputs() -> [String: String] {
+        guard let shown, let config else { return [:] }
+        var icons = (shown == .n4 ? config.n4?.keys : config.n3?.buttons)?.compactMapValues(\.icon) ?? [:]
+        if shown == .n4 {
+            for (block, settings) in config.n4?.strip ?? [:] where settings.type == .picture {
+                icons[block] = settings.icon
+            }
+        }
+        return icons
+    }
+
+    /// Remakes the key images only when an icon (or the deck) changed: a brightness drag or an action change
+    /// doesn't decode every icon again.
+    private func rebuildStaticImagesIfNeeded() {
+        let inputs = imageInputs()
+        if let last = staticImageInputs, last.deck == shown, last.icons == inputs { return }
+        rebuildStaticImages()
+    }
+
     func rebuildStaticImages() {
+        staticImageBuilds += 1
+        staticImageInputs = (shown, imageInputs())
         guard let shown, let config else {
             staticImages = [:]
             return
@@ -244,8 +275,17 @@ public final class AppModel: ObservableObject {
     public enum Health: Sendable { case good, busy, problem }
 
     public var statusLine: (health: Health, text: String) {
-        Self.statusLine(screen: screen, linkState: link?.state ?? .connecting, status: link?.status,
-                        configProblem: configProblem)
+        let line = Self.statusLine(screen: screen, linkState: link?.state ?? .connecting, status: link?.status,
+                                   configProblem: configProblem)
+        if line.health == .good, let configNotice { return (.good, configNotice) }
+        return line
+    }
+
+    /// The app came to the front: pick up a hand edit made meanwhile, and look at the registration if the link is
+    /// down.
+    public func becameActive() async {
+        store?.externalChange()
+        await recheckRegistration()
     }
 
     public nonisolated static func statusLine(screen: Screen, linkState: AgentLink.State, status: AgentStatus?,

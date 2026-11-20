@@ -16,11 +16,13 @@ extension AppModel {
     /// Open App puts that app's icon on the key unless the person chose an image of their own.
     public func setAction(_ choice: ActionChoice, button id: String, on deck: DeckKind) {
         guard let store else { return }
-        var icon = config?.button(deck, id)?.icon
-        if case .openApp(let path) = choice, !path.isEmpty, deck == .n4 || id.hasPrefix("lcd_"), Self.followsApp(icon) {
-            icon = IconFiles.appIcon(appPath: path, folder: IconFiles.folder(forConfig: store.path)) ?? icon
-        }
+        let folder = IconFiles.folder(forConfig: store.path)
         store.change("Change Action") { config in
+            // Read inside the change: the store has just picked up any hand edit.
+            var icon = config.button(deck, id)?.icon
+            if case .openApp(let path) = choice, !path.isEmpty, deck == .n4 || id.hasPrefix("lcd_"), Self.followsApp(icon) {
+                icon = IconFiles.appIcon(appPath: path, folder: folder) ?? icon
+            }
             config.setButton(deck, id, choice == .nothing && icon == nil
                              ? nil : ButtonConfig(action: choice.action, icon: icon, step: choice.step))
         }
@@ -45,10 +47,17 @@ extension AppModel {
         return icon.contains("/icons/app-") || icon.contains(".app/Contents/")
     }
 
-    /// Copies a chosen image into the icons folder; nil if it can't be read.
+    /// Brings a chosen image into the icons folder; nil, with `iconProblem` set, if it isn't a picture.
     public func importImage(_ source: String) -> String? {
         guard let store else { return nil }
-        return IconFiles.copyImage(from: source, folder: IconFiles.folder(forConfig: store.path))
+        do {
+            let path = try IconFiles.importImage(from: source, folder: IconFiles.folder(forConfig: store.path))
+            iconProblem = nil
+            return path
+        } catch {
+            iconProblem = (error as? IconFiles.ImportError)?.description ?? error.localizedDescription
+            return nil
+        }
     }
 
     public func appIcon(for appPath: String) -> String? {

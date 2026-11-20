@@ -38,7 +38,7 @@ public struct MainWindow: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            Task { await model.recheckRegistration() }
+            Task { await model.becameActive() }
         }
     }
 

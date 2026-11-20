@@ -1,6 +1,7 @@
 import AppKit
 import CryptoKit
 import Foundation
+import ImageIO
 
 /// Icons the app makes or copies for the decks. They live in `<config folder>/icons/` (folder 0700, files 0600), so
 /// the agent reads them from a folder macOS doesn't guard (Desktop, Documents and Downloads ask first), and moving
@@ -21,12 +22,34 @@ public enum IconFiles {
         return write(png, to: path, folder: folder) ? path : nil
     }
 
-    /// A copy of the image at `source`, named for its contents: `icons/image-<hash>.<ext>`. Nil if unreadable.
-    public static func copyImage(from source: String, folder: String) -> String? {
-        guard let data = FileManager.default.contents(atPath: source) else { return nil }
-        let ext = (source as NSString).pathExtension.lowercased()
-        let path = folder + "/image-\(hash(data)).\(ext.isEmpty ? "png" : ext)"
-        return write(data, to: path, folder: folder) ? path : nil
+    public enum ImportError: Error, Equatable, CustomStringConvertible {
+        case notAnImage
+        case notSaved
+
+        public var description: String {
+            switch self {
+            case .notAnImage: return "That file isn't a picture DeckOut can read."
+            case .notSaved: return "The picture couldn't be saved in DeckOut's folder."
+            }
+        }
+    }
+
+    /// The image at `source`, decoded and made at most 512 px on a side (the deck refuses anything over 1024, and a
+    /// key is 112), saved as a PNG named for its contents: `icons/image-<hash>.png`. Throws for a file that isn't an
+    /// image (or isn't there).
+    public static func importImage(from source: String, folder: String) throws -> String {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 512,
+        ]
+        guard let imageSource = CGImageSourceCreateWithURL(URL(fileURLWithPath: source) as CFURL, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, options as CFDictionary),
+              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+        else { throw ImportError.notAnImage }
+        let path = folder + "/image-\(hash(png)).png"
+        guard write(png, to: path, folder: folder) else { throw ImportError.notSaved }
+        return path
     }
 
     // MARK: - Private
@@ -43,19 +66,35 @@ public enum IconFiles {
         return rep.representation(using: .png, properties: [:])
     }
 
-    /// Writes atomically at 0600, making the folder 0700 if needed; true on success.
+    /// Writes a new file at 0600 from the start (a temp file created 0600, then renamed over), making the folder
+    /// 0700 if needed; true on success.
     private static func write(_ data: Data, to path: String, folder: String) -> Bool {
         do {
             if !FileManager.default.fileExists(atPath: folder) {
                 try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true,
                                                         attributes: [.posixPermissions: 0o700])
             }
-            try data.write(to: URL(fileURLWithPath: path), options: .atomic)
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path)
-            return true
         } catch {
             return false
         }
+        let temp = folder + "/.\(UUID().uuidString).tmp"
+        let fd = open(temp, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        guard fd >= 0 else { return false }
+        let written = data.withUnsafeBytes { buffer -> Bool in
+            var offset = 0
+            while offset < buffer.count {
+                let n = Darwin.write(fd, buffer.baseAddress! + offset, buffer.count - offset)
+                if n <= 0 { return false }
+                offset += n
+            }
+            return true
+        }
+        close(fd)
+        guard written, rename(temp, path) == 0 else {
+            unlink(temp)
+            return false
+        }
+        return true
     }
 
     private static func hash(_ string: String) -> String { hash(Data(string.utf8)) }

@@ -48,6 +48,9 @@ struct CommitTextField: View {
     var monospaced = false
     let commit: (String) -> Void
     @State private var draft = ""
+    /// The value the draft started from. Until the person types, the field follows the value (an undo shows at
+    /// once), and leaving it commits nothing.
+    @State private var base = ""
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -63,12 +66,19 @@ struct CommitTextField: View {
         .focused($focused)
         .onSubmit(apply)
         .onChange(of: focused) { _, isFocused in if !isFocused { apply() } }
-        .onAppear { draft = value }
-        .onChange(of: value) { _, newValue in if !focused { draft = newValue } }
+        .onAppear {
+            draft = value
+            base = value
+        }
+        .onChange(of: value) { _, newValue in
+            if draft == base { draft = newValue }      // not typed in: follow
+            base = newValue
+        }
     }
 
     private func apply() {
-        if draft != value { commit(draft) }
+        guard draft != base else { return }
+        commit(draft)
     }
 }
 

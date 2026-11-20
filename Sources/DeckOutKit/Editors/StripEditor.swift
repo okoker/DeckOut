@@ -87,6 +87,7 @@ struct StripEditor: View {
                 }
             }
         }
+        if let problem = model.iconProblem { FieldNote(text: problem, warning: true) }
         if let icon = block?.icon, let image = DeckPreview.stripPicture(path: icon) {
             Image(decorative: image, scale: 1).resizable().interpolation(.high)
                 .frame(width: 88, height: 56)

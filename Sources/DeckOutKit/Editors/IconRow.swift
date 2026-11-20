@@ -34,6 +34,7 @@ struct IconRow: View {
                 }
             }
             .padding(.leading, FieldRow<EmptyView>.labelWidth + 10)
+            if let problem = model.iconProblem { FieldNote(text: problem, warning: true) }
         }
     }
 

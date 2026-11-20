@@ -63,3 +63,28 @@ import Testing
     try Snapshot.windowPNG(note, size: CGSize(width: 300, height: 140), dark: false)
         .write(to: snapshotFolder.appendingPathComponent("accessibility-light.png"))
 }
+
+@MainActor @Test func anEditKeepsAHandEditedIcon() throws {   // T-122 (review M2)
+    var config = AppConfig.empty
+    config.setButton(.n4, "key_1", ButtonConfig(action: "media_next", icon: "/a/icons/image-1.png"))
+    let model = try previewModel(config, deck: .n4, selection: "key_1")
+    let path = try #require(model.store?.path)
+    var edited = config
+    edited.setButton(.n4, "key_1", ButtonConfig(action: "media_next", icon: "/b/icons/image-2.png"))
+    try ConfigFile.save(edited, to: path)
+    model.setAction(.playPause, button: "key_1", on: .n4)
+    #expect(try ConfigFile.load(at: path).get().button(.n4, "key_1") == ButtonConfig(action: "media_play_pause", icon: "/b/icons/image-2.png"))
+}
+
+@MainActor @Test func brightnessDoesNotRedrawKeys() throws {   // T-120 (review M7)
+    var config = AppConfig.empty
+    config.setButton(.n4, "key_1", ButtonConfig(action: "media_next", icon: "/System/Applications/Notes.app/Contents/Resources/AppIcon.icns"))
+    let model = try previewModel(config, deck: .n4, selection: nil)
+    let builds = model.staticImageBuilds
+    for value in [70, 60, 50] { model.setBrightness(value) }
+    #expect(model.staticImageBuilds == builds)        // a slider drag doesn't re-decode every icon
+    model.setAction(.playPause, button: "key_2", on: .n4)
+    #expect(model.staticImageBuilds == builds)        // nor does an action without an icon change
+    model.setIcon(nil, button: "key_1", on: .n4)
+    #expect(model.staticImageBuilds == builds + 1)    // an icon change does
+}

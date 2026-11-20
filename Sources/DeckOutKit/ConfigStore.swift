@@ -12,12 +12,19 @@ public final class ConfigStore: ObservableObject {
     public let path: String
     @Published public private(set) var config: AppConfig = .empty
     @Published public private(set) var problem: String?
+    /// Something the person should know that isn't a problem (a hand edit picked up).
+    @Published public private(set) var notice: String?
     @Published public private(set) var undoName: String?
     @Published public private(set) var redoName: String?
 
     private let reload: () -> Void
     /// The bytes the store last read from or wrote to the file: anything else there is a hand edit.
     private var lastData: Data?
+    /// The file on disk doesn't load (broken, or not safe to read): nothing is saved over it, and it is read again
+    /// before every change until it loads, so fixing it (even with chmod, which leaves the bytes) is picked up.
+    private var loadProblem: String? { didSet { problem = loadProblem ?? saveProblem } }
+    /// The last save failed: shown; the next change tries again.
+    private var saveProblem: String? { didSet { problem = loadProblem ?? saveProblem } }
     private var undoStack: [(name: String, config: AppConfig)] = []
     private var redoStack: [(name: String, config: AppConfig)] = []
     private static let undoLimit = 200
@@ -38,22 +45,30 @@ public final class ConfigStore: ObservableObject {
         switch ConfigFile.load(at: path) {
         case .success(let loaded):
             config = loaded
-            problem = nil
+            loadProblem = nil
             lastData = data
         case .failure(.missing):
             config = .empty
-            problem = nil
+            loadProblem = nil
             lastData = nil
         case .failure(let error):
-            problem = error.description
+            loadProblem = error.description
             lastData = data
         }
     }
 
-    /// Re-reads the file if it changed since the store last read or wrote it.
+    /// Re-reads the file if it changed since the store last read or wrote it, or while it doesn't load. A hand
+    /// edit that changes the config starts the undo history again: undoing past it would throw it away.
     public func externalChange() {
-        guard FileManager.default.contents(atPath: path) != lastData else { return }
+        guard loadProblem != nil || FileManager.default.contents(atPath: path) != lastData else { return }
+        let before = config
         load()
+        if loadProblem == nil, config != before {
+            undoStack.removeAll()
+            redoStack.removeAll()
+            updateNames()
+            notice = "Picked up a change made outside DeckOut; undo starts again from here"
+        }
     }
 
     /// Applies `edit` to the current config; if anything changed, saves it, asks for a reload, and makes it undoable
@@ -61,9 +76,7 @@ public final class ConfigStore: ObservableObject {
     /// each within a second of the last (a slider dragged), is one undo step.
     public func change(_ name: String, coalescing: Bool = false, _ edit: (inout AppConfig) -> Void) {
         externalChange()
-        guard problem == nil || ConfigFile.load(at: path).isMissing else {
-            return                                  // the file on disk doesn't load: never save over it
-        }
+        guard loadProblem == nil else { return }    // the file on disk doesn't load: never save over it
         var next = config
         edit(&next)
         guard next != config else { return }
@@ -83,7 +96,7 @@ public final class ConfigStore: ObservableObject {
 
     public func undo() {
         externalChange()
-        guard problem == nil, let last = undoStack.popLast() else { return }
+        guard loadProblem == nil, let last = undoStack.popLast() else { return }
         let current = config
         guard save(last.config) else {
             undoStack.append(last)
@@ -95,7 +108,7 @@ public final class ConfigStore: ObservableObject {
 
     public func redo() {
         externalChange()
-        guard problem == nil, let next = redoStack.popLast() else { return }
+        guard loadProblem == nil, let next = redoStack.popLast() else { return }
         let current = config
         guard save(next.config) else {
             redoStack.append(next)
@@ -112,11 +125,12 @@ public final class ConfigStore: ObservableObject {
         do {
             try ConfigFile.save(newConfig, to: path)
         } catch {
-            problem = "Couldn't save the change: \((error as? ConfigFile.SaveError)?.description ?? error.localizedDescription)"
+            saveProblem = "Couldn't save the change: \((error as? ConfigFile.SaveError)?.description ?? error.localizedDescription)"
             return false
         }
         config = newConfig
-        problem = nil
+        saveProblem = nil
+        notice = nil
         lastData = FileManager.default.contents(atPath: path)
         reload()
         return true
@@ -125,12 +139,5 @@ public final class ConfigStore: ObservableObject {
     private func updateNames() {
         undoName = undoStack.last?.name
         redoName = redoStack.last?.name
-    }
-}
-
-private extension Result where Failure == ConfigFile.LoadError {
-    var isMissing: Bool {
-        if case .failure(.missing) = self { return true }
-        return false
     }
 }

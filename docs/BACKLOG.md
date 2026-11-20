@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-011
+Next free ID: BL-016
 
 ---
 
@@ -57,3 +57,20 @@ Next free ID: BL-011
 - BL-010 [P2] [debt] The app's registration work (the not-answering hook, Try Again, the re-check when the app becomes
   active) can interleave unregister / register calls. Serialise them (one task at a time). `AppModel.swift` (plan 2
   review)
+- BL-011 [P2] [bug] Preset rename in the toolbar drops the typed name when focus leaves the field (Finder and Xcode
+  apply it), and it renames whichever preset is live when committed, so ⌘Z right after New Preset makes the rename
+  hit the previous preset. Apply on focus loss; rename the preset that was live when editing began. `Toolbar.swift`
+  (plan 3 review)
+- BL-012 [P2] [bug] Make Executable does nothing visible when it fails (e.g. a script the person doesn't own). Show
+  why. `AppModel+Editing.swift` (plan 3 review)
+- BL-013 [P2] [bug] An emptied Host field on an internet strip block saves an empty host, and the block stays red,
+  though the placeholder suggests the default is used. Save the default host for an empty field. `StripEditor.swift`
+  (plan 3 review)
+- BL-014 [P2] [feature] Shortcut list and recorder: the list of Apple Shortcuts is read once per launch (a Shortcut
+  made after opening DeckOut needs a relaunch); media keys pressed in the recorder show nothing (they arrive as system
+  events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the
+  key sent is right: both sides work by position). Re-read the list when the picker opens; say media keys aren't
+  recordable; label with the layout's character. `AppModel+Editing.swift`, `ShortcutRecorder.swift` (plan 3 review)
+- BL-015 [P2] [debt] Small loose ends from the plan 3 review: the Undo / Redo menu items are never greyed out; each
+  Allow… click schedules its own 30 status checks; a slider pause of over a second mid-drag makes two undo steps
+  (bracket with `onEditingChanged` instead of a time gap). `Toolbar.swift`, `AppModel+Editing.swift`

@@ -26,13 +26,34 @@ private func tempFolder() throws -> String {
     // The same app again: the same file.
     #expect(IconFiles.appIcon(appPath: notes, folder: folder) == icon)
 
-    // A chosen image is copied in, byte for byte; the original can go.
-    let source = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-src-\(UUID().uuidString).png").path
-    try Data([0x89, 0x50, 0x4E, 0x47, 1, 2, 3]).write(to: URL(fileURLWithPath: source))
-    let copy = try #require(IconFiles.copyImage(from: source, folder: folder))
-    #expect(copy.hasPrefix(folder + "/image-") && copy.hasSuffix(".png"))
-    #expect(FileManager.default.contents(atPath: copy) == FileManager.default.contents(atPath: source))
-    #expect(IconFiles.copyImage(from: "/nonexistent.png", folder: folder) == nil)
+    // A chosen image is imported: decoded, at most 512 px on a side, saved as a PNG (a phone photo would be refused
+    // by the deck at over 1024 px); the original can go.
+    let big = try writeBigPNG(side: 2000)
+    let imported = try IconFiles.importImage(from: big, folder: folder)
+    #expect(imported.hasPrefix(folder + "/image-") && imported.hasSuffix(".png"))
+    let decoded = try #require(NSImage(contentsOfFile: imported)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
+    #expect(max(decoded.width, decoded.height) == 512)
+    #expect(DeckPreview.keyImage(path: imported, deck: .n4) != nil)
+    lstat(imported, &st)
+    #expect(st.st_mode & 0o777 == 0o600)
+
+    // Not an image: refused with a message, nothing written.
+    let text = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-src-\(UUID().uuidString).png").path
+    try Data("not a picture".utf8).write(to: URL(fileURLWithPath: text))
+    #expect(throws: IconFiles.ImportError.notAnImage) { try IconFiles.importImage(from: text, folder: folder) }
+    #expect(throws: IconFiles.ImportError.notAnImage) { try IconFiles.importImage(from: "/nonexistent.png", folder: folder) }
+}
+
+private func writeBigPNG(side: Int) throws -> String {
+    let ctx = try #require(CGContext(data: nil, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
+                                     space: CGColorSpaceCreateDeviceRGB(),
+                                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    ctx.setFillColor(red: 0.2, green: 0.6, blue: 1, alpha: 1)
+    ctx.fill(CGRect(x: 0, y: 0, width: side, height: side))
+    let rep = NSBitmapImageRep(cgImage: try #require(ctx.makeImage()))
+    let path = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-big-\(UUID().uuidString).png").path
+    try #require(rep.representation(using: .png, properties: [:])).write(to: URL(fileURLWithPath: path))
+    return path
 }
 
 @Test func editsReachTheLivePreset() {   // T-128

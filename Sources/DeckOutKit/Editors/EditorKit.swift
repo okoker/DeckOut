@@ -46,6 +46,8 @@ struct CommitTextField: View {
     let placeholder: String
     var multiline = false
     var monospaced = false
+    /// Multi-line fields: how many lines show before it scrolls.
+    var lines: ClosedRange<Int> = 2...6
     let commit: (String) -> Void
     @State private var draft = ""
     /// The value the draft started from. Until the person types, the field follows the value (an undo shows at
@@ -56,12 +58,12 @@ struct CommitTextField: View {
     var body: some View {
         Group {
             if multiline {
-                TextField(placeholder, text: $draft, axis: .vertical).lineLimit(2...6)
+                // The default (square) style: macOS draws a rounded-border field on one line, whatever its limit.
+                TextField(placeholder, text: $draft, axis: .vertical).lineLimit(lines)
             } else {
-                TextField(placeholder, text: $draft)
+                TextField(placeholder, text: $draft).textFieldStyle(.roundedBorder)
             }
         }
-        .textFieldStyle(.roundedBorder)
         .font(monospaced ? .system(size: 11.5, design: .monospaced) : .system(size: 12.5))
         .focused($focused)
         .onSubmit(apply)

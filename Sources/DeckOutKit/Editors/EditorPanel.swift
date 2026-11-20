@@ -7,6 +7,14 @@ struct EditorPanel: View {
     let face: DeckFace
 
     var body: some View {
+        ScrollView(.vertical) { content }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(.background.secondary)
+            .id(model.selection)   // a fresh editor (and Test result) per control
+    }
+
+    /// Scrolls when it's taller than the window (a long command with a strip block's icon settings).
+    private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let id = model.selection, let control = face.control(id) {
                 EditorTitle(text: control.label)
@@ -25,12 +33,9 @@ struct EditorPanel: View {
                 Text("Click a key, strip block or knob on the deck to set it up.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(.secondary)
-                Spacer()
             }
         }
         .padding(18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.background.secondary)
-        .id(model.selection)   // a fresh editor (and Test result) per control
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }

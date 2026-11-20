@@ -86,11 +86,7 @@ struct ActionFields: View {
                 fileLine(path, empty: "No script chosen") { if let script = Chooser.script() { change(.runScript(script)) } }
             }
         case .runCommand(let command):
-            FieldRow("Command") {
-                CommitTextField(value: command, placeholder: "open -a Notes", multiline: true, monospaced: true) {
-                    change(.runCommand($0))
-                }
-            }
+            CommandField(command: command) { change(.runCommand($0)) }
         case .zr7Volume, .zr7Mute, .unknown:
             FieldRow("Set to") {
                 Text(choice.action).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(.secondary)

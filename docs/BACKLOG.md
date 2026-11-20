@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-033
+Next free ID: BL-034
 
 ---
 
@@ -83,3 +83,9 @@ Next free ID: BL-033
   window also closes, losing its text, when the deck on screen changes (unplug, agent restart). Skip the store's
   undo while a sheet is key (`NSApp.keyWindow?.sheetParent != nil`); host the command sheet on the main window like
   the preset sheet. `Toolbar.swift` (`UndoCommands`), `CommandEditor.swift` (plan 7 review, 20/11/2026)
+- BL-033 [P2] [feature] Switch the N4's preset by swiping its strip (owner, UAT 20/11/2026: today presets switch only
+  from the app's pull-down). The N4 reports a swipe with no direction (0x39, `REQUIREMENTS.md`, Touch strip), so a
+  swipe can only step to the next preset, wrapping round; it can't go left / right. The likely shape: a "Next Preset"
+  action the swipe (or any key) can take, run by the agent, which saves the new `active_preset` so the app shows it.
+  Presets already live where the agent can read them (design: Non-goals). `ActionDispatcher.swift`, `Daemon.swift`,
+  `ActionChoice.swift`

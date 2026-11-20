@@ -26,6 +26,19 @@ import Testing
     #expect(config.displays == nil)
 }
 
+@Test func licencesFitTheAboutTab() throws {   // T-174
+    // The three licences the About tab shows (the Makefile copies them into the app), every line measured in its font.
+    let root = resourcesFolder.deletingLastPathComponent().deletingLastPathComponent()
+    let font = NSFont.monospacedSystemFont(ofSize: AboutSettings.licenceFontSize, weight: .regular)
+    for file in ["LICENSE", "Vendor/m1ddc/LICENSE", "Packaging/Resources/Phosphor-LICENSE.txt"] {
+        let text = try String(contentsOf: root.appendingPathComponent(file), encoding: .utf8)
+        let widest = text.components(separatedBy: "\n")
+            .map { NSAttributedString(string: $0, attributes: [.font: font]).size().width }.max() ?? 0
+        #expect(widest > 0, "\(file) is empty")
+        #expect(widest <= AboutSettings.licenceWidth, "\(file): a line is \(widest) pt, the tab has \(AboutSettings.licenceWidth)")
+    }
+}
+
 @MainActor @Test func settingsDraw() throws {   // T-150 (design check)
     var config = AppConfig.empty
     config.useMonitor(serial: "AAA111TEST", name: "Left", true)

@@ -34,6 +34,10 @@ enum WindowSnapshot {
                 exit(1)
             }
             frameView.cacheDisplay(in: frameView.bounds, to: rep)
+            if let toolbar = window.toolbar {
+                print("DeckOut: toolbar menu \(toolbar.allowsDisplayModeCustomization ? "on" : "off"), "
+                      + "display mode \(toolbar.displayMode.rawValue), window \(Int(frameView.bounds.height)) pt high")
+            }
             do {
                 try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
                 print("DeckOut: snapshot written to \(path)")

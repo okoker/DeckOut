@@ -145,6 +145,11 @@ struct MonitorSettings: View {
 struct AboutSettings: View {
     @ObservedObject var model: AppModel
 
+    /// The licences keep their 78-character lines, so the font is small enough for the longest to fit the tab:
+    /// 520 pt less 20 pt padding each side and 16 pt for a scroll bar.
+    static let licenceFontSize: CGFloat = 9.5
+    static let licenceWidth: CGFloat = 520 - 2 * 20 - 16
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
@@ -161,7 +166,8 @@ struct AboutSettings: View {
                          ("m1ddc 1.3.1 (patched)", "m1ddc-LICENSE.txt")], id: \.0) { name, file in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(name).font(.headline)
-                        Text(licence(file)).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(.secondary)
+                        Text(licence(file)).font(.system(size: Self.licenceFontSize, design: .monospaced))
+                            .foregroundStyle(.secondary)
                             .textSelection(.enabled)
                     }
                 }

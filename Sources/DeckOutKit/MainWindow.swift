@@ -8,7 +8,7 @@ public struct MainWindow: View {
     @ObservedObject var model: AppModel
     @State private var presetSheet: PresetSheet?
 
-    public static let size = CGSize(width: 946, height: 488)   // below the toolbar: 946 × 544 with it
+    public static let size = CGSize(width: 946, height: 488)   // below the toolbar: 946 × 540 with it
 
     public init(model: AppModel) {
         self.model = model

@@ -43,8 +43,8 @@
   up to 15 warnings.
 
 ### What's next
-1. Ask the owner which UAT checks are left (the list: `git show 95eecc1:docs/PROGRESS.md`, "The owner's checks";
-   brightness done). Fixes on `main`, tests first.
+1. UAT is done (owner, 20/11/2026), but for removal: Stop and Remove of DeckOut Dev, the first step of moving the
+   decks to the signed app in phase 7, is its test. Swiping the strip to change presets is BL-033.
 2. Write the phase 7 plan (`docs/superpowers/plans/`): signing target + identity file, release build, notarise, the
    GitHub release, README rewrite, moving the owner's decks to the signed app, fresh-install test in a VM. Each
    signing, notarising, publishing and install act gets its own go.
@@ -52,9 +52,10 @@
 
 ## Current Status
 DeckOut Dev (`~/Applications`, a debug build of `main`) drives the TreasLin N3 and the MiraBox N4
-through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) is in the owner's
-UAT: it runs the deck controller from its bundle, edits every control, presets, brightness, the lock photo, generated
-icons, monitors and its own removal.
+through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) has passed the
+owner's UAT (removal is tested in phase 7): it runs the deck controller from its bundle, edits every control,
+presets, brightness, the lock photo, generated icons, monitors and its own removal.
+20/11/2026 — UAT fixes on `main` (toolbar, About licences): `swift test` 222/222 (new T-174), watched; T-174 failed first (a licence line measured 506 pt for 464); `make install-dev` (build 261120.132255), one `--snapshot` run: "toolbar menu off, display mode 2, window 540 pt high" (540 before too), the toolbar items' middles on the window buttons' row (25.5 pt; 19.5–21 under Icon and Text), KI-008 on the restart, registered again, drew 14 of 14 and 6 of 6. Owner: licences read well; not checked: the owner's look at the Icon Only toolbar.
 20/11/2026 — BL-003 on `deckout-7-uat-fixes` (ae9ee09): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
 20/11/2026 — BL-005 on `deckout-7-uat-fixes` (to 38094e3): `swift test` 217/217 (new T-169), watched; `make install-dev` (build 261120.103217), one `--snapshot` run: KI-008 on the restart, the app re-registered 10 s later, window "Deck controller running"; the agent drew 6 of 6 and 14 of 14 on connect; one `--post-reload` with nothing changed: "Drew 0 of 6 slots on n3 in 1 ms", "Drew 0 of 14 slots on n4 in 4 ms", "Reloaded in 7 ms" (433–453 ms before). Not checked: a changed key and an unlock on the decks (owner, at UAT).
 20/11/2026 — Seven backlog fixes on `deckout-7-uat-fixes` (to 1b615ac): `swift test` 210/210 (new T-162–T-168), watched; `make install-dev` (build 261120.035630), then one `--snapshot` run of the real app: it asked the old agent to restart, the new one hit KI-008 and the app's own recovery re-registered it 10 s later; the window said "Deck controller running" (the new agent's build), and the agent drew the N3 and the N4's lock photo (Mac locked). Not checked: live strip pushes (paused while locked), every click (owner, at UAT).

@@ -178,6 +178,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-171 | `BrightnessControlTests/aMonitorWithNoReadingIsLeftAlone` | A monitor with no valid reading (m1ddc exits 1, or prints 41984) isn't moved, and the HUD says "Left: Monitor Error"; the other monitor still moves; the next turn reads the failed one again and moves both, the other from what the agent knows (read once) |
 | T-172 | `BrightnessControlTests/aTurnAfterIdleReadsTheMonitorAgain` | Within the idle time a turn moves from what the agent knows (a change on the monitor itself is not seen); after it, the next turn reads the monitor again |
 | T-173 | `BrightnessControlTests/longMessagesFitTheBox` | The HUD keeps 80 pt for "☀ 100%  Right" and shrinks "Left: Monitor Error" until it fits the box's 660 pt (at 80 pt it measured 940 pt and was cut off) |
+| T-174 | `MonitorSettingsTests/licencesFitTheAboutTab` | Every line of the three licences About shows (DeckOut, m1ddc, Phosphor) fits the tab's 464 pt (520 less padding and a scroll bar) in the licence font; at 10.5 pt the longest measured 506 pt and broke |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

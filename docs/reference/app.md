@@ -50,9 +50,11 @@ the job definition it registered: a changed plist needs a new label.
 4. The config is re-read from disk on every status push (they follow reloads and decks coming and going).
 
 ## Window
-- 946 × 544 with its toolbar; one window; quitting with it.
+- 946 × 540 with its toolbar; one window; quitting with it.
 - **Toolbar:** a button per deck with its glyph: colour when plugged in, grey and disabled when not, pressed in when on
-  screen.
+  screen. Fixed at Icon Only, with macOS's right-click Icon and Text / Icon Only menu off: the buttons draw their own
+  picture and name, so the menu had nothing to switch. Icon Only, not Icon and Text, because Icon and Text keeps an
+  empty label row that lifts the buttons ~5 pt above the window's close / minimise / zoom buttons.
 - **Screens:** starting; move to Applications; allow in Login Items; deck controller not running (Try Again); plug in
   your deck (none plugged in); pick a deck (both plugged in at launch); the deck. The deck on screen stays while
   plugged in; unplugged, the other one shows, else "Plug in your deck" (T-118).
@@ -174,7 +176,8 @@ the job definition it registered: a changed plist needs a new label.
   first); turning one on adds it to `displays` (named by its place) at the end of that order; a name field and up /
   down reorder; monitors in `displays` that aren't connected show with Forget; Look Again; the list refreshes when
   Settings opens and when screens change. A monitor without a serial ("(null)") isn't listed.
-- **About:** version and build; the DeckOut, Phosphor and m1ddc licences, from the app's Resources.
+- **About:** version and build; the DeckOut, Phosphor and m1ddc licences, from the app's Resources, in 9.5 pt
+  fixed-width type, so their 78-character lines fit the tab without breaking (T-174).
 - **m1ddc** 1.3.1 (MIT), patched (About says so), is built from `Vendor/m1ddc` into `Contents/Helpers/m1ddc`; the
   agent and the app use it before Homebrew's (the agent logs which). The patch makes a read wait 50 ms, decode only a
   valid reply, and ask again up to 4 times; a read that gets none exits 1 instead of printing `0`

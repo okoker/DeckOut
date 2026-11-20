@@ -10,7 +10,10 @@ until UAT. No signing. Downloads allowed: m1ddc source, Phosphor icons. Plans an
 
 ### Where it stands
 - Plan 2 (the app shell) built on `deckout-2-app-shell`: 127 tests, two test sessions, fresh review fixed (I1, I2);
-  minors are BL-006–BL-010. Plan 3 (editing) is drafted and next, on `deckout-3-editing`.
+  minors are BL-006–BL-010. Plan 3 (editing) built on `deckout-3-editing` (from plan 2's branch): 152 tests, test
+  session 3 (`--selftest` 12/12), fresh review fixed (I1–I3, M1, M7); minors BL-011–BL-015. Plans 4–6 written; next
+  is plan 4 (lock photo) on `deckout-4-lock-photo`. Downloads verified and parked in the session scratchpad:
+  Phosphor 2.1.2 (npm sha512 matched), m1ddc 1.3.1 (Homebrew's sha256 matched; 1.3.2 is a day old, not adopted).
 - The installed daemon is the plan 1 build, running; the dev app is `~/Applications/DeckOut Dev.app`, unregistered.
 
 ### Recorded only here (still open)
@@ -31,13 +34,30 @@ One launchd daemon drives the TreasLin N3 and the MiraBox N4 (DeckOut plan 1 bui
 app shell (plan 2) is built on a local branch: it registers its agent, checks signatures both ways, and shows the
 plugged-in deck as it is, live strip included; editing comes with plan 3.
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
+20/11/2026 — DeckOut plan 3 on `deckout-3-editing`: `swift test` 152/152 (new T-119–T-133), watched; test session 3 on this Mac without the owner: `--selftest` 12/12 against the live dev agent (key set and saved, Test ran `echo` in the agent, preset made live then deleted, brightness drag one undo, all undone), the app recovered from KI-008 by itself, update restart; real-window snapshots of the editors. Not checked: clicks, typing, focus (owner, at UAT).
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- DeckOut plan 3, editing (`docs/superpowers/plans/2026-11-19-deckout-3-editing.md`), then plans 4–6, then UAT.
-  Backlog: BL-002–BL-010.
+- DeckOut plan 4, lock photo (`docs/superpowers/plans/2026-11-19-deckout-4-lock-photo.md`), then plans 5–6, then
+  UAT. Backlog: BL-002–BL-015.
 
 ## Completed
+
+### 20/11/2026 — Every control of both decks is set from DeckOut, and changes show on the deck at once
+- **Reference:** `docs/reference/app.md` (Editing); plan `docs/superpowers/plans/2026-11-19-deckout-3-editing.md`;
+  T-119–T-133; BL-011–BL-015.
+- **For a person:** click a key, button, knob or strip block and set what it does from a menu: open an app, a
+  website or a file, a keyboard shortcut (press it to record it), one of your Shortcuts, media keys, volume and
+  monitor brightness steps, a script or a command. Keys take the app's icon or your picture. Test runs it right there
+  and shows what happened. Presets are made, switched, renamed and deleted from the toolbar, with a brightness slider
+  beside them; ⌘Z undoes anything. Keys whose app or script has gone are marked red. When a shortcut needs
+  Accessibility, the app says so and opens the right pane.
+- **Decision (owner, 19/11/2026):** the unmocked editor screens follow the approved mockups' style (CL designed);
+  judged at UAT. (CL calls, in the plan / ledger:) the app keeps its own undo history of whole configs; a hand edit
+  picked up starts it again; pictures are imported at most 512 px.
+- **Checked:** `swift test` 152/152; test session 3 (run line above). A fresh reviewer found three important issues
+  (edits blocked after a fixed problem; undo dropping a hand edit; phone photos coming out black), fixed test-first,
+  plus two re-graded minors (a frozen slider in debug builds; a field re-committing after undo).
 
 ### 19/11/2026 — DeckOut is an app: it runs the deck controller and shows your deck as it is
 - **Reference:** `docs/reference/app.md` (new); design `docs/design/config_app.md` (phase 2); plan
@@ -85,7 +105,6 @@ plugged-in deck as it is, live strip included; editing comes with plan 3.
   average — owner told); memory 19 MB vs 17 MB. The Mac never system-slept (display sleep only), so a real sleep's
   USB power loss is covered only by the unplug checks.
 
-- Brightness knob fixes (02/11/2026): mode cycle stuck on Left — `refreshDisplays()` reset the mode to All on every press (regression from the 02/04/2026 hot-plug refresh); daemon crash ~2.5 s after the HUD closed — NSWindow over-release, fixed with `isReleasedWhenClosed = false`. Checked by hand 02/11/2026: the knob cycles All → Left → Right → All, Right adjusts only the right screen; no crash reports after the test.
 
 ## History
 Older work: `old_progress/README.md`.

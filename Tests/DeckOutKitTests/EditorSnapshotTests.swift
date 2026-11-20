@@ -1,3 +1,4 @@
+import AppKit
 import DeckCore
 import SwiftUI
 import Testing
@@ -56,6 +57,47 @@ import Testing
     }
     let model = try previewModel(config, deck: .n4, selection: nil)
     #expect(model.problems == ["key_2": "The script isn't there any more"])
+}
+
+/// How far down the editor panel (the window's right 300 pt) Clear's red reaches, in points from the top; nil if
+/// nothing in the panel is red. The deck's red selection ring is left of the panel.
+private func lowestRedInPanel(_ png: Data, window: CGSize) throws -> CGFloat? {
+    let image = try #require(NSBitmapImageRep(data: png)?.cgImage)
+    let w = image.width, h = image.height
+    var bytes = [UInt8](repeating: 0, count: w * h * 4)
+    try bytes.withUnsafeMutableBytes { buffer in
+        let ctx = try #require(CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                         bytesPerRow: w * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+    }
+    let scale = CGFloat(w) / window.width
+    let left = Int((window.width - 300 + 4) * scale)
+    for y in stride(from: h - 1, through: 0, by: -1) {
+        for x in left..<w {
+            let i = (y * w + x) * 4
+            if bytes[i] > 180, bytes[i + 1] < 110, bytes[i + 2] < 110 { return CGFloat(y) / scale }
+        }
+    }
+    return nil
+}
+
+// Clear Key / Knob / Block sits at the panel's bottom, as in the mockup, not under Test: the scrolling panel gave the
+// editor only the height it needed, so the space above Clear collapsed (BL-032).
+@MainActor @Test func clearSitsAtTheBottom() throws {   // T-168
+    var config = AppConfig.empty
+    config.setButton(.n4, "key_3", ButtonConfig(action: "media_next"))
+    config.setKnob(.n4, "knob_4", KnobConfig(rotate: KnobAction(action: "system_volume", step: 2),
+                                             press: KnobAction(action: "system_mute_toggle")))
+    config.setStripBlock("1", StripBlockConfig(type: .internet, action: "url:https://example.com"))
+    for selection in ["key_3", "knob_4", "1"] {
+        let model = try previewModel(config, deck: .n4, selection: selection)
+        for dark in [false, true] {
+            let png = try Snapshot.windowPNG(DeckStage(model: model, face: DeckFace.of(.n4)), size: MainWindow.size, dark: dark)
+            let lowest = try #require(try lowestRedInPanel(png, window: MainWindow.size), "\(selection): Clear is drawn")
+            #expect(lowest > MainWindow.size.height - 60, "\(selection) \(dark ? "dark" : "light"): Clear reaches y \(lowest)")
+        }
+    }
 }
 
 @MainActor @Test func accessibilityNoteDraws() throws {   // T-129 (design check)

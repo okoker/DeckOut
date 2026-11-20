@@ -29,7 +29,8 @@ struct CommandField: View {
     }
 }
 
-/// The command in a window big enough to read it: Cancel changes nothing, Save (⌘Return) applies it.
+/// The command in a window big enough to read it: Cancel (Esc) changes nothing, Save (⌘Return, the prominent button)
+/// applies it.
 struct CommandSheet: View {
     static let size = CGSize(width: 640, height: 380)
     let save: (String) -> Void
@@ -56,6 +57,7 @@ struct CommandSheet: View {
                     save(draft)
                     dismiss()
                 }
+                .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return, modifiers: .command)
             }
         }

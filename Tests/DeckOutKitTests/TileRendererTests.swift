@@ -1,5 +1,4 @@
 import AppKit
-import CryptoKit
 import DeckCore
 import Testing
 @testable import DeckOutKit
@@ -215,6 +214,10 @@ private func ink(_ image: CGImage, background bg: (r: Int, g: Int, b: Int)) -> C
     #expect(IconRow.defaultText(.nothing) == "Key")
     #expect(IconRow.defaultText(.playPause) == "Play / Pause")
     #expect(IconRow.defaultText(.openWebsite("https://www.github.com/okoker")) == "github.com")
+    // A strip block with no tap starts as "Block", not "Key"; with one, it names it as a key does (T-168).
+    #expect(IconRow.defaultText(.nothing, shape: .stripBlock) == "Block")
+    #expect(IconRow.defaultText(.playPause, shape: .stripBlock) == "Play / Pause")
+    #expect(IconRow.defaultText(.openWebsite("https://www.github.com/okoker"), shape: .stripBlock) == "github.com")
 }
 
 @Test func stripTileFillsTheBlock() throws {   // T-156
@@ -233,8 +236,15 @@ private func ink(_ image: CGImage, background bg: (r: Int, g: Int, b: Int)) -> C
     let symbolPNG = try #require(TileRenderer.render(symbol, library: library, width: 352, height: 224))
     let mark = try #require(whiteBounds(try decode(symbolPNG)))
     #expect(abs(mark.midX - 176) <= 4 && abs(mark.midY - 112) <= 4, "symbol at \(mark)")
-    // Keys are untouched: the same bytes as before tiles had a size (hashes taken 20/11/2026, before the change).
-    func sha(_ data: Data?) -> String { data.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() } ?? "" }
-    #expect(sha(TileRenderer.render(text, library: library)) == "ac56bee9eeab6f681473ec0a3eb447163b933044271d0a0d1441616a2ae2636f")
-    #expect(sha(TileRenderer.render(symbol, library: library)) == "7bfd2aa90a217be41d4657f98d2597fd697ecf9a2cd5ee575031c11dc5b35c86")
+    // A key's tile, by default, is still the 256 square: the text uses its width and stays clear of the edges, the
+    // symbol sits in the middle. (Shape, not bytes: font drawing changes with macOS.)
+    let key = try decode(try #require(TileRenderer.render(text, library: nil)))
+    #expect(key.width == TileRenderer.size && key.height == TileRenderer.size)
+    #expect(edgesAreBackground(key, (0x0F, 0x8A, 0x7E), band: 15), "nothing within 6 % of an edge")
+    let keyWords = try #require(whiteBounds(key))
+    #expect(keyWords.minX < 64 && keyWords.maxX > 192, "key text spans \(keyWords)")
+    let keySymbol = try decode(try #require(TileRenderer.render(symbol, library: library)))
+    #expect(keySymbol.width == TileRenderer.size && keySymbol.height == TileRenderer.size)
+    let keyMark = try #require(whiteBounds(keySymbol))
+    #expect(abs(keyMark.midX - 128) <= 4 && abs(keyMark.midY - 128) <= 4, "key symbol at \(keyMark)")
 }

@@ -82,18 +82,21 @@ the job definition it registered: a changed plist needs a new label.
   Mute; Monitor Brightness Up / Down, Switch Monitor; Run Script, Run Command. Knob turns offer Nothing, Volume and
   Monitor Brightness, with a step per click. ZR7 and unknown strings show as "set by hand" until replaced. Fields
   apply when finished (Return, leaving the field, a file chosen); the agent's own reason a string wouldn't run shows
-  under the fields. Multi-line fields (a command, a text icon) wrap and grow; Option-Return starts a new line. The
-  editor panel scrolls when its content is taller than the window.
+  under the fields. Multi-line fields (a command, a text icon) wrap and grow; Option-Return starts a new line. Each
+  editor ends with its Clear (Key, Button, Knob or Block, in red) at the bottom of the panel; the panel scrolls when
+  its content is taller than the window.
 - **Run Command:** the command spans the panel (3–10 lines, then it scrolls). Edit in Window… applies what was
   typed in the panel, then opens a 640 × 380 editor: monospaced, wrapped, and typed exactly (smart quotes, dashes,
-  text replacements and spelling fixes off whatever the macOS settings); ⌘Return saves, Esc cancels.
+  text replacements and spelling fixes off whatever the macOS settings); Save (the prominent button, ⌘Return)
+  applies it, Cancel (Esc) changes nothing.
 - **Keyboard shortcuts** are recorded by pressing them; only keys in the agent's own table (`KeyNames`) are taken.
 - **Apple Shortcuts** come from `shortcuts list` (run by the app, as an argument array); a text field if none.
 - **Icons** ([App | Image | Text | Library], and No Icon): the app's own icon for Open App (rendered to a 256 px PNG
   in `<config folder>/icons/`, following the app unless you chose another icon); a picture you choose (decoded and
   saved as a PNG at most 512 px on a side in `icons/`; a file that isn't a picture is refused with a message); text
   (wrapped at spaces into up to three lines, as large as fits down to a readable minimum, then cut with an ellipsis;
-  a new one starts with the key's app, file or site name) or a library symbol (centred on its outline) on one of ten
+  a new one starts with the key's app, file or site name, or its action's name: "Key" for none, "Block" on a strip
+  block with no tap) or a library symbol (centred on its outline) on one of ten
   colours, drawn by the app as `icons/tile-<hash>.png` (256 px, sRGB, white or near-black text by the background
   unless chosen; a `tile` that doesn't read is ignored) with the key's `tile` recording how, so it opens
   for editing again; changing the key's action keeps it. The library is Phosphor 2.1.2 (1,530 symbols, Bold and

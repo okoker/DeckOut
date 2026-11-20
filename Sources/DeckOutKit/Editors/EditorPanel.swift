@@ -7,13 +7,18 @@ struct EditorPanel: View {
     let face: DeckFace
 
     var body: some View {
-        ScrollView(.vertical) { content }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.background.secondary)
-            .id(model.selection)   // a fresh editor (and Test result) per control
+        GeometryReader { proxy in
+            ScrollView(.vertical) {
+                content.frame(minHeight: proxy.size.height, alignment: .top)   // so Clear sits at the bottom
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.background.secondary)
+        .id(model.selection)   // a fresh editor (and Test result) per control
     }
 
-    /// Scrolls when it's taller than the window (a long command with a strip block's icon settings).
+    /// At least the panel's height, so the editor's Clear sits at the bottom; scrolls when it's taller than the window
+    /// (a long command with a strip block's icon settings).
     private var content: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let id = model.selection, let control = face.control(id) {

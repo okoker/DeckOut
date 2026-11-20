@@ -90,9 +90,3 @@ Next free ID: BL-033
   window also closes, losing its text, when the deck on screen changes (unplug, agent restart). Skip the store's
   undo while a sheet is key (`NSApp.keyWindow?.sheetParent != nil`); host the command sheet on the main window like
   the preset sheet. `Toolbar.swift` (`UndoCommands`), `CommandEditor.swift` (plan 7 review, 20/11/2026)
-- BL-032 [P2] [debt] Loose ends from the plan 7 review: Clear Key / Block / Knob sits under Test, not at the panel's
-  bottom (the scrolling panel collapses the spacer; the mockup has it at the bottom: a `GeometryReader` minimum
-  height); a strip block with no tap starts a text image as "Key"; Save in the command window is a plain button
-  (looks like Cancel); tests: T-153's `insertText` half can't fail (its flag checks carry it), T-156's hashes tie
-  the suite to this macOS's font drawing (an OS update can fail it with no code change), T-157 checks undo for one
-  edit only. `EditorPanel.swift`, `IconRow.swift`, `CommandEditor.swift` (plan 7 review, 20/11/2026)

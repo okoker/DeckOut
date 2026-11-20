@@ -8,7 +8,8 @@ import Testing
 let longCommand = #"osascript -e 'tell application "iTerm2" to create window with profile "POPUP-INFO" command "/bin/zsh -lc \"/Users/someone/scripts/network-detail.sh --interface en0 --gateway 192.168.1.1 --watch --every 5; exec zsh\""'"#
 
 // The command editor's text view keeps quotes and dashes as typed: macOS would otherwise turn ' " -- into curly
-// quotes and a dash when the person's "smart quotes" setting is on, and the command would fail.
+// quotes and a dash when the person's "smart quotes" setting is on, and the command would fail. The switches are the
+// test: text inserted in code is never substituted, even with them on, so checking what it typed couldn't fail.
 @MainActor @Test func codeTextViewKeepsWhatIsTyped() {   // T-153
     let view = CodeTextView.makeTextView()
     #expect(!view.isAutomaticQuoteSubstitutionEnabled)
@@ -18,9 +19,6 @@ let longCommand = #"osascript -e 'tell application "iTerm2" to create window wit
     #expect(!view.isContinuousSpellCheckingEnabled)
     #expect(!view.isRichText)
     #expect(view.font?.isFixedPitch == true)
-    let typed = #"echo 'a' -- "b""#
-    view.insertText(typed, replacementRange: NSRange(location: 0, length: 0))
-    #expect(view.string == typed)
 }
 
 // The panel with a long command, and the larger editor: PNGs for a look.

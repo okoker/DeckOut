@@ -162,10 +162,11 @@ struct IconRow: View {
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(rgb: 0x3B3B3E), lineWidth: 1.5).padding(-1))
     }
 
-    /// The text a new text icon starts with: what the key opens or does, by name (it wraps; it's never cut).
-    static func defaultText(_ choice: ActionChoice) -> String {
+    /// The text a new text icon starts with: what the key or the block's tap opens or does, by name (it wraps; it's
+    /// never cut); "Key", or "Block" on a strip block, when it does nothing.
+    static func defaultText(_ choice: ActionChoice, shape: IconShape = .key(.n4)) -> String {
         switch choice {
-        case .nothing: return "Key"
+        case .nothing: return shape == .stripBlock ? "Block" : "Key"
         case .openApp(let path) where !path.isEmpty: return ActionNames.appName(path)
         case .openFile(let path) where !path.isEmpty, .runScript(let path) where !path.isEmpty:
             return ((path as NSString).lastPathComponent as NSString).deletingPathExtension
@@ -185,7 +186,7 @@ struct IconRow: View {
         case .image:
             chooseImage()
         case .text:
-            setTile(IconTile(kind: .text, text: Self.defaultText(choice), symbol: nil, style: nil,
+            setTile(IconTile(kind: .text, text: Self.defaultText(choice, shape: shape), symbol: nil, style: nil,
                              background: Self.swatches[0], foreground: nil))
         case .library:
             setTile(IconTile(kind: .symbol, text: nil, symbol: "star", style: "fill", background: Self.swatches[9],

@@ -4,44 +4,54 @@ import Testing
 @testable import DeckOutKit
 
 // A strip block takes a key's icons: a text or symbol tile drawn at the strip's shape, an image, or none. Setting
-// its tap never puts an icon on it (the owner: a block stays blank until its icon is picked).
+// its tap never puts an icon on it (the owner: a block stays blank until its icon is picked). Every edit is one undo
+// step.
 @MainActor @Test func stripIconEdits() throws {   // T-157
     let notes = "/System/Applications/Notes.app"
     var config = AppConfig.empty
     config.setStripBlock("1", StripBlockConfig(type: .internet, action: "url:https://example.com"))
     let model = try previewModel(config, deck: .n4, selection: "3")
     let store = try #require(model.store)
+    /// Makes the edit, then checks that one undo puts the block (and the whole config) back as it was before it, and
+    /// that redo brings the edit back.
+    func undoable(_ name: String, block id: String, _ edit: () -> Void) {
+        let before = model.config, blockBefore = model.stripBlock(id)
+        edit()
+        let after = model.config
+        #expect(after != before, "\(name) changes block \(id)")
+        store.undo()
+        #expect(model.stripBlock(id) == blockBefore && model.config == before, "\(name) undoes in one step")
+        store.redo()
+        #expect(model.config == after, "\(name) redoes")
+    }
 
     // A text tile on a block with only a tap: it shows the icon now, 352 × 224; the tap and how it was made are kept.
     let tile = IconTile(kind: .text, text: "Weather", symbol: nil, style: nil, background: "#0A84FF", foreground: nil)
-    model.setStripTap(.runCommand("echo hi"), block: "3")
-    model.setStripTile(tile, block: "3")
+    undoable("Tap", block: "3") { model.setStripTap(.runCommand("echo hi"), block: "3") }
+    undoable("Text tile", block: "3") { model.setStripTile(tile, block: "3") }
     let block = try #require(model.stripBlock("3"))
     #expect(block.type == .picture && block.tile == tile && block.action == "shell:echo hi")
     let icon = try #require(block.icon)
     let rep = try #require(NSBitmapImageRep(data: try Data(contentsOf: URL(fileURLWithPath: icon))))
     #expect(rep.pixelsWide == 352 && rep.pixelsHigh == 224)
-    store.undo()                                                    // one step
-    #expect(model.stripBlock("3")?.type == .empty && model.stripBlock("3")?.action == "shell:echo hi")
-    store.redo()
 
     // A live reading drops the icon and keeps the tap.
-    model.setStripType(.load, block: "3")
+    undoable("Live reading", block: "3") { model.setStripType(.load, block: "3") }
     #expect(model.stripBlock("3") == StripBlockConfig(type: .load, action: "shell:echo hi"))
 
     // A tap never puts an icon on a block: an empty one stays blank, a reading stays.
-    model.setStripTap(.openApp(notes), block: "4")
+    undoable("Tap on a new block", block: "4") { model.setStripTap(.openApp(notes), block: "4") }
     #expect(model.stripBlock("4")?.type == .empty && model.stripBlock("4")?.icon == nil)
-    model.setStripTap(.openApp(notes), block: "1")
+    undoable("Tap on a reading", block: "1") { model.setStripTap(.openApp(notes), block: "1") }
     #expect(model.stripBlock("1")?.type == .internet && model.stripBlock("1")?.icon == nil)
 
     // No Icon: still an icon block, with nothing on it and no tile.
-    model.setStripTile(tile, block: "2")
-    model.setStripIcon(nil, block: "2")
+    undoable("Text tile", block: "2") { model.setStripTile(tile, block: "2") }
+    undoable("No Icon", block: "2") { model.setStripIcon(nil, block: "2") }
     #expect(model.stripBlock("2") == StripBlockConfig(type: .picture))
     // An image chosen for a block replaces its tile.
-    model.setStripTile(tile, block: "2")
-    model.setStripIcon("/icons/image-1.png", block: "2")
+    undoable("Text tile", block: "2") { model.setStripTile(tile, block: "2") }
+    undoable("Chosen image", block: "2") { model.setStripIcon("/icons/image-1.png", block: "2") }
     #expect(model.stripBlock("2") == StripBlockConfig(type: .picture, icon: "/icons/image-1.png"))
 }
 

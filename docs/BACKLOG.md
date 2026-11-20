@@ -28,16 +28,12 @@ Next free ID: BL-033
 ### Open
 
 - BL-002 [P2] [feature] No handling for the Mac waking from system sleep. If a deck keeps power through sleep but resets
-  without re-enumerating, its keys could show the deck's own logo until the next lock / unlock, reload or replug. On
+  without re-enumerating, its keys could show the deck's own logo until the next lock / unlock or replug. On
   `NSWorkspace.didWakeNotification`: re-run the start-up sequence, redraw, recheck the lock. Untested here — this Mac
   never system-sleeps. `Daemon.swift` (19/11/2026)
 - BL-003 [P1] [bug] `BrightnessControl` reads 0 for a monitor at start-up and reload and then trusts its cache, so the
   first brightness turn can set a monitor to ~5 %. REQUIREMENTS says brightness is read on first interaction after
   idle. Pre-existing (v1.0.0). `BrightnessControl.swift` (19/11/2026)
-- BL-005 [P2] [debt] A reload redraws every screen on every deck (N3 6, N4 14): 75–158 ms measured 19/11/2026, on
-  the main thread, so a press during a reload waits for it. Redraw only the screens whose content changed (compare
-  each deck's layout plan before and after). Matters once the config app reloads on every edit (plan 3): most edits
-  change one key. `Daemon.reload`, `Daemon.drawAll`, `LayoutPlan` (19/11/2026)
 - BL-007 [P2] [bug] The app's N3 key preview letterboxes a non-square icon, while the deck's N3 pipeline
   (`ImageLoader.loadAsJPEG`) stretches it into the square, so the drawing differs from the deck for such icons. Draw
   the N3 preview the deck's way. `DeckFace.swift` (`DeckPreview.keyImage`), `ImageLoader.swift` (plan 2 review)

@@ -9,4 +9,9 @@ enum IconImage {
     static func renderN4(path: String) -> Data? {
         Canvas.iconTile(path: path, width: n4Size, height: n4Size)
     }
+
+    /// The same from the icon file's bytes, already read (`path` names it in the log lines and gives its type).
+    static func renderN4(data: Data, path: String) -> Data? {
+        Canvas.iconTile(data: data, path: path, width: n4Size, height: n4Size)
+    }
 }

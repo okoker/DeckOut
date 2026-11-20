@@ -3,6 +3,7 @@ import CoreGraphics
 import CoreText
 import Foundation
 import ImageIO
+import UniformTypeIdentifiers
 
 /// Drawing helpers for deck images: a black canvas, the 180° turn the N4 needs, JPEG encoding.
 /// (The N3 keeps its own pipeline, `ImageLoader.loadAsJPEG`, unchanged.)
@@ -41,8 +42,23 @@ enum Canvas {
     /// Decodes the first image in a file. Nil, with a log line, when the file is missing,
     /// undecodable, or larger than `maxDimension` pixels on a side (icons only — not photos).
     static func loadImage(path: String, maxDimension: Int = 1024) -> CGImage? {
-        guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
-              CGImageSourceGetCount(source) > 0 else {
+        firstImage(CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil), path: path,
+                   maxDimension: maxDimension)
+    }
+
+    /// The same from the file's bytes, already read: `path` names the file in the log lines, and its extension
+    /// tells the decoder the type, as it does when decoding from the path.
+    static func loadImage(data: Data, path: String, maxDimension: Int = 1024) -> CGImage? {
+        var options: [CFString: Any] = [:]
+        if let type = UTType(filenameExtension: (path as NSString).pathExtension) {
+            options[kCGImageSourceTypeIdentifierHint] = type.identifier
+        }
+        return firstImage(CGImageSourceCreateWithData(data as CFData, options as CFDictionary), path: path,
+                          maxDimension: maxDimension)
+    }
+
+    private static func firstImage(_ source: CGImageSource?, path: String, maxDimension: Int) -> CGImage? {
+        guard let source, CGImageSourceGetCount(source) > 0 else {
             print("Warning: could not load image at \(path)")
             return nil
         }
@@ -71,7 +87,16 @@ enum Canvas {
     /// Loads an icon, trims its transparent padding and draws it fitted inside a black
     /// `width`×`height` tile with `margin` on every side, turned 180°.
     static func iconTile(path: String, width: Int, height: Int, margin: CGFloat = 4) -> Data? {
-        guard let icon = trimmedIcon(path: path) else { return nil }
+        iconTile(trimmed(loadImage(path: path)), width: width, height: height, margin: margin)
+    }
+
+    /// The same tile from the icon file's bytes, already read (`path` names it in the log lines and gives its type).
+    static func iconTile(data: Data, path: String, width: Int, height: Int, margin: CGFloat = 4) -> Data? {
+        iconTile(trimmed(loadImage(data: data, path: path)), width: width, height: height, margin: margin)
+    }
+
+    private static func iconTile(_ icon: CGImage?, width: Int, height: Int, margin: CGFloat) -> Data? {
+        guard let icon else { return nil }
         return jpeg(width: width, height: height) { ctx in
             ctx.draw(icon, in: iconRect(icon, width: width, height: height, margin: margin))
         }
@@ -79,7 +104,7 @@ enum Canvas {
 
     /// The same tile upright, as a person sees it on the deck (the config app's drawing).
     static func iconTileImage(path: String, width: Int, height: Int, margin: CGFloat = 4) -> CGImage? {
-        guard let icon = trimmedIcon(path: path) else { return nil }
+        guard let icon = trimmed(loadImage(path: path)) else { return nil }
         return image(width: width, height: height) { ctx in
             ctx.draw(icon, in: iconRect(icon, width: width, height: height, margin: margin))
         }
@@ -98,9 +123,10 @@ enum Canvas {
         return ctx.makeImage()
     }
 
-    private static func trimmedIcon(path: String) -> CGImage? {
-        guard let source = loadImage(path: path) else { return nil }
-        return ImageLoader.trimTransparency(source) ?? source
+    /// The icon with its transparent padding trimmed.
+    private static func trimmed(_ icon: CGImage?) -> CGImage? {
+        guard let icon else { return nil }
+        return ImageLoader.trimTransparency(icon) ?? icon
     }
 
     private static func iconRect(_ icon: CGImage, width: Int, height: Int, margin: CGFloat) -> CGRect {

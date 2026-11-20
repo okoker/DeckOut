@@ -9,6 +9,8 @@ public final class Daemon {
     private var config: AppConfig
     private var dispatcher: ActionDispatcher
     private let decks = DeckManager()
+    /// Key icons and picture blocks, rendered again only when a file's bytes change.
+    private let slotImages = SlotImageCache()
     private var keepaliveTimer: Timer?
     private let lockMonitor = LockMonitor()
 
@@ -71,8 +73,8 @@ public final class Daemon {
 
     /// Called after a deck connects or is removed.
     var onDecksChanged: (() -> Void)?
-    /// Called once per redraw with the images just drawn on live strip blocks, one per block type (the config app
-    /// shows them in its drawing).
+    /// Called once per redraw with the images it made for live strip blocks, one per block type, whether they were
+    /// sent or already showing (the config app shows them in its drawing).
     var onLiveImages: (([StripBlockType: Data]) -> Void)?
 
     /// The decks plugged in now.
@@ -103,9 +105,10 @@ public final class Daemon {
         }
     }
 
-    /// Switch to a new, already validated config and redraw every connected deck in place. The monitor control
-    /// is rebuilt when `displays` changed, or when `rebuildMonitors` asks (a reload from outside: it finds monitors
-    /// plugged in, or `m1ddc` installed, since start, as every reload did in v1.0.0).
+    /// Switch to a new, already validated config and redraw every connected deck in place, sending only the slots
+    /// whose image changed. The monitor control is rebuilt when `displays` changed, or when `rebuildMonitors` asks
+    /// (a reload from outside: it finds monitors plugged in, or `m1ddc` installed, since start, as every reload did
+    /// in v1.0.0).
     public func reload(_ newConfig: AppConfig, rebuildMonitors: Bool = false) {
         let started = Date()
         let displaysChanged = Self.displaysChanged(config.displays, newConfig.displays)
@@ -177,10 +180,11 @@ public final class Daemon {
         updateLiveSources()
     }
 
-    /// The layout, or — while the Mac is locked — the N4's lock photo if one is set.
-    private func showCurrent(_ connection: DeckConnection) {
-        if livePaused, drawLockPhoto(connection) { return }
-        drawAll(connection)
+    /// The layout, or — while the Mac is locked — the N4's lock photo if one is set. Only the slots whose image
+    /// changed are sent; with `everySlot`, every slot (unlock: a deck may have reset itself meanwhile).
+    private func showCurrent(_ connection: DeckConnection, everySlot: Bool = false) {
+        if livePaused, drawLockPhoto(connection, everySlot: everySlot) { return }
+        drawAll(connection, everySlot: everySlot)
     }
 
     private func brightness(for kind: DeckKind) -> Int {
@@ -190,32 +194,33 @@ public final class Daemon {
         }
     }
 
-    /// Draws every slot of the deck's layout plan in place (a black image where nothing is set),
-    /// then one commit. No clear, unless the model needs one.
-    func drawAll(_ connection: DeckConnection) {
+    /// Makes the image of every slot of the deck's layout plan (a black image where nothing is set; icons from the
+    /// cache, live blocks from their latest reading) and sends, in place, those that differ from what the deck
+    /// shows — every slot with `everySlot` — then one commit if any was sent. No clear, unless the model needs one.
+    func drawAll(_ connection: DeckConnection, everySlot: Bool = false) {
         let started = Date()
         let model = connection.model
         let plan = LayoutPlan.slots(model: model, config: config)
         if model.clearsBeforeRedraw { connection.clearAll() }
+        var images = slotImages.images(plan: plan, model: model)
         var live: [StripBlockType: Data] = [:]
         for (slot, content) in plan.sorted(by: { $0.key < $1.key }) {
-            var jpeg: Data?
-            if case .strip(let type) = content {
-                jpeg = liveImage(type)
-                if let jpeg { live[type] = jpeg }
-            }
-            connection.draw(slot: slot, jpeg: jpeg ?? LayoutPlan.render(content, slot: slot, model: model))
+            guard case .strip(let type) = content else { continue }
+            let jpeg = liveImage(type)
+            if let jpeg { live[type] = jpeg }
+            images[slot] = jpeg ?? LayoutPlan.blank(slot: slot, model: model)
         }
-        connection.commit()
+        let sent = connection.drawChanged(images, everySlot: everySlot)
         if !live.isEmpty { onLiveImages?(live) }
         let ms = Int(Date().timeIntervalSince(started) * 1000)
-        print("Drew \(plan.count) slots on \(model.kind.rawValue) in \(ms) ms")
+        print("Drew \(sent) of \(plan.count) slots on \(model.kind.rawValue) in \(ms) ms")
     }
 
     // MARK: - Lock
 
     /// Locked: live readings pause and the N4 shows its lock photo (without one, every deck keeps its
-    /// layout, inert). Unlocked: every deck redraws its layout and live readings resume.
+    /// layout, inert). Unlocked: every deck redraws every slot (a deck that reset itself while locked, e.g.
+    /// through sleep, is put right) and live readings resume.
     private func lockChanged(_ locked: Bool) {
         print(locked ? "Screen locked" : "Screen unlocked")
         updateLiveSources()
@@ -223,7 +228,7 @@ public final class Daemon {
             if locked {
                 _ = drawLockPhoto(connection)
             } else {
-                showCurrent(connection)
+                showCurrent(connection, everySlot: true)
             }
         }
     }
@@ -240,19 +245,17 @@ public final class Daemon {
     }
 
     /// Draws the lock photo across an N4's keys and strip: the preview framing if one is up, else the config's.
+    /// Sends only the pieces that differ from what the deck shows (every piece with `everySlot`).
     /// False (nothing drawn) for another deck, with no photo set, or when the photo can't be read.
     @discardableResult
-    private func drawLockPhoto(_ connection: DeckConnection) -> Bool {
+    private func drawLockPhoto(_ connection: DeckConnection, everySlot: Bool = false) -> Bool {
         guard connection.model.kind == .n4, let framing = lockPhotoPreview ?? config.n4?.lockPhoto else { return false }
         let started = Date()
         let preview = lockPhotoPreview.flatMap { previewPhotos.image(for: $0.path) }
         let slices = LockPhoto.jpegSlices(framing, photo: preview)
         guard !slices.isEmpty else { return false }
-        for (slot, jpeg) in slices.sorted(by: { $0.key < $1.key }) {
-            connection.draw(slot: slot, jpeg: jpeg)
-        }
-        connection.commit()
-        print("Drew lock photo on n4 (\(slices.count) slots) in \(Int(Date().timeIntervalSince(started) * 1000)) ms")
+        let sent = connection.drawChanged(slices, everySlot: everySlot)
+        print("Drew lock photo on n4 (\(sent) of \(slices.count) slots) in \(Int(Date().timeIntervalSince(started) * 1000)) ms")
         return true
     }
 
@@ -384,16 +387,13 @@ public final class Daemon {
         }
     }
 
-    /// Redraws only the slots showing `type`, on every deck that shows it.
+    /// Redraws only the slots showing `type`, on every deck that shows it, and only where the image differs.
     private func redrawLive(_ type: StripBlockType) {
         guard !livePaused, let jpeg = liveImage(type) else { return }   // never over the lock photo
         onLiveImages?([type: jpeg])
         for connection in decks.connections {
-            let slots = LayoutPlan.slots(model: connection.model, config: config)
-                .filter { $0.value == .strip(type) }.keys.sorted()
-            guard !slots.isEmpty else { continue }
-            for slot in slots { connection.draw(slot: slot, jpeg: jpeg) }
-            connection.commit()
+            let slots = LayoutPlan.slots(model: connection.model, config: config).filter { $0.value == .strip(type) }
+            connection.drawChanged(slots.mapValues { _ in jpeg }, everySlot: false)
         }
     }
 

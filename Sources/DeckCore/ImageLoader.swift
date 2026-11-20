@@ -15,27 +15,17 @@ enum ImageLoader {
     private static let maxSourceDimension = 1024
 
     static func loadAsJPEG(path: String, size: Int = 85, quality: Double = 0.9) -> Data? {
-        let url = URL(fileURLWithPath: path) as CFURL
-        guard let source = CGImageSourceCreateWithURL(url, nil),
-              CGImageSourceGetCount(source) > 0 else {
-            print("Warning: could not load image at \(path)")
-            return nil
-        }
+        guard let image = Canvas.loadImage(path: path, maxDimension: maxSourceDimension) else { return nil }
+        return render(image, size: size, quality: quality)
+    }
 
-        // Check dimensions from metadata before full decode
-        if let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-           let pw = props[kCGImagePropertyPixelWidth] as? Int,
-           let ph = props[kCGImagePropertyPixelHeight] as? Int,
-           pw > maxSourceDimension || ph > maxSourceDimension {
-            print("Warning: image too large (\(pw)x\(ph), max \(maxSourceDimension)px) at \(path)")
-            return nil
-        }
+    /// The same from the icon file's bytes, already read (`path` names it in the log lines and gives its type).
+    static func loadAsJPEG(data: Data, path: String, size: Int = 85, quality: Double = 0.9) -> Data? {
+        guard let image = Canvas.loadImage(data: data, path: path, maxDimension: maxSourceDimension) else { return nil }
+        return render(image, size: size, quality: quality)
+    }
 
-        guard let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-            print("Warning: could not decode image at \(path)")
-            return nil
-        }
-
+    private static func render(_ image: CGImage, size: Int, quality: Double) -> Data? {
         // Auto-trim: crop to non-transparent content bounds
         let cropped = trimTransparency(image) ?? image
 

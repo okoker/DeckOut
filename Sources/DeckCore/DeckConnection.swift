@@ -13,6 +13,8 @@ final class DeckConnection {
     static let reportBufferSize = 512
 
     private(set) var isOpen = true
+    /// What each slot shows, as last sent: a redraw sends only what differs.
+    private var shown = ShownSlots()
 
     init(model: DeckModel, device: IOHIDDevice) {
         self.model = model
@@ -21,26 +23,44 @@ final class DeckConnection {
         reportBuffer.initialize(repeating: 0, count: Self.reportBufferSize)
     }
 
-    /// Start-up sequence: wake, brightness, refresh, clear every slot.
+    /// Start-up sequence: wake, brightness, refresh, clear every slot (so the next redraw sends every slot).
     func start(brightness: Int) {
         send(CRTCommand.makeDIS())
         setBrightness(brightness)
         send(CRTCommand.makeSTP())
         send(CRTCommand.makeCLE())
+        shown.forgetAll()
     }
 
     func setBrightness(_ brightness: Int) {
         send(CRTCommand.makeLIG(UInt8(clamping: brightness)))
     }
 
-    /// Clears every slot. After start-up only for a model with `clearsBeforeRedraw`.
+    /// Clears every slot (so the next redraw sends every slot). After start-up only for a model with
+    /// `clearsBeforeRedraw`.
     func clearAll() {
         send(CRTCommand.makeCLE())
+        shown.forgetAll()
+    }
+
+    /// Sends the slots of `images` whose image differs from what they show (with `everySlot`, all of them), then
+    /// one commit if it sent any. Returns how many it sent.
+    @discardableResult
+    func drawChanged(_ images: [UInt8: Data], everySlot: Bool) -> Int {
+        let slots = shown.changed(images, everySlot: everySlot)
+        for slot in slots {
+            if let jpeg = images[slot] { draw(slot: slot, jpeg: jpeg) }
+        }
+        if !slots.isEmpty { commit() }
+        return slots.count
     }
 
     /// Sends one image to a wire slot: `BAT` header, then the JPEG in 1024-byte chunks.
     /// It shows after the next `commit()`. Stops at the first failed packet (e.g. the deck was unplugged).
-    func draw(slot: UInt8, jpeg: Data) {
+    /// The slot's image is recorded as shown only when every packet went out; otherwise the slot is forgotten, so
+    /// the next redraw sends it again.
+    private func draw(slot: UInt8, jpeg: Data) {
+        shown.forget(slot)
         guard !jpeg.isEmpty else { return }
         guard jpeg.count <= 65535 else {
             print("Warning: \(model.kind.rawValue) slot \(slot): image too large (\(jpeg.count) bytes, max 65535)")
@@ -54,10 +74,11 @@ final class DeckConnection {
             guard send(CRTCommand.makeDataChunk(data: Array(bytes[offset..<end]))) else { return }
             offset = end
         }
+        shown.record(slot, jpeg)
     }
 
     /// Shows what was drawn since the last commit.
-    func commit() {
+    private func commit() {
         send(CRTCommand.makeSTP())
     }
 

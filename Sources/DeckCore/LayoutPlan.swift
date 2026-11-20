@@ -1,15 +1,17 @@
 import Foundation
 
 /// What one image slot shows.
-enum SlotContent: Equatable {
+enum SlotContent: Hashable {
     case icon(String)               // a key's icon file
     case picture(String)            // a `picture` strip block
     case strip(StripBlockType)      // a live strip block (internet, load, volume), drawn from its latest reading
     case blank
 }
 
-/// Every image slot of a deck and what it shows. Drawing walks this whole plan — every slot, every
-/// time (start-up, reload, unlock) — so nothing has to track what changed.
+/// Every image slot of a deck and what it shows. Every redraw (start-up, reload, unlock) makes an image for each
+/// slot of this plan — icons through `SlotImageCache`, which reads each file's bytes again and renders only when
+/// they changed; live blocks from their latest reading — and sends only the slots whose image differs from what the
+/// deck shows (`ShownSlots`); unlock sends every slot.
 enum LayoutPlan {
 
     static func slots(model: DeckModel, config: AppConfig) -> [UInt8: SlotContent] {
@@ -48,7 +50,28 @@ enum LayoutPlan {
         case .strip, .blank:
             image = nil
         }
+        return image ?? blank(slot: slot, model: model)
+    }
+
+    /// The same from the file's bytes, already read (`SlotImageCache` renders this way, so the image it keeps is
+    /// always the one for the bytes it read).
+    static func render(_ content: SlotContent, bytes: Data, slot: UInt8, model: DeckModel) -> Data {
+        let image: Data?
+        switch content {
+        case .icon(let path):
+            image = model.kind == .n3 ? ImageLoader.loadAsJPEG(data: bytes, path: path)
+                                      : IconImage.renderN4(data: bytes, path: path)
+        case .picture(let path):
+            image = StripRenderer.picture(data: bytes, path: path)
+        case .strip, .blank:
+            image = nil
+        }
+        return image ?? blank(slot: slot, model: model)
+    }
+
+    /// A black image at the slot's size.
+    static func blank(slot: UInt8, model: DeckModel) -> Data {
         let size = model.imageSize(slot: slot)
-        return image ?? StripRenderer.blank(w: size.width, h: size.height)
+        return StripRenderer.blank(w: size.width, h: size.height)
     }
 }

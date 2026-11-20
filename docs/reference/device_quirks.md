@@ -97,7 +97,7 @@ Decoded inputs (`DeckInput` in `DeckModel.swift`) carry the JSON config key dire
 Full map and behaviour: `n4.md`. What catches you out:
 - **USB-C power:** on the dock's USB-C port the N4 gets no power after being unplugged for more than a few seconds — dark, and
   absent from the USB tree. A USB-A port (A-to-C cable) powers it every time (KI-009).
-- **Redraw in place:** a `CLE` blinks the whole N4, so after start-up every slot is redrawn without one. The N3
+- **Redraw in place:** a `CLE` blinks the whole N4, so after start-up slots are redrawn without one. The N3
   shows a changed icon without a `CLE` too (checked 19/11/2026), so both decks redraw in place.
 - **Swipe:** `0x39`, with no direction. Some swipes arrive as `0x38` (touch outside the blocks); that code is ignored.
 - **Knob press:** one report, no release. Strip taps likewise.

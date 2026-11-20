@@ -202,8 +202,11 @@ install). Without either, all other features work — brightness actions log a w
 - On knob rotate: applies ±step for each tick
 - On knob press: executes the knob's press action
 - Reloads the config on `SIGHUP` or the distributed notification `com.streamdeck.controller.reload`
-  (`DeckOutAgent --post-reload` posts it), then redraws every slot in place — no clear, so nothing blinks;
-  a slot with nothing set is drawn black. A reload that fails keeps the previous config and the deck unchanged.
+  (`DeckOutAgent --post-reload` posts it), then redraws in place — no clear, so nothing blinks — sending only
+  the screens whose image changed. A reload reads every icon file again and renders it again only when its bytes
+  changed (not its date or size), so a script that rewrites its icon at the same path and posts a reload shows the
+  new picture; live blocks are drawn from their latest reading. A slot with nothing set is drawn black.
+  Connect and unlock send every screen. A reload that fails keeps the previous config and the deck unchanged.
   Requests within 0.15 s of the first merge into one reload. The monitor control is built off the main thread at
   start, and again when `displays` changes or on a reload from outside (`SIGHUP`, `--post-reload`), which finds
   monitors plugged in or `m1ddc` installed since start; the config app's own saves reuse it. Until it is ready,

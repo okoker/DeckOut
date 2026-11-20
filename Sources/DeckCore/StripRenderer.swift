@@ -16,6 +16,11 @@ enum StripRenderer {
         Canvas.iconTile(path: path, width: width, height: height)
     }
 
+    /// The same from the image file's bytes, already read (`path` names it in the log lines and gives its type).
+    static func picture(data: Data, path: String) -> Data? {
+        Canvas.iconTile(data: data, path: path, width: width, height: height)
+    }
+
     // MARK: - Volume
 
     static let gaugeCenter = (x: 88, y: 56)     // upright coordinates, y up

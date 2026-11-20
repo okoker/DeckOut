@@ -11,8 +11,10 @@ until UAT. No signing. Downloads allowed: m1ddc source, Phosphor icons. Plans an
 ### Where it stands
 - Plan 2 (the app shell) built on `deckout-2-app-shell`: 127 tests, two test sessions, fresh review fixed (I1, I2);
   minors are BL-006–BL-010. Plan 3 (editing) built on `deckout-3-editing` (from plan 2's branch): 152 tests, test
-  session 3 (`--selftest` 12/12), fresh review fixed (I1–I3, M1, M7); minors BL-011–BL-015. Plans 4–6 written; next
-  is plan 4 (lock photo) on `deckout-4-lock-photo`. Downloads verified and parked in the session scratchpad:
+  session 3 (`--selftest` 12/12), fresh review fixed (I1–I3, M1, M7); minors BL-011–BL-015. Plan 4 (lock photo) built on
+  `deckout-4-lock-photo`: 161 tests, session 4 (`--selftest` with a lock photo), review fixed (I1–I4, M2, M4);
+  minors BL-016–BL-019. Next: plan 5 (icons) on `deckout-5-icons`; its Phosphor files and plan 6's vendored m1ddc
+  sit uncommitted in the tree (Packaging/Resources/, Vendor/, scripts/phosphor-index.swift) until their branches. Downloads verified and parked in the session scratchpad:
   Phosphor 2.1.2 (npm sha512 matched), m1ddc 1.3.1 (Homebrew's sha256 matched; 1.3.2 is a day old, not adopted).
 - The installed daemon is the plan 1 build, running; the dev app is `~/Applications/DeckOut Dev.app`, unregistered.
 
@@ -34,14 +36,27 @@ One launchd daemon drives the TreasLin N3 and the MiraBox N4 (DeckOut plan 1 bui
 app shell (plan 2) is built on a local branch: it registers its agent, checks signatures both ways, and shows the
 plugged-in deck as it is, live strip included; editing comes with plan 3.
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
+20/11/2026 — DeckOut plan 4 on `deckout-4-lock-photo`: `swift test` 161/161 (new T-134–T-138), watched; test session 4: `--selftest` passed with a generated lock photo moved while the N4 previewed it (agent: one decode, 17–33 ms per preview), Done back to keys, all undone; real-window snapshot of photo mode. Not checked: real drag / pinch / scroll (owner, at UAT).
 20/11/2026 — DeckOut plan 3 on `deckout-3-editing`: `swift test` 152/152 (new T-119–T-133), watched; test session 3 on this Mac without the owner: `--selftest` 12/12 against the live dev agent (key set and saved, Test ran `echo` in the agent, preset made live then deleted, brightness drag one undo, all undone), the app recovered from KI-008 by itself, update restart; real-window snapshots of the editors. Not checked: clicks, typing, focus (owner, at UAT).
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- DeckOut plan 4, lock photo (`docs/superpowers/plans/2026-11-19-deckout-4-lock-photo.md`), then plans 5–6, then
-  UAT. Backlog: BL-002–BL-015.
+- DeckOut plan 5, icons (`docs/superpowers/plans/2026-11-19-deckout-5-icons.md`), then plan 6, then UAT.
+  Backlog: BL-002–BL-019.
 
 ## Completed
+
+### 20/11/2026 — The N4's lock photo is chosen, moved and zoomed in DeckOut, live on the deck
+- **Reference:** `docs/reference/app.md` (Lock photo mode); plan `docs/superpowers/plans/2026-11-19-deckout-4-lock-photo.md`;
+  T-134–T-138; BL-016–BL-019.
+- **For a person:** Lock Photo… turns the window into the N4 showing your photo across its screens, exactly as it
+  will be cut; drag to move it, pinch or scroll to zoom, see what falls between the screens if you like. The real
+  N4 shows it as you go and goes back to its keys when you click Done. The app keeps its own copy of the photo.
+- **Decision (owner, 19/11/2026):** the approved mockup. (CL calls:) chosen photos are saved at most 3200 px as a
+  JPEG; files over 100 MB are refused; the zoom slider spans 100–400 % (pinch reaches 1000 %).
+- **Checked:** `swift test` 161/161; test session 4 (run line above). A fresh reviewer found four important issues
+  (a dead zone within a drag; the N4 left on the photo after unplugging; undo not reaching the N4; huge photos),
+  fixed test-first.
 
 ### 20/11/2026 — Every control of both decks is set from DeckOut, and changes show on the deck at once
 - **Reference:** `docs/reference/app.md` (Editing); plan `docs/superpowers/plans/2026-11-19-deckout-3-editing.md`;
@@ -90,21 +105,6 @@ plugged-in deck as it is, live strip included; editing comes with plan 3.
   the owner (run line in Current Status): every new action kind, presets, the framed lock photo, a blank start, the
   layout kept when the file went missing. Next / previous track unverified (no track player here); the owner's
   network script needs a terminal, so `script:` can't run it.
-
-### 19/11/2026 — The N4 works next to the N3: its own layout, a live strip, a photo while locked
-- **Reference:** `docs/reference/n4.md`; design `docs/design/n4_support.md` (✅ built); KI-009.
-- **For a person:** plug in either deck or both; each shows its own icons and runs its own actions. The N4's strip
-  shows internet latency, CPU / memory and volume, live; locking the Mac puts a photo across the N4 and makes keys
-  inert while the volume knob still works. Reloading the config redraws without a blink.
-- **Decision (owner, 19/11/2026):** the owner's own N4 layout in the live config, strip internet / load / empty /
-  volume, deck brightness 75. A shell action that needs Homebrew tools runs in a login shell (`zsh -lc`). The N4
-  goes on USB-A (KI-009). Lock-photo framing and brightness settings wait for the config app.
-- **Checked:** the owner worked every control on both decks with the log open; lock, sleep-to-lock and unlock; unplug
-  each deck while the other runs. Lock-photo positions measured from two photos of a test grid. Performance:
-  0.135 % of one core with both decks and the live strip, 0.015 % with the N3 alone (old daemon 0.008 %, a 7-day
-  average — owner told); memory 19 MB vs 17 MB. The Mac never system-slept (display sleep only), so a real sleep's
-  USB power loss is covered only by the unplug checks.
-
 
 ## History
 Older work: `old_progress/README.md`.

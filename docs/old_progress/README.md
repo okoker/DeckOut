@@ -6,3 +6,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 - 02 — launchd install (27/03/2026): daemon runs as a launchd service → `02_launchd_install.md`
 - 03 — CoreAudio volume and early fixes (27/03/2026): system volume via CoreAudio; report ID, config key and run loop fixes → `03_volume_and_fixes.md`
 - 04 — Brightness knob fixes (02/11/2026): mode cycle stuck on Left; HUD window over-release crash → `04_brightness_knob_fixes.md`
+- 05 — N4 support (19/11/2026): the MiraBox N4 next to the N3, live strip, lock photo → `05_n4_support.md`

@@ -123,6 +123,9 @@ public enum IconFiles {
         return true
     }
 
+    static func contentHash(_ data: Data) -> String { hash(data) }
+    static func writeFile(_ data: Data, to path: String, folder: String) -> Bool { write(data, to: path, folder: folder) }
+
     private static func hash(_ string: String) -> String { hash(Data(string.utf8)) }
 
     private static func hash(_ data: Data) -> String {

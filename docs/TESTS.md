@@ -145,6 +145,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-138 | `LockPhotoModeTests/framingIsClampedAndUndoable`, `theN4FollowsTheWindow` | Moving the photo is clamped at its edge and a whole drag is one undo step; zoom stays 1–10; Reset centres it; Remove takes it off and undo brings it back; the real N4 shows what the window shows after a move, undo and Remove, and is told to drop the photo when the only deck goes |
 | T-139 | `ConfigTests/tileRoundTripsAndIsOptional` | How a generated icon was made (`tile`: text or symbol, colours) round-trips in the config; files without it load as before |
 | T-140 | `LibraryTests/indexHasEveryIcon` | The icon library's index has all 1,530 Phosphor symbols with their characters, and both fonts (Bold, Fill) have the glyphs |
+| T-141 | `TileRendererTests/textFitsAndContrasts`, `tilesForALook` | Text tiles: one character, a long line or three lines fit inside the key (nothing cut off), white on dark colours and near-black on light ones unless a colour is chosen; empty text or a bad colour makes no tile; a strip of samples at key size for a look |
+| T-142 | `TileRendererTests/symbolDraws` | Library symbols (Bold and Fill) draw centred inside the key; an unknown name makes no tile; the same tile is written once (`icons/tile-<hash>.png`) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

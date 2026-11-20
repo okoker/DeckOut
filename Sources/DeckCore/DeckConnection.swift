@@ -44,21 +44,22 @@ final class DeckConnection {
     }
 
     /// Sends the slots of `images` whose image differs from what they show (with `everySlot`, all of them), then
-    /// one commit if it sent any. Returns how many it sent.
+    /// one commit if it sent any. If the commit fails, the slots just sent are forgotten (the deck may still show
+    /// their old images), so the next redraw sends them again. Returns how many it sent.
     @discardableResult
     func drawChanged(_ images: [UInt8: Data], everySlot: Bool) -> Int {
         let slots = shown.changed(images, everySlot: everySlot)
         for slot in slots {
             if let jpeg = images[slot] { draw(slot: slot, jpeg: jpeg) }
         }
-        if !slots.isEmpty { commit() }
+        if !slots.isEmpty, !commit() { slots.forEach { shown.forget($0) } }
         return slots.count
     }
 
     /// Sends one image to a wire slot: `BAT` header, then the JPEG in 1024-byte chunks.
     /// It shows after the next `commit()`. Stops at the first failed packet (e.g. the deck was unplugged).
-    /// The slot's image is recorded as shown only when every packet went out; otherwise the slot is forgotten, so
-    /// the next redraw sends it again.
+    /// The slot's image is recorded as shown only when every packet went out (and stays recorded only if the
+    /// commit then goes out too); otherwise the slot is forgotten, so the next redraw sends it again.
     private func draw(slot: UInt8, jpeg: Data) {
         shown.forget(slot)
         guard !jpeg.isEmpty else { return }
@@ -77,8 +78,8 @@ final class DeckConnection {
         shown.record(slot, jpeg)
     }
 
-    /// Shows what was drawn since the last commit.
-    private func commit() {
+    /// Shows what was drawn since the last commit. False if the packet didn't go out.
+    private func commit() -> Bool {
         send(CRTCommand.makeSTP())
     }
 

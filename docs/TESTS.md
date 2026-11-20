@@ -166,6 +166,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-159 | `PresetTests/presetMenuOrder`, `presetNameProblems`, `newPresetUndoesInOne`, `renameNamesThePresetItWasOpenedFor`, `presetSheetsDraw` | The pull-down's order (live first, then Default — the first preset, even renamed — then the rest below the actions); the sheet's reasons ("Type a name.", "There's already a preset called “Work”.", its own name fine when renaming); New Preset is one undo step and a refused name leaves none; Rename names the preset it was opened for (BL-011); both sheets drawn |
 | T-160 | `CommandEditorTests/multiLineFieldsShowSeveralLines` | A multi-line field shows several lines at the panel's width (the rounded-border style drew it on one line) |
 | T-161 | `CommandEditorTests/fieldsDoNotAutocorrect` | With macOS's "Correct spelling automatically" forced on (this process only), a field's editor (multi-line and single-line) doesn't autocorrect: commands, hosts and URLs stay as typed |
+| T-162 | `XPCTests/onlyAConnectionThatAskedForTheStatusHearsPushes` | A connection the agent has accepted, but that hasn't asked for the status, hears no push (XPC checks the app's signature on the first message, so a refused peer would otherwise get one); once it asks, the next push reaches it (BL-006) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

@@ -104,6 +104,22 @@ private final class Once<T>: @unchecked Sendable {
     }
 }
 
+/// Counts what a client hears on its XPC queue, read from the test.
+private final class Tally: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+    func add() {
+        lock.lock()
+        value += 1
+        lock.unlock()
+    }
+    var count: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+}
+
 private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
     data.flatMap { try? JSONDecoder().decode(type, from: $0) }
 }
@@ -128,7 +144,7 @@ private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
 @Test func clientHearsStatusChanges() async {                       // T-089
     let spy = ClientSpy()
     let harness = Harness(exporting: spy)
-    let first: Data? = await harness.call { proxy, reply in proxy.status(reply: reply) }   // connects the client
+    let first: Data? = await harness.call { proxy, reply in proxy.status(reply: reply) }   // signs the client up
     #expect(first != nil)
     let pushed: Data? = await harness.call { (_: AgentXPC, reply: @escaping (Data) -> Void) in
         spy.heard = reply
@@ -198,13 +214,36 @@ private func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
 @Test func liveStripPushedToClients() async {                        // T-105
     let spy = ClientSpy()
     let harness = Harness(exporting: spy)
-    let asked: Data? = await harness.call { proxy, reply in proxy.liveStrip(reply: reply) }   // connects the client
+    let first: Data? = await harness.call { proxy, reply in proxy.status(reply: reply) }   // signs the client up
+    #expect(first != nil)
+    let asked: Data? = await harness.call { proxy, reply in proxy.liveStrip(reply: reply) }
     #expect(decode(LiveStrip.self, asked) == harness.stub.liveStripValue)
     let pushed: Data? = await harness.call { (_: AgentXPC, reply: @escaping (Data) -> Void) in
         spy.heardStrip = reply
         DispatchQueue.main.async { harness.stub.onLiveStripChange?() }
     }
     #expect(decode(LiveStrip.self, pushed) == harness.stub.liveStripValue)
+}
+
+@Test func onlyAConnectionThatAskedForTheStatusHearsPushes() async {   // T-162
+    // XPC checks the app's signature on a connection's first message, after the agent has accepted it. Asking for
+    // the status is what signs a connection up for pushes, so a peer that will be refused hears none.
+    let spy = ClientSpy()
+    let harness = Harness(exporting: spy)
+    let strays = Tally()
+    spy.heardStrip = { _ in strays.add() }
+    let asked: Data? = await harness.call { proxy, reply in proxy.liveStrip(reply: reply) }   // accepted, not signed up
+    #expect(asked != nil)
+    DispatchQueue.main.async { harness.stub.onLiveStripChange?() }      // must reach no one
+    let status: Data? = await harness.call { proxy, reply in proxy.status(reply: reply) }     // signs it up
+    #expect(status != nil)
+    let pushed: Data? = await harness.call { (_: AgentXPC, reply: @escaping (Data) -> Void) in
+        spy.heard = reply
+        DispatchQueue.main.async { harness.stub.onStatusChange?() }
+    }
+    #expect(decode(AgentStatus.self, pushed) == harness.stub.statusValue)
+    // XPC delivers one connection's messages in the order sent: a strip push sent earlier would be here by now.
+    #expect(strays.count == 0)
 }
 
 @Test func accessibilityRequestReachesTheAgent() async {            // T-124

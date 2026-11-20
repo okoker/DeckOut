@@ -3,7 +3,8 @@ import Foundation
 /// What the config app can ask the background part over XPC. Every `Data` is the JSON of the Codable type named,
 /// so the wire format is the same types the rest of DeckCore uses.
 @objc public protocol AgentXPC {
-    /// Reply: `AgentStatus`.
+    /// Reply: `AgentStatus`. Asking for it is what signs the connection up for pushes (`AgentClientXPC`), so the app
+    /// asks it first on every connection.
     func status(reply: @escaping (Data) -> Void)
     /// Re-read the config. Reply: `ReloadResult`.
     func reload(reply: @escaping (Data) -> Void)
@@ -21,7 +22,8 @@ import Foundation
     func requestAccessibility(reply: @escaping (Bool) -> Void)
 }
 
-/// What the background part tells the app without being asked.
+/// What the background part tells the app without being asked, once the app has asked for the status on that
+/// connection.
 @objc public protocol AgentClientXPC {
     /// `AgentStatus`, sent on deck connect and remove, after each reload and after each environment read.
     func statusChanged(_ status: Data)
@@ -30,8 +32,10 @@ import Foundation
 }
 
 /// The XPC listener's delegate and exported object. Each connection must meet the peer requirement (our own app,
-/// `CodeSigning.appRequirement`), checked by XPC before any call runs. It keeps each client until its connection is
-/// invalidated, and pushes status changes to all of them. Calls hop to the main thread before touching `control`.
+/// `CodeSigning.appRequirement`), checked by XPC before any call runs. A connection becomes a client when it asks
+/// for the status (a checked call), so a peer that XPC will refuse never hears a push. It keeps each client until its
+/// connection is invalidated, and pushes status changes to all of them. Calls hop to the main thread before touching
+/// `control`.
 public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
     private let control: AgentControl
     /// Evaluated per connection (the app on disk may have been replaced since the last one). Returning nil refuses
@@ -71,7 +75,6 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
                 self.clients.removeAll { $0 === connection }
             }
         }
-        DispatchQueue.main.async { self.clients.append(connection) }
         connection.resume()
         return true
     }
@@ -79,7 +82,13 @@ public final class AgentService: NSObject, NSXPCListenerDelegate, AgentXPC {
     // MARK: - AgentXPC
 
     public func status(reply: @escaping (Data) -> Void) {
-        DispatchQueue.main.async { [control] in reply(Self.encode(control.status())) }
+        let caller = NSXPCConnection.current()      // only valid here, before the hop to main
+        DispatchQueue.main.async { [self] in
+            // Signed up in the block that replies, so no change falls between the reply and the first push.
+            // Queued on main before its removal: XPC calls the invalidation handler after the connection's messages.
+            if let caller, !clients.contains(where: { $0 === caller }) { clients.append(caller) }
+            reply(Self.encode(control.status()))
+        }
     }
 
     public func reload(reply: @escaping (Data) -> Void) {

@@ -38,10 +38,6 @@ Next free ID: BL-033
   the main thread, so a press during a reload waits for it. Redraw only the screens whose content changed (compare
   each deck's layout plan before and after). Matters once the config app reloads on every edit (plan 3): most edits
   change one key. `Daemon.reload`, `Daemon.drawAll`, `LayoutPlan` (19/11/2026)
-- BL-006 [P2] [security] The agent adds a connection to the clients it pushes status to as soon as it accepts it,
-  before XPC has checked the first message against the code-signing requirement, so a refused peer can receive one
-  status or live-strip push before it is cut off (no calls run). Add a client on its first checked call instead
-  (`NSXPCConnection.current()` inside `status`). `AgentXPC.swift` (plan 2 review, 19/11/2026)
 - BL-007 [P2] [bug] The app's N3 key preview letterboxes a non-square icon, while the deck's N3 pipeline
   (`ImageLoader.loadAsJPEG`) stretches it into the square, so the drawing differs from the deck for such icons. Draw
   the N3 preview the deck's way. `DeckFace.swift` (`DeckPreview.keyImage`), `ImageLoader.swift` (plan 2 review)

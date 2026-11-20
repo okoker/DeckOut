@@ -10,3 +10,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 - 06 — DeckOut plan 1, the background part (19/11/2026): presets, photo framing, new actions, XPC service → `06_deckout_plan1_background.md`
 - 07 — DeckOut plan 2, the app shell (19/11/2026): the app runs its agent, signature checks, the deck drawing → `07_deckout_plan2_app_shell.md`
 - 08 — DeckOut plan 3, editing (20/11/2026): every control set from the app, presets, brightness, Test, undo → `08_deckout_plan3_editing.md`
+- 09 — DeckOut plan 4, lock photo (20/11/2026): the N4 photo chosen, moved and zoomed from the app, live on the deck → `09_deckout_plan4_lock_photo.md`

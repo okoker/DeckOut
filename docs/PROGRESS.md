@@ -1,20 +1,23 @@
 # Progress
 
-## Session Handover — 20/11/2026 02:35: UAT fixes built and installed; the owner re-tests them
+## Session Handover — 20/11/2026: seven backlog fixes on top of the UAT fixes; the owner re-tests both
 
 ### What was done
 - DeckOut phases 2–6 are on chained local branches (`deckout-2-app-shell` → … → `deckout-6-settings`); the owner's
   first UAT issues are fixed on `deckout-7-uat-fixes` (plan 7, from `deckout-6-settings`): BL-026 command field,
-  BL-027 strip images, BL-028 / BL-011 presets. Installed to `~/Applications/DeckOut Dev.app`. Not pushed, merged
-  or signed. Rulings per plan: `.superpowers/sdd/<plan>/progress.md`; deferred minors BL-006–BL-025, BL-030–BL-032.
+  BL-027 strip images, BL-028 / BL-011 presets. Then, on the same branch, seven backlog fixes (one commit each):
+  BL-006, BL-009, BL-010, BL-030, BL-013, BL-021, BL-032. Installed to `~/Applications/DeckOut Dev.app`. Not pushed,
+  merged or signed. Rulings per plan: `.superpowers/sdd/<plan>/progress.md`.
 
-### The owner's checks for plan 7 (quit and reopen DeckOut Dev first: the new app restarts the agent)
-- Command: type in the panel without Return, click Edit in Window…: the typing is there; Save (⌘Return) applies,
-  Esc cancels; `' " --` and command words stay as typed in both.
-- Strip: a block shows Tap first, then Shows → An image → Text / Library / Image, drawn wide on the N4.
+### The owner's checks (quit and reopen DeckOut Dev first: the new app restarts the agent)
+- Command: type in the panel without Return, click Edit in Window…: the typing is there; Save (⌘Return, now the
+  blue button) applies, Esc cancels; `' " --` and command words stay as typed in both.
+- Strip: a block shows Tap first, then Shows → An image → Text / Library / Image, drawn wide on the N4. A block
+  showing Notes' own icon, its tap changed to another app, shows that app's icon (BL-030); a text image on a block
+  with no tap starts as "Block". An internet block's Host emptied goes back to one.one.one.one and turns green.
+- Every editor: Clear Key / Block / Knob sits at the bottom of the panel, with no stray scroll.
 - Presets: New Preset… → Cancel adds nothing; Return creates; a taken name greys out Create with the reason; Rename;
   the menu order; the name selected when the sheet opens; Save and Create look right (snapshots can't show them).
-- BL-030 needs the owner's call (a strip block's App image when the tap's app changes).
 
 ### Environment state — the decks now run on DeckOut Dev
 - The hand install is retired: `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` (its
@@ -28,8 +31,9 @@
   the agent on the new build).
 
 ### Gotchas
-- KI-008: installing over an unregistered dev agent then registering kills the first start; the app now unregisters
-  and registers afresh by itself after 10 s ("registered again" in its output). Reinstalling while registered is fine.
+- KI-008: replacing the bundle (`make install-dev`, registered or not) can get the agent's next start killed by a
+  launch constraint; the app unregisters and registers afresh by itself after 10 s ("registered again" in its
+  output), so the decks are dark ~10 s after an install.
 - `--selftest` ends with Stop and Remove (it leaves the dev agent unregistered): don't run it while the owner uses
   DeckOut Dev for their decks.
 - Tests: `ImageRenderer` draws AppKit controls as yellow placeholders (use `Snapshot.windowPNG`); read tile pixels as
@@ -56,17 +60,34 @@ DeckOut Dev (`~/Applications`, a debug build of `deckout-7-uat-fixes`) drives th
 through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) is in the owner's
 UAT: it runs the deck controller from its bundle, edits every control, presets, brightness, the lock photo, generated
 icons, monitors and its own removal.
+20/11/2026 — Seven backlog fixes on `deckout-7-uat-fixes` (to 1b615ac): `swift test` 210/210 (new T-162–T-168), watched; `make install-dev` (build 261120.035630), then one `--snapshot` run of the real app: it asked the old agent to restart, the new one hit KI-008 and the app's own recovery re-registered it 10 s later; the window said "Deck controller running" (the new agent's build), and the agent drew the N3 and the N4's lock photo (Mac locked). Not checked: live strip pushes (paused while locked), every click (owner, at UAT).
 20/11/2026 — DeckOut plan 7 on `deckout-7-uat-fixes`: `swift test` 198/198 (new T-153–T-161; T-132 changed), watched; `make install-dev` installed it. Not checked: the clicks in the real window (owner, at UAT; the app was theirs and open).
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
 20/11/2026 — DeckOut plan 6 on `deckout-6-settings`: `swift test` 185/185 (new T-144–T-152), watched; test sessions 6–7: `--selftest` 23/23 (the app's own m1ddc lists "LG HDR 4K · Left / Right", both answer a brightness read; Stop and Remove stays removed 15 s later with launchd holding no job); the old-controller screen in the real window. Not checked: Retire It on the real plist, Settings by hand (owner, at UAT).
 20/11/2026 — DeckOut plan 5 on `deckout-5-icons`: `swift test` 172/172 on the branch (new T-139–T-143), watched; test session 5: `--selftest` passed with a text and a symbol tile drawn by the real app's bundled library; the app recovered from KI-008 by itself. Not checked: the pickers by hand (owner, at UAT).
-20/11/2026 — DeckOut plan 4 on `deckout-4-lock-photo`: `swift test` 161/161 (new T-134–T-138), watched; test session 4: `--selftest` passed with a generated lock photo moved while the N4 previewed it (agent: one decode, 17–33 ms per preview), Done back to keys, all undone; real-window snapshot of photo mode. Not checked: real drag / pinch / scroll (owner, at UAT).
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- UAT of DeckOut (handover above), then merge, signing and release (design phase 7). Backlog: BL-002–BL-032.
+- UAT of DeckOut (handover above), then merge, signing and release (design phase 7). Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 20/11/2026 — Seven backlog fixes: strip images follow the tap's app, Stop and Remove can't be undone behind your back, tidier editors
+- **Reference:** `docs/reference/app.md` (Launch; Editing; First run and removal), `docs/REQUIREMENTS.md` (XPC);
+  plan `docs/superpowers/plans/2026-11-20-deckout-backlog-fixes-1.md`; T-162–T-168 (T-143, T-153, T-156, T-157
+  sharpened); BL-006, BL-009, BL-010, BL-013, BL-021, BL-030, BL-032.
+- **For a person:** a strip block showing an app's own icon follows its tap to another app, as a key does. An emptied
+  Host field pings the default host instead of staying red. Clear sits at the panel's bottom; Save in Edit in
+  Window… stands out; a block's text image starts "Block". Stop and Remove says "Stopping…" until macOS has the agent
+  out, and a recovery already under way can no longer register it again afterwards. A build without the symbol
+  library says so. Behind the scenes: the agent tells only a signature-checked app about changes, and builds the
+  ~40 KB live-strip update only when the app is open, once per redraw.
+- **Decision (owner, 20/11/2026):** BL-030: only an image that already is an app's own icon follows; a blank block,
+  a live reading, or your own picture / text / symbol stays. "Use your judgement" on BL-032: (CL calls) "Block", the
+  prominent Save, T-153's no-op half deleted, T-156's hashes replaced by layout checks.
+- **Checked:** run line above. One agent per item, each reviewed by CL, then a fresh reviewer over all seven: no
+  critical or important issues; its removal-path minor ("Stopping…") fixed test-first. Open: two minors (Try Again
+  during a recovery re-registers twice; a late push can mark the link connected after removal), in the ledger.
 
 ### 20/11/2026 — Long commands can be read and edited, strip blocks take images like keys, presets can be cancelled
 - **Reference:** `docs/reference/app.md` (Actions; Run Command; Strip blocks; Presets); plan
@@ -107,18 +128,6 @@ icons, monitors and its own removal.
   instead of a colour well; tiles drawn by the app, the agent still draws a file.
 - **Checked:** `swift test` 172/172; test session 5 (run line above). A fresh reviewer found symbols drawn off-centre
   and long text going unreadable, plus a typo in a tile able to stop the agent loading the file: all fixed test-first.
-
-### 20/11/2026 — The N4's lock photo is chosen, moved and zoomed in DeckOut, live on the deck
-- **Reference:** `docs/reference/app.md` (Lock photo mode); plan `docs/superpowers/plans/2026-11-19-deckout-4-lock-photo.md`;
-  T-134–T-138; BL-016–BL-019.
-- **For a person:** Lock Photo… turns the window into the N4 showing your photo across its screens, exactly as it
-  will be cut; drag to move it, pinch or scroll to zoom, see what falls between the screens if you like. The real
-  N4 shows it as you go and goes back to its keys when you click Done. The app keeps its own copy of the photo.
-- **Decision (owner, 19/11/2026):** the approved mockup. (CL calls:) chosen photos are saved at most 3200 px as a
-  JPEG; files over 100 MB are refused; the zoom slider spans 100–400 % (pinch reaches 1000 %).
-- **Checked:** `swift test` 161/161; test session 4 (run line above). A fresh reviewer found four important issues
-  (a dead zone within a drag; the N4 left on the photo after unplugging; undo not reaching the N4; huge photos),
-  fixed test-first.
 
 ## History
 Older work: `old_progress/README.md`.

@@ -121,3 +121,53 @@ private func quadrantPhoto(width: Int, height: Int) -> CGImage {
         }
     }
 }
+
+@Test func panelIsWhatSlicesCut() throws {                          // T-134
+    // The app draws the panel; the deck gets the slices: the same picture, each slice its rect turned 180°.
+    let photo = quadrantPhoto(width: 1200, height: 700)
+    let framing = LockPhotoConfig(path: "/p.jpg", zoom: 1.7, offsetX: 0.1, offsetY: -0.05)
+    let panel = try #require(LockPhoto.panel(photo, framing: framing))
+    #expect(panel.width == 800 && panel.height == 464)
+    let slices = LockPhoto.slices(photo, rects: LockPhoto.n4Rects, framing: framing)
+    for (slot, rect) in LockPhoto.n4Rects {
+        let slice = try #require(slices[slot])
+        for (sx, sy) in [(5, 5), (slice.width / 2, slice.height / 2), (slice.width - 6, slice.height - 6)] {
+            let fromSlice = pixel(slice, sx, sy)
+            let fromPanel = pixel(panel, Int(rect.minX) + slice.width - 1 - sx, Int(rect.minY) + slice.height - 1 - sy)
+            #expect(fromSlice == fromPanel, "slot \(slot) at \(sx),\(sy)")
+        }
+    }
+}
+
+@Test func offsetsClampToTheEdge() {                                // T-135
+    // A 4:1 photo filled into the 800 × 464 face: 1856 × 464 at zoom 1, so it can move (1856 − 800) / 2 sideways
+    // (0.66 of the face's width) and not at all up or down.
+    let photo = CGSize(width: 1600, height: 400)
+    let limits = LockPhoto.offsetLimits(photo: photo, zoom: 1)
+    #expect(abs(limits.x - 0.66) < 1e-9)
+    #expect(limits.y == 0)
+    let twice = LockPhoto.offsetLimits(photo: photo, zoom: 2)
+    #expect(abs(twice.y - 0.5) < 1e-9)          // (928 − 464) / 2 / 464
+    // Clamped, the photo sits exactly where the unclamped framing put it; a drag back moves it at once.
+    let far = LockPhotoConfig(path: "/p.jpg", zoom: 1, offsetX: 5, offsetY: -1)
+    let clamped = LockPhoto.clamped(far, photo: photo)
+    #expect(abs(clamped.offsetX - 0.66) < 1e-9 && clamped.offsetY == 0)
+    #expect(LockPhoto.placement(photo: photo, framing: clamped) == LockPhoto.placement(photo: photo, framing: far))
+    #expect(LockPhoto.clamped(LockPhotoConfig(path: "/p", zoom: 30), photo: photo).zoom == 10)
+}
+
+@Test func previewDecodesOnce() {                                   // T-136
+    var loads = 0
+    let cache = LockPhoto.PreviewCache { _ in
+        loads += 1
+        return quadrantPhoto(width: 80, height: 40)
+    }
+    _ = cache.image(for: "/a.jpg")
+    _ = cache.image(for: "/a.jpg")
+    #expect(loads == 1)                          // a drag streaming previews decodes the photo once
+    _ = cache.image(for: "/b.jpg")
+    #expect(loads == 2)
+    cache.clear()
+    _ = cache.image(for: "/b.jpg")
+    #expect(loads == 3)
+}

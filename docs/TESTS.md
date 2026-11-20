@@ -138,6 +138,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-131 | `MissingFilesTests/scriptWarnings` | A script that isn't there or isn't executable is told apart; "Make Executable" adds only the owner's execute bit; a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS will ask (by path; nothing there is read) |
 | T-132 | `PresetTests/presetOperations` | Presets from the toolbar: switch, New ("Preset N", blank, live), Duplicate ("Work copy", "copy 2", live), Rename (never empty or taken; stays live); a deck with no section gets one; brightness 0–100 per deck |
 | T-133 | `PresetTests/deleteLiveFallsBackAndUndoes` | The last preset can't be deleted; deleting the live one makes the first left live; undo brings it back, live again, on disk |
+| T-134 | `LockTests/panelIsWhatSlicesCut` | The app's drawing of the lock photo (the framed panel) is exactly what the deck's slices cut, each slice its rectangle turned 180° |
+| T-135 | `LockTests/offsetsClampToTheEdge` | The photo's offsets have limits at each zoom; clamped to them, the photo sits where it did, so a drag past the edge and back moves it at once (no dead zone); zoom stays 1–10 |
+| T-136 | `LockTests/previewDecodesOnce` | While the app's preview is up, the agent decodes the photo once, not per framing sent during a drag |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

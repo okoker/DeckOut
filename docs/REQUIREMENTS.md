@@ -221,6 +221,7 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
   ad hoc (development), the exact app binary in the agent's bundle, pinned by its code hash read from disk at each
   connection. Outside DeckOut.app, or when no requirement can be built, every connection is refused (the decks still
   work). The app checks the agent the same way when signed, and by its identifier when ad hoc
+- While the app's lock-photo preview is up, the photo is decoded once (not per framing sent during a drag)
 - `--show-lock-photo` keeps the N4's lock photo, as framed at start, up while unlocked (development: lining up the
   panel rectangles). The same preview is switchable at run time for the config app's photo mode
 - Logs to stdout (a hand install's plist sends it to `~/Library/Logs/StreamDeckController.log`). Inside DeckOut,

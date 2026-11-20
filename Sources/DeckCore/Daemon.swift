@@ -15,6 +15,8 @@ public final class Daemon {
     /// A lock photo framing shown on the N4 while unlocked: the config app's photo mode, or `--show-lock-photo`.
     /// Keys and knobs work as usual; live readings pause.
     private var lockPhotoPreview: LockPhotoConfig?
+    /// The preview's photo, decoded once while the preview is up (a drag sends a framing per move).
+    private let previewPhotos = LockPhoto.PreviewCache()
 
     /// Live readings pause while the lock photo or the locked layout is up.
     private var livePaused: Bool { lockMonitor.locked || lockPhotoPreview != nil }
@@ -227,6 +229,7 @@ public final class Daemon {
     /// configured lock photo). Live readings pause meanwhile.
     public func showLockPhoto(_ framing: LockPhotoConfig?) {
         lockPhotoPreview = framing
+        if framing == nil { previewPhotos.clear() }
         updateLiveSources()
         for connection in decks.connections where connection.model.kind == .n4 {
             showCurrent(connection)
@@ -239,7 +242,8 @@ public final class Daemon {
     private func drawLockPhoto(_ connection: DeckConnection) -> Bool {
         guard connection.model.kind == .n4, let framing = lockPhotoPreview ?? config.n4?.lockPhoto else { return false }
         let started = Date()
-        let slices = LockPhoto.jpegSlices(framing)
+        let preview = lockPhotoPreview.flatMap { previewPhotos.image(for: $0.path) }
+        let slices = LockPhoto.jpegSlices(framing, photo: preview)
         guard !slices.isEmpty else { return false }
         for (slot, jpeg) in slices.sorted(by: { $0.key < $1.key }) {
             connection.draw(slot: slot, jpeg: jpeg)

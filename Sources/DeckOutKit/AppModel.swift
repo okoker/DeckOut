@@ -67,6 +67,8 @@ public final class AppModel: ObservableObject {
     @Published public var selection: String? { didSet { iconProblem = nil; executableProblem = nil } }
     /// Why Make Executable didn't work, shown under its button until another control is selected.
     @Published public var executableProblem: String?
+    /// Edit in Window…'s command window, while it's open.
+    @Published public var commandEdit: CommandEdit?
     /// Upright images of the shown deck's keys and picture blocks, rebuilt when the config changes.
     @Published public private(set) var staticImages: [String: CGImage] = [:]
     /// Upright images of the live strip blocks, rebuilt with each push.

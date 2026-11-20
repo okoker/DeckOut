@@ -7,7 +7,7 @@ Edge cases, uncertain solutions, and accepted limitations we're aware of but not
 
 When ready to address: move to `BACKLOG.md` or `TODO.md`, delete from here.
 
-Next free ID: KI-011
+Next free ID: KI-012
 
 ---
 
@@ -21,6 +21,7 @@ Next free ID: KI-011
 | KI-008 | 02/11/2026 | The first launch of a newly written ad hoc agent binary is sometimes killed by macOS (`SIGKILL (Code Signature Invalid)`, `Launch Constraint Violation (Constraint not matched)`). Hand install: launchd relaunches ~10 s later and it runs (seen on both installs on 02/11/2026, not on 19/11/2026's). DeckOut's agent (registered with `SMAppService`): seen when the bundle is replaced, both while the agent was unregistered and then registered again (19/11/2026), and while it stayed registered (the update path: `make install-dev`, then the app's restart request, 20/11/2026). On the update path launchd resolved the job to the build it was registered with, the new binary failed `Launch Constraint Violation (Constraint not matched)`, and launchd removed the job. Either way the app recovers by itself: its agent doesn't answer for 10 s, so it unregisters and registers again, and the agent runs (the decks are dark for those ~10 s). Cause unknown; whether a Developer ID signature avoids it is untested. |
 | KI-009 | 19/11/2026 | The N4 gets no power from the dock's USB-C port (the only USB-C port tried) after being unplugged for more than a few seconds: dark, absent from the USB tree. It powers up only if the port is already live (e.g. a phone plugged in first, then the cable swapped). On USB-A (A-to-C cable) it works every time. Most likely the N4's USB-C socket lacks the resistors that tell a USB-C port to switch power on; not confirmed with a meter. Workaround: connect the N4 to USB-A. |
 | KI-010 | 20/11/2026 | The N4's internet tile sometimes shows red ("no reply") for its first reading after the agent starts (2 of ~7 starts, seen 19/11/2026), never afterwards; the next reading puts it right. Which step fails (lookup, `sendto`, timeout, `recv`) isn't known. Accepted as is (owner, 20/11/2026). `LatencyProbe.swift`, `Daemon.swift` |
+| KI-011 | 20/11/2026 | The app draws the config file on disk, not the one the agent loaded: after a hand edit of the file without a reload, the app shows icons the deck doesn't. Accepted (owner, 20/11/2026): the app is the supported way to change the config; hand edits are at the editor's own risk. The app's own edits save, then reload, so they always match. `AppModel.swift` |
 
 ## Accepted Risks
 

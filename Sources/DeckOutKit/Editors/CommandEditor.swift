@@ -4,9 +4,9 @@ import SwiftUI
 /// Run Command's field: the label on its own line with Edit in Window… beside it, and the command at the panel's
 /// full width below (3–10 lines, then it scrolls). Return applies, Option-Return starts a new line.
 struct CommandField: View {
+    @ObservedObject var model: AppModel
     let command: String
     let change: (String) -> Void
-    @State private var editing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -19,14 +19,21 @@ struct CommandField: View {
             CommitTextField(value: command, placeholder: "open -a Notes", multiline: true, monospaced: true,
                             lines: 3...10, commit: change)
         }
-        .sheet(isPresented: $editing) { CommandSheet(command: command, save: change) }
     }
 
     /// Ends typing in the field first, so what was typed there is applied and the window opens on it.
     private func openWindow() {
         NSApp.keyWindow?.makeFirstResponder(nil)
-        DispatchQueue.main.async { editing = true }
+        DispatchQueue.main.async { model.commandEdit = CommandEdit(command: command, save: change) }
     }
+}
+
+/// An open command window: the command it opened on, and Save, which writes to the control it was opened for (the
+/// editor's `change` names the deck and the control, so a new selection or an unplug can't move it elsewhere).
+public struct CommandEdit: Identifiable {
+    public let id = UUID()
+    let command: String
+    let save: (String) -> Void
 }
 
 /// The command in a window big enough to read it: Cancel (Esc) changes nothing, Save (⌘Return, the prominent button)

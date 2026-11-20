@@ -146,18 +146,26 @@ struct UndoCommands: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        Button(model.store?.undoName.map { "Undo \($0)" } ?? "Undo") { perform(undo: true) }
-            .keyboardShortcut("z", modifiers: .command)
-        Button(model.store?.redoName.map { "Redo \($0)" } ?? "Redo") { perform(undo: false) }
-            .keyboardShortcut("z", modifiers: [.command, .shift])
+        Button(model.store?.undoName.map { "Undo \($0)" } ?? "Undo") {
+            Self.perform(undo: true, in: NSApp.keyWindow, store: model.store)
+        }
+        .keyboardShortcut("z", modifiers: .command)
+        Button(model.store?.redoName.map { "Redo \($0)" } ?? "Redo") {
+            Self.perform(undo: false, in: NSApp.keyWindow, store: model.store)
+        }
+        .keyboardShortcut("z", modifiers: [.command, .shift])
     }
 
-    private func perform(undo: Bool) {
-        if let editor = NSApp.keyWindow?.firstResponder as? NSTextView, let manager = editor.undoManager,
+    /// Typing in the focused field first. Deck changes only from the main window: in a sheet (Edit in Window…, a
+    /// preset's name) ⌘Z stops at the field, so it never undoes a change behind the sheet, which could remove the
+    /// command field and close its window, typing and all (BL-031).
+    static func perform(undo: Bool, in window: NSWindow?, store: ConfigStore?) {
+        if let editor = window?.firstResponder as? NSTextView, let manager = editor.undoManager,
            undo ? manager.canUndo : manager.canRedo {
             undo ? manager.undo() : manager.redo()
             return
         }
-        undo ? model.store?.undo() : model.store?.redo()
+        guard window?.sheetParent == nil else { return }
+        undo ? store?.undo() : store?.redo()
     }
 }

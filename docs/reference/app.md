@@ -72,7 +72,8 @@ the job definition it registered: a changed plist needs a new label.
 - **The config store** (`ConfigStore`): every change makes a whole new config, saved atomically at 0600 through
   `ConfigFile.save` (which refuses a config that wouldn't load back; the first save over a file keeps
   `.before-app`), then the agent is asked to reload (it logs one line per app reload). Undo / redo (Edit menu, ⌘Z /
-  ⇧⌘Z, named for the change) put back whole configs; a text field being edited undoes its typing first; a slider
+  ⇧⌘Z, named for the change) put back whole configs; a text field being edited undoes its typing first; in a sheet
+  (the command window, a preset's name) ⌘Z / ⇧⌘Z only touch its typing, never the deck behind it; a slider
   drag is one undo step; up to 200 steps. Before each change the file is read again if it changed on disk (a hand
   edit is built on, and the undo history starts again from it, with a notice in the status line); a file that
   doesn't load is never saved over, the status line says why, and it is read again before every change until it
@@ -90,7 +91,9 @@ the job definition it registered: a changed plist needs a new label.
 - **Run Command:** the command spans the panel (3–10 lines, then it scrolls). Edit in Window… applies what was
   typed in the panel, then opens a 640 × 380 editor: monospaced, wrapped, and typed exactly (smart quotes, dashes,
   text replacements and spelling fixes off whatever the macOS settings); Save (the prominent button, ⌘Return)
-  applies it, Cancel (Esc) changes nothing.
+  applies it, Cancel (Esc) changes nothing. The editor hangs on the main window (`AppModel.commandEdit`), not on
+  the key's panel, so it stays open, typing and all, if the deck unplugs or the agent restarts; Save writes to the
+  control it was opened for.
 - **Keyboard shortcuts** are recorded by pressing them; only keys in the agent's own table (`KeyNames`) are taken.
 - **Apple Shortcuts** come from `shortcuts list` (run by the app, as an argument array); a text field if none. It is
   read each time a Shortcut picker appears and each time DeckOut comes to the front after one has, so a Shortcut made

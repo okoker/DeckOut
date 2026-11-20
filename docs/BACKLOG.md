@@ -34,9 +34,6 @@ Next free ID: BL-034
 - BL-007 [P2] [bug] The app's N3 key preview letterboxes a non-square icon, while the deck's N3 pipeline
   (`ImageLoader.loadAsJPEG`) stretches it into the square, so the drawing differs from the deck for such icons. Draw
   the N3 preview the deck's way. `DeckFace.swift` (`DeckPreview.keyImage`), `ImageLoader.swift` (plan 2 review)
-- BL-008 [P2] [bug] The app draws the config file on disk, not the one the agent loaded: after a hand edit without a
-  reload, the drawing shows icons the deck doesn't. Plan 3's save-then-reload covers the app's own edits; for hand
-  edits, show the agent's config (or its file's state) instead. `AppModel.swift` (plan 2 review)
 - BL-014 [P2] [feature] Shortcut recorder: media keys pressed in the recorder show nothing (they arrive as system
   events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the
   key sent is right: both sides work by position). Say media keys aren't recordable; label with the layout's
@@ -64,11 +61,6 @@ Next free ID: BL-034
   paused while the Mac is locked, cut off if it hangs. What's in the folder runs unattended, so the folder gets the
   config's checks (owned by the person, not writable by others). Design with a mockup first; touches the agent,
   which runs them. `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
-- BL-031 [P2] [bug] Sheets and undo: ⌘Z in the command window or a preset sheet, with nothing left to undo in its
-  field, undoes the last deck change behind it (the command window can then close, its typing gone); the command
-  window also closes, losing its text, when the deck on screen changes (unplug, agent restart). Skip the store's
-  undo while a sheet is key (`NSApp.keyWindow?.sheetParent != nil`); host the command sheet on the main window like
-  the preset sheet. `Toolbar.swift` (`UndoCommands`), `CommandEditor.swift` (plan 7 review, 20/11/2026)
 - BL-033 [P2] [feature] Switch the N4's preset by swiping its strip (owner, UAT 20/11/2026: today presets switch only
   from the app's pull-down). The N4 reports a swipe with no direction (0x39, `REQUIREMENTS.md`, Touch strip), so a
   swipe can only step to the next preset, wrapping round; it can't go left / right. The likely shape: a "Next Preset"

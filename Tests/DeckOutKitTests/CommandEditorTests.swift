@@ -77,3 +77,51 @@ let longCommand = #"osascript -e 'tell application "iTerm2" to create window wit
         #expect(!editor.isAutomaticSpellingCorrectionEnabled, "multiline \(multiline)")
     }
 }
+
+// ⌘Z in a sheet (Edit in Window…, New Preset, Rename) with nothing left to undo in its field does nothing: it used to
+// undo the last deck change behind the sheet, and when that change removed the command field, the command window
+// closed with its typing (BL-031). In the main window ⌘Z still undoes deck changes; ⇧⌘Z in a sheet doesn't redo them.
+@MainActor @Test func undoInASheetNeverReachesTheDeck() throws {   // T-179
+    let model = try previewModel(AppConfig.empty, deck: .n4, selection: "key_3")
+    let store = try #require(model.store)
+    model.setAction(.runCommand("echo one"), button: "key_3", on: .n4)
+    #expect(store.config.button(.n4, "key_3")?.action == "shell:echo one")
+
+    let main = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled],
+                        backing: .buffered, defer: false)
+    let sheet = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100), styleMask: [.titled],
+                         backing: .buffered, defer: false)
+    main.beginSheet(sheet)
+    defer { main.endSheet(sheet) }
+    #expect(sheet.sheetParent === main)
+
+    UndoCommands.perform(undo: true, in: sheet, store: store)
+    #expect(store.config.button(.n4, "key_3")?.action == "shell:echo one", "⌘Z in the sheet left the deck alone")
+    UndoCommands.perform(undo: true, in: main, store: store)
+    #expect(store.config.button(.n4, "key_3") == nil, "⌘Z in the main window undoes the deck change")
+    UndoCommands.perform(undo: false, in: sheet, store: store)
+    #expect(store.config.button(.n4, "key_3") == nil, "⇧⌘Z in the sheet left the deck alone")
+}
+
+// The command window hangs on the main window, not on the key's editor: unplugging the deck or an agent restart takes
+// the editor away, and it used to take the window and its typing with it (BL-031). Save still writes to the key the
+// window was opened for. The window here shows "Starting…" (no agent): no editor is on screen at all.
+@MainActor @Test func theCommandWindowOutlivesTheEditor() throws {   // T-180
+    var config = AppConfig.empty
+    config.setButton(.n4, "key_3", ButtonConfig(action: "shell:echo old"))
+    let model = try previewModel(config, deck: .n4, selection: "key_3")
+    let window = NSWindow(contentRect: NSRect(origin: .zero, size: MainWindow.size), styleMask: [.titled],
+                          backing: .buffered, defer: false)
+    window.contentView = NSHostingView(rootView: MainWindow(model: model))
+    window.orderFront(nil)
+    defer { window.close() }
+
+    model.commandEdit = CommandEdit(command: "echo old") { model.setAction(.runCommand($0), button: "key_3", on: .n4) }
+    RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+    #expect(window.attachedSheet != nil, "the command window is open")
+    model.followDecks(connected: [])   // unplugged: "Plug in your deck"
+    RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+    #expect(window.attachedSheet != nil, "still open after the deck went")
+    try #require(model.commandEdit).save("echo new")
+    #expect(model.store?.config.button(.n4, "key_3")?.action == "shell:echo new")
+}

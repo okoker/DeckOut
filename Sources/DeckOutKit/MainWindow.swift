@@ -47,6 +47,8 @@ public struct MainWindow: View {
             }
         }
         .sheet(item: $presetSheet, content: presetNameSheet)
+        // On the window, not the editor: an unplug or an agent restart takes the editor away, typing and all (BL-031).
+        .sheet(item: $model.commandEdit) { CommandSheet(command: $0.command, save: $0.save) }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             Task { await model.becameActive() }
         }

@@ -46,6 +46,7 @@ final class BrightnessControl {
             return nil
         }
         self.m1ddcPath = path
+        print("BrightnessControl: using m1ddc at \(path)")
         self.configuredDisplays = displays
         refreshDisplays()
         if connectedDisplays.isEmpty {

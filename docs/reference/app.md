@@ -1,7 +1,7 @@
 # DeckOut app — reference
 
 How the DeckOut app works now. Design and its reasons: `docs/design/config_app.md`. Build plans: plan 2 (the shell),
-plan 3 (editing), plan 4 (lock photo), plan 5 (icons).
+plan 3 (editing), plan 4 (lock photo), plan 5 (icons), plan 6 (settings, monitors, first run).
 
 ## Bundle and identity
 - `make app` builds `build/DeckOut Dev.app` (dev variant, debug build); `make app VARIANT=release` builds
@@ -126,11 +126,33 @@ the job definition it registered: a changed plist needs a new label.
   a hand edit, a reconnect), at most every 50 ms with the last one always sent; it goes back to its keys on Done, and
   when the only deck goes away. The agent decodes the photo once per preview.
 
+## First run and removal
+- **The hand-installed controller** (the README's `com.streamdeck.controller`): when its plist is in
+  `~/Library/LaunchAgents`, DeckOut asks before registering its own ("Another deck controller is installed"):
+  **Retire It** boots it out of launchd and moves its plist to `….plist.retired-by-deckout` (kept for rollback; its
+  program and the config stay), then registers DeckOut's; **Not Now** registers DeckOut's anyway and the status line
+  keeps warning that presses may fire twice. Automated debug runs (`--selftest`, `--snapshot`) skip the question.
+- **Removal:** Settings → General → Stop and Remove… (confirmed) unregisters the agent (out of launchd and Login
+  Items) and shows "The deck controller is stopped" with Quit and Start Again; then the person bins the app. The
+  config stays in `~/.config/vsd`.
+
+## Settings (⌘,)
+- **General:** the deck controller's state, version and build; whether the shell's settings were read (Read Again);
+  Accessibility (Allow…); Stop and Remove….
+- **Monitors:** the monitors the app's own `m1ddc` lists (`display list detailed`, read only), told apart by where
+  they sit (Left / Right / Middle, Top / Bottom); turning one on adds it to `displays` (named by its place) at the
+  end of Switch Monitor's order; a name field and up / down reorder; monitors in `displays` that aren't connected
+  show with Forget; Look Again.
+- **About:** version and build; the DeckOut, Phosphor and m1ddc licences, from the app's Resources.
+- **m1ddc** 1.3.1 (MIT) is built from `Vendor/m1ddc` into `Contents/Helpers/m1ddc`; the agent and the app use it
+  before Homebrew's (the agent logs which).
+
 ## Debug builds
 - `--unregister`: take the agent out of launchd and Login Items, then quit (test sessions).
-- `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--photo] [--after <s>]`: draw the real window to a
-  PNG and quit (`--photo`: in photo mode, without previewing on the N4).
+- `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--photo] [--show-old-controller] [--after <s>]`:
+  draw the real window to a PNG and quit (`--photo`: in photo mode, without previewing on the N4).
 - `--selftest`: sets a key, runs Test (`echo`) in the agent, makes, shows and deletes a preset, drags brightness,
-  chooses a generated lock photo and moves it with the N4 previewing it, undoes everything and checks the config is
-  back; prints `SELFTEST PASSED` or `FAILED` and quits.
+  chooses a generated lock photo and moves it with the N4 previewing it, puts a text and a symbol tile on a key,
+  lists the monitors through the app's own m1ddc, undoes everything and checks the config is back; prints
+  `SELFTEST PASSED` or `FAILED` and quits.
 - Window "Agent Status": the status JSON and the link's state.

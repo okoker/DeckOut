@@ -2,7 +2,8 @@ import AppKit
 import DeckCore
 
 #if DEBUG
-/// Debug builds: `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--photo] [--after <seconds>]` draws the real main window,
+/// Debug builds: `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--photo] [--show-old-controller]
+/// [--after <seconds>]` draws the real main window,
 /// title bar and toolbar included, to a PNG and quits. For design checks and test sessions without a screen
 /// recording permission: a window may draw itself.
 @MainActor

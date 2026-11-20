@@ -272,6 +272,11 @@ How it works: `docs/reference/app.md`. Contracts:
   on its own
 - The N4's lock photo is chosen, moved and zoomed in the window's photo mode, previewed on the real N4 while editing;
   the app keeps its own copy of the photo in the config folder
+- Keys can show generated text or library-symbol icons (Phosphor, MIT, shipped in the app)
+- First run: with the hand-installed `com.streamdeck.controller` present, the app asks before registering its own
+  (two controllers would both act on every press); retiring it is the person's click and reversible
+- Settings: monitors for the brightness keys (named, ordered, told apart by place), the deck controller's state, and
+  removal (Stop and Remove: out of launchd and Login Items; the config stays)
 - Every change in the app is saved whole and atomically, then the agent is asked to reload; undo puts back the whole
   previous config. A config that wouldn't load back is never written. A hand edit made while the app is open is built
   on, not overwritten; a hand edit that doesn't load is never saved over

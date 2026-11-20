@@ -111,6 +111,12 @@ enum SelfTest {
             await wait(0.5)
         }
 
+        // Monitors through the app's own m1ddc (read only: `display list detailed`).
+        check(model.m1ddcPath?.hasSuffix("Contents/Helpers/m1ddc") == true, "the app's own m1ddc: \(model.m1ddcPath ?? "none")")
+        model.loadMonitors()
+        for _ in 0..<20 where model.monitors.isEmpty { await wait(0.25) }
+        check(!model.monitors.isEmpty, "monitors listed: \(model.monitors.map { model.monitorLabel($0) })")
+
         // Undo everything: the file is back, byte for byte.
         while store.canUndo { store.undo() }
         await wait(1)

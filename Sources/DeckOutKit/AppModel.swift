@@ -71,6 +71,8 @@ public final class AppModel: ObservableObject {
     @Published public var commandEdit: CommandEdit?
     /// Allow…'s watch for the Accessibility grant (`watchAccessibility`).
     var accessibilityWatch: Task<Void, Never>?
+    /// Unused icon files were looked for this run (`removeUnusedIcons`).
+    private var cleanedIcons = false
     /// A text field (any, in any window) has been typed in and not yet left: Edit → Undo stays on for its typing.
     @Published public private(set) var typingInAField = false
     /// Upright images of the shown deck's keys and picture blocks, rebuilt when the config changes.
@@ -260,6 +262,7 @@ public final class AppModel: ObservableObject {
             return
         }
         store?.load()
+        removeUnusedIcons()
         // The hand-installed controller first: two controllers would both act on every press. (Debug runs that
         // drive the app themselves skip the question; a release build has no such runs.)
         #if DEBUG
@@ -489,6 +492,19 @@ public final class AppModel: ObservableObject {
             return (.busy, "Deck controller running · your shell's settings didn't load (\(environment.detail ?? "unknown"))")
         }
         return (.good, "Deck controller running")
+    }
+
+    /// Removes the icon files nothing names any more (`IconFiles.removeUnused`), once per run and only while there's
+    /// nothing to undo or redo: launch runs again when the window is closed and opened, and by then the undo history
+    /// may name files the config doesn't (undo would bring back a black key).
+    func removeUnusedIcons() {
+        guard !cleanedIcons, let store, !store.canUndo, !store.canRedo else { return }
+        cleanedIcons = true
+        let removed = IconFiles.removeUnused(configPath: store.path)
+        if !removed.isEmpty {
+            log("removed \(removed.count) unused icon files: "
+                + removed.map { ($0 as NSString).lastPathComponent }.joined(separator: ", "))
+        }
     }
 
     func log(_ line: String) {

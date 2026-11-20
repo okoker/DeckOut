@@ -1,5 +1,6 @@
 import AppKit
 import CryptoKit
+import DeckCore
 import Foundation
 import ImageIO
 
@@ -76,6 +77,48 @@ public enum IconFiles {
         let path = folder + "/lock-photo-\(hash(jpeg)).jpg"
         guard write(jpeg, to: path, folder: folder) else { throw ImportError.notSaved }
         return path
+    }
+
+    /// DeckOut's own file names: keys' and blocks' pictures in `icons/`, lock photos beside the config.
+    private static let madeIcon = #/(?:app|image|tile)-[0-9a-f]{16}\.png/#
+    private static let madeLockPhoto = #/lock-photo-[0-9a-f]{16}\.jpg/#
+
+    /// Removes the files DeckOut made that nothing names any more (BL-018, BL-023), and returns their paths. A file is
+    /// kept if its name appears anywhere in any other file in the config folder, subfolders included (the config, its
+    /// `.before-app` copy, anything kept beside it): the text is searched, not the config's fields, so an icon can't
+    /// be missed for a field this code doesn't know. Only DeckOut's own names in their own places, only plain files
+    /// (never a link). Nothing at all when the config is missing or doesn't load, or any other file can't be read.
+    /// Run before any edit: the undo history can name files the config doesn't (`AppModel.removeUnusedIcons`).
+    @discardableResult
+    public static func removeUnused(configPath: String) -> [String] {
+        guard case .success = ConfigFile.load(at: configPath) else { return [] }
+        let base = (configPath as NSString).deletingLastPathComponent
+        let icons = folder(forConfig: configPath)
+        let manager = FileManager.default
+        func isPlainFile(_ path: String) -> Bool {
+            (try? manager.attributesOfItem(atPath: path)[.type] as? FileAttributeType) == .typeRegular
+        }
+        func made(in folder: String, _ name: Regex<Substring>) -> [String] {
+            ((try? manager.contentsOfDirectory(atPath: folder)) ?? [])
+                .filter { $0.wholeMatch(of: name) != nil }
+                .map { folder + "/" + $0 }
+                .filter(isPlainFile)
+        }
+        let candidates = made(in: icons, madeIcon) + made(in: base, madeLockPhoto)
+        guard !candidates.isEmpty else { return [] }
+        let skip = Set(candidates)
+        var texts: [Data] = []
+        for case let relative as String in manager.enumerator(atPath: base) ?? NSEnumerator() {
+            let path = base + "/" + relative
+            guard !skip.contains(path), isPlainFile(path) else { continue }
+            guard let data = try? Data(contentsOf: URL(fileURLWithPath: path), options: .alwaysMapped) else { return [] }
+            texts.append(data)
+        }
+        let unused = candidates.filter { path in
+            let name = Data((path as NSString).lastPathComponent.utf8)
+            return !texts.contains { $0.range(of: name) != nil }
+        }
+        return unused.filter { unlink($0) == 0 }
     }
 
     // MARK: - Private

@@ -35,13 +35,8 @@ Next free ID: BL-034
   events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the
   key sent is right: both sides work by position). Say media keys aren't recordable; label with the layout's
   character. `ShortcutRecorder.swift` (plan 3 review)
-- BL-018 [P2] [debt] Chosen lock photos (and pictures) are never deleted: every Choose leaves a file in the config
-  folder. Clean up at quit, keeping anything the config or the undo history still names. `IconFiles.swift`
-  (plan 4 review)
 - BL-020 [P2] [debt] The self-test checks that a tile's PNG exists and is in the app's config, not that the agent drew
-  it (status or log), and each run leaves its tile PNGs in `icons/`. `SelfTest.swift` (plan 5 review)
-- BL-023 [P2] [debt] The icons folder only grows: every colour tap or text edit writes a new `tile-<hash>.png`. Sweep
-  files no config or undo step names (with BL-018). `IconFiles.swift` (plan 5 review)
+  it (status or log). `SelfTest.swift` (plan 5 review)
 - BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three
   live readings (internet, CPU and memory, volume) are written into the agent, so each new one needs code. Owner
   (20/11/2026): new kinds are not built into the app. They live in a folder people put them into, in a documented

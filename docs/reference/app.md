@@ -115,6 +115,14 @@ the job definition it registered: a changed plist needs a new label.
   restyles the symbol on the key at once. In a build without it, choosing Library changes nothing and says "The symbol
   library isn't in this build." A tile that can't be drawn changes nothing and says why. The preview is the key as the
   deck shows it.
+- **Unused icon files** (`IconFiles.removeUnused`, from `AppModel.removeUnusedIcons`): at start-up, right after the
+  config is read and before any edit (once per run, and only with nothing to undo or redo), DeckOut deletes the
+  files it made that nothing names any more: `app-` / `image-` / `tile-<16 hex>.png` in `icons/` and
+  `lock-photo-<16 hex>.jpg` beside the config. A file is kept if its name appears anywhere in any other file in the
+  config folder or its subfolders (the config, `.before-app`, copies kept there): the bytes are searched, not the
+  config's fields. Never touched: other names, the right name in the wrong folder, links. Nothing is removed when the
+  config is missing or doesn't load, or another file there can't be read. The app's log lists what went. Each app
+  judges by its own config folder only (DeckOut Dev's and the signed DeckOut's are separate).
 - **Strip blocks** are laid out like a key: **Tap** (the key's actions) first, then **Shows**: An image (the key's
   [App | Image | Text | Library], App only for an Open App tap; text and symbols drawn at 352 × 224, 2× the block's
   176 × 112, text sizes scaled to the shorter side, with the block's own `tile`), Internet latency (host, trimmed —

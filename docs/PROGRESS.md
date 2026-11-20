@@ -26,6 +26,11 @@
   not `vsd-dev`). The UAT edits live in `vsd-dev/config.json`, and its generated icons point into
   `~/.config/vsd-dev/icons/`: carry config and icons over (owner's go), and Stop and Remove DeckOut Dev first (two
   agents fire every press twice). The signed agent needs Accessibility granted again.
+- **Must not be skipped (owner, 20/11/2026):** the move copies the icons and lock photos into `~/.config/vsd/` and
+  rewrites every path in the carried config to point there; none may still point into `~/.config/vsd-dev/`. Each
+  app removes unused icon files from its own folder at start-up (BL-018 / BL-023), judging "used" by its own config
+  only: run DeckOut Dev again after an edit there, and it deletes icons the signed app's config still points at, and
+  those keys go black. Check: `grep -c vsd-dev ~/.config/vsd/config.json` is 0.
 - Nothing for signing exists yet: no Makefile target, no gitignored identity file (design: Constraints; Signing during
   development). Before the first signed build the owner checks who issued the certificate (only builds after
   01/02/2027 need a G2 one). Every `codesign` / `notarytool` run needs the owner's go; never pick the identity.
@@ -55,6 +60,7 @@ DeckOut Dev (`~/Applications`, a debug build of `main`) drives the TreasLin N3 a
 through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) has passed the
 owner's UAT (removal is tested in phase 7): it runs the deck controller from its bundle, edits every control,
 presets, brightness, the lock photo, generated icons, monitors and its own removal.
+20/11/2026 — BL-018 + BL-023 on `main`: `swift test` 237/237 (new T-186–T-188), watched; T-186 and T-188 failed first against do-nothing stubs; with the code in, each of six guards taken out in turn failed a test (config check, unreadable file, links, subfolders, undo history, once per run), sources restored byte for byte. Not installed; not checked: the start-up log line and the icons folder after a real launch (owner). Phase 7 must rewrite `vsd-dev` paths (Release gotchas).
 20/11/2026 — BL-007 on `main`: `swift test` 234/234 (new T-185), watched; T-185 failed first (the N3's JPEG of a 2:1 icon filled 72 × 73, the square), and again with the old drawing put back after the fix. Square icons draw as before (a square fitted in a square is the same square). Not installed; not checked: a non-square icon on the real N3 (owner).
 20/11/2026 — BL-015 on `main`: `swift test` 233/233 (new T-183, T-184), watched; both failed first (Undo / Redo always on, the first Allow… watch still running after a second click). Scratch probe (not in the repo): macOS posts begin-editing at a field's first keystroke, none on focus alone, end-editing on leaving. BL-019 and BL-015's slider pause → KI-012 (owner). Not installed; not checked: the greyed menu items and ⌘Z on typing in the real app (owner).
 20/11/2026 — BL-022 on `main`: `swift test` 231/231 (new T-181, T-182), watched; T-181 failed first (choosing Library wrote a star tile at once), T-182 failed first (Bold picked nothing); T-181's popover check failed with the fix's `choosingSymbol` line removed (a check on the segment's selection didn't, and was replaced). Not installed; not checked: Library, Bold / Fill and closing the popover in the real window (owner).

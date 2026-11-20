@@ -88,3 +88,22 @@ import Testing
     model.setIcon(nil, button: "key_1", on: .n4)
     #expect(model.staticImageBuilds == builds + 1)    // an icon change does
 }
+
+@MainActor @Test func iconPickersDraw() throws {   // T-143 (design check)
+    let library = try #require(SymbolLibrary(folder: resourcesFolder))
+    var config = AppConfig.empty
+    config.setButton(.n4, "key_3", ButtonConfig(action: "media_next"))
+    let model = try previewModel(config, deck: .n4, selection: "key_3")
+    model.symbolLibrary = library
+    for (name, tile) in [("text", IconTile(kind: .text, text: "Standup\nZoom", symbol: nil, style: nil, background: "#0F8A7E", foreground: nil)),
+                         ("symbol", IconTile(kind: .symbol, text: nil, symbol: "skip-forward", style: "fill", background: "#5E5CE6", foreground: nil))] {
+        model.setTile(tile, button: "key_3", on: .n4)
+        for dark in [false, true] {
+            let png = try Snapshot.windowPNG(DeckStage(model: model, face: DeckFace.of(.n4)), size: MainWindow.size, dark: dark)
+            try png.write(to: snapshotFolder.appendingPathComponent("icon-\(name)-\(dark ? "dark" : "light").png"))
+        }
+    }
+    let picker = SymbolPicker(library: library, selected: "skip-forward", style: "fill") { _, _ in }
+    try Snapshot.windowPNG(picker, size: CGSize(width: 360, height: 340), dark: false)
+        .write(to: snapshotFolder.appendingPathComponent("symbol-picker.png"))
+}

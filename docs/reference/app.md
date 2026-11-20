@@ -1,7 +1,7 @@
 # DeckOut app — reference
 
 How the DeckOut app works now. Design and its reasons: `docs/design/config_app.md`. Build plans: plan 2 (the shell),
-plan 3 (editing), plan 4 (lock photo).
+plan 3 (editing), plan 4 (lock photo), plan 5 (icons).
 
 ## Bundle and identity
 - `make app` builds `build/DeckOut Dev.app` (dev variant, debug build); `make app VARIANT=release` builds
@@ -84,9 +84,13 @@ the job definition it registered: a changed plist needs a new label.
   under the fields.
 - **Keyboard shortcuts** are recorded by pressing them; only keys in the agent's own table (`KeyNames`) are taken.
 - **Apple Shortcuts** come from `shortcuts list` (run by the app, as an argument array); a text field if none.
-- **Icons:** the app's own icon for Open App (rendered to a 256 px PNG in `<config folder>/icons/`, following the app
-  unless you chose an image), a picture you choose (decoded and saved as a PNG at most 512 px on a side in `icons/`;
-  a file that isn't a picture is refused with a message), or none; the preview is the key as the deck shows it.
+- **Icons** ([App | Image | Text | Library], and No Icon): the app's own icon for Open App (rendered to a 256 px PNG
+  in `<config folder>/icons/`, following the app unless you chose another icon); a picture you choose (decoded and
+  saved as a PNG at most 512 px on a side in `icons/`; a file that isn't a picture is refused with a message); text
+  (up to three lines) or a library symbol on one of ten colours, drawn by the app as `icons/tile-<hash>.png` (256 px,
+  sRGB, white or near-black text by the background unless chosen) with the key's `tile` recording how, so it opens
+  for editing again; changing the key's action keeps it. The library is Phosphor 2.1.2 (1,530 symbols, Bold and
+  Fill, MIT), searched in a popover. The preview is the key as the deck shows it.
 - **Strip blocks:** Internet latency (host, arrow threshold in ms, red after s), CPU and memory, Volume, a picture
   (imported like a key's), or nothing; plus what a tap does.
 - **Files that are gone:** keys, presses and taps whose app, file, folder, script, icon or picture is missing get a

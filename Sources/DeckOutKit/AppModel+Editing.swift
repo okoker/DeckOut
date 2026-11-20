@@ -19,12 +19,17 @@ extension AppModel {
         let folder = IconFiles.folder(forConfig: store.path)
         store.change("Change Action") { config in
             // Read inside the change: the store has just picked up any hand edit.
-            var icon = config.button(deck, id)?.icon
+            let current = config.button(deck, id)
+            var icon = current?.icon
+            var tile = current?.tile
             if case .openApp(let path) = choice, !path.isEmpty, deck == .n4 || id.hasPrefix("lcd_"), Self.followsApp(icon) {
-                icon = IconFiles.appIcon(appPath: path, folder: folder) ?? icon
+                if let appIcon = IconFiles.appIcon(appPath: path, folder: folder) {
+                    icon = appIcon
+                    tile = nil
+                }
             }
             config.setButton(deck, id, choice == .nothing && icon == nil
-                             ? nil : ButtonConfig(action: choice.action, icon: icon, step: choice.step))
+                             ? nil : ButtonConfig(action: choice.action, icon: icon, step: choice.step, tile: tile))
         }
     }
 
@@ -33,6 +38,21 @@ extension AppModel {
             let current = config.button(deck, id) ?? ButtonConfig(action: "none")
             config.setButton(deck, id, path == nil && current.action == "none"
                              ? nil : ButtonConfig(action: current.action, icon: path, step: current.step))
+        }
+    }
+
+    /// Draws the tile into the icons folder and puts it on the key, remembering how it was made.
+    public func setTile(_ tile: IconTile, button id: String, on deck: DeckKind, library: SymbolLibrary? = nil) {
+        guard let store else { return }
+        let library = library ?? symbolLibrary
+        guard let path = IconFiles.tile(tile, library: library, folder: IconFiles.folder(forConfig: store.path)) else {
+            iconProblem = tile.kind == .text ? "Type some text for the key." : "That symbol couldn't be drawn."
+            return
+        }
+        iconProblem = nil
+        store.change(tile.kind == .text ? "Change Text Icon" : "Change Symbol Icon") { config in
+            let current = config.button(deck, id) ?? ButtonConfig(action: "none")
+            config.setButton(deck, id, ButtonConfig(action: current.action, icon: path, step: current.step, tile: tile))
         }
     }
 

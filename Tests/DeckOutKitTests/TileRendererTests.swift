@@ -101,3 +101,26 @@ private func centreHas(_ image: CGImage, where match: ((r: Int, g: Int, b: Int))
     try #require(NSBitmapImageRep(cgImage: strip).representation(using: .png, properties: [:]))
         .write(to: snapshotFolder.appendingPathComponent("tiles.png"))
 }
+
+@MainActor @Test func tilesOnKeys() throws {   // T-143
+    var config = AppConfig.empty
+    config.setButton(.n4, "key_1", ButtonConfig(action: "media_next"))
+    let model = try previewModel(config, deck: .n4, selection: "key_1")
+    let library = try #require(SymbolLibrary(folder: resourcesFolder))
+    let tile = IconTile(kind: .symbol, text: nil, symbol: "skip-forward", style: "fill", background: "#0A84FF", foreground: nil)
+    model.setTile(tile, button: "key_1", on: .n4, library: library)
+    let set = try #require(model.config?.button(.n4, "key_1"))
+    #expect(set.tile == tile)
+    #expect(set.icon?.contains("/icons/tile-") == true)
+    #expect(DeckPreview.keyImage(path: set.icon!, deck: .n4) != nil)
+    // Another action keeps the tile; an image (or none) replaces it.
+    model.setAction(.playPause, button: "key_1", on: .n4)
+    #expect(model.config?.button(.n4, "key_1")?.tile == tile)
+    model.setIcon(nil, button: "key_1", on: .n4)
+    #expect(model.config?.button(.n4, "key_1")?.tile == nil)
+    // A tile that can't be drawn changes nothing and says why.
+    let bad = IconTile(kind: .symbol, text: nil, symbol: "no-such", style: "bold", background: "#000000", foreground: nil)
+    model.setTile(bad, button: "key_1", on: .n4, library: library)
+    #expect(model.config?.button(.n4, "key_1")?.icon == nil)
+    #expect(model.iconProblem != nil)
+}

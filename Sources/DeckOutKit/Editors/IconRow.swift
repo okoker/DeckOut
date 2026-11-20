@@ -1,35 +1,71 @@
 import DeckCore
 import SwiftUI
 
-/// Icon: the app's own (Open App), an image you choose, or none; and the key as the deck will show it.
+/// Icon: the app's own (Open App), an image you choose, text on a colour, or a symbol from the library; and the key
+/// as the deck will show it (mockup: [App | Image | Text | Library]).
 struct IconRow: View {
     @ObservedObject var model: AppModel
     let deck: DeckKind
     let id: String
     let choice: ActionChoice
-    let icon: String?
+    let button: ButtonConfig?
+    @State private var choosingSymbol = false
 
-    enum Source: Hashable { case app, image, none }
+    enum Source: Hashable { case app, image, text, library }
+
+    /// The mockup's key colours.
+    static let swatches = ["#0A84FF", "#30D158", "#FFD60A", "#FF9F0A", "#FF375F", "#BF5AF2", "#5E5CE6",
+                           "#0F8A7E", "#C35A00", "#3A3A3C"]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             FieldRow("Icon") {
-                Picker("", selection: Binding(get: { source }, set: pick)) {
-                    if isOpenApp { Text("App").tag(Source.app) }
-                    Text("Image").tag(Source.image)
-                    Text("None").tag(Source.none)
+                Picker("", selection: Binding(get: { source }, set: { if let new = $0 { pick(new) } })) {
+                    if isOpenApp { Text("App").tag(Optional(Source.app)) }
+                    Text("Image").tag(Optional(Source.image))
+                    Text("Text").tag(Optional(Source.text))
+                    Text("Library").tag(Optional(Source.library))
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
+                .controlSize(.small)
                 .fixedSize()
+            }
+            if let tile = button?.tile, source == .text {
+                FieldRow("Text") {
+                    CommitTextField(value: tile.text ?? "", placeholder: "Up to three lines", multiline: true) { text in
+                        var changed = tile
+                        changed.text = text
+                        model.setTile(changed, button: id, on: deck)
+                    }
+                }
+                colourRows(tile)
+            }
+            if let tile = button?.tile, source == .library {
+                FieldRow("Symbol") {
+                    Button(tile.symbol ?? "Choose…") { choosingSymbol = true }
+                        .popover(isPresented: $choosingSymbol, arrowEdge: .leading) {
+                            SymbolPicker(library: model.symbolLibrary, selected: tile.symbol, style: tile.style ?? "bold") { name, style in
+                                var changed = tile
+                                changed.symbol = name
+                                changed.style = style
+                                model.setTile(changed, button: id, on: deck)
+                            }
+                        }
+                }
+                colourRows(tile)
             }
             HStack(alignment: .top, spacing: 12) {
                 preview
                 VStack(alignment: .leading, spacing: 6) {
                     Text(caption).font(.system(size: 11)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    if source == .image {
-                        Button("Choose…", action: chooseImage).controlSize(.small)
+                    HStack(spacing: 10) {
+                        if source == .image { Button("Choose…", action: chooseImage).controlSize(.small) }
+                        if button?.icon != nil {
+                            Button("No Icon") { model.setIcon(nil, button: id, on: deck) }
+                                .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
@@ -43,23 +79,62 @@ struct IconRow: View {
         return false
     }
 
-    private var source: Source {
-        guard let icon else { return .none }
+    private var source: Source? {
+        if let tile = button?.tile { return tile.kind == .text ? .text : .library }
+        guard let icon = button?.icon else { return nil }
         return isOpenApp && AppModel.followsApp(icon) ? .app : .image
     }
 
     private var caption: String {
         switch source {
-        case .app: return "The app's own icon, as the deck shows it."
-        case .image: return "Your image, as the deck shows it."
-        case .none: return "A black screen."
+        case .app?: return "The app's own icon, as the deck shows it."
+        case .image?: return "Your image, as the deck shows it."
+        case .text?, .library?: return "As the deck shows it."
+        case nil: return "No icon: a black screen."
+        }
+    }
+
+    @ViewBuilder
+    private func colourRows(_ tile: IconTile) -> some View {
+        FieldRow("Colour") {
+            HStack(spacing: 5) {
+                ForEach(Self.swatches, id: \.self) { hex in
+                    Circle()
+                        .fill(Color(hex: hex))
+                        .frame(width: 15, height: 15)
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(tile.background == hex ? 0.9 : 0.15),
+                                                       lineWidth: tile.background == hex ? 2 : 0.5))
+                        .onTapGesture {
+                            var changed = tile
+                            changed.background = hex
+                            model.setTile(changed, button: id, on: deck)
+                        }
+                        .accessibilityLabel(hex)
+                        .accessibilityAddTraits(.isButton)
+                }
+            }
+        }
+        FieldRow(tile.kind == .text ? "Text colour" : "Symbol") {
+            Picker("", selection: Binding(get: { tile.foreground ?? "auto" }, set: { value in
+                var changed = tile
+                changed.foreground = value == "auto" ? nil : value
+                model.setTile(changed, button: id, on: deck)
+            })) {
+                Text("Auto").tag("auto")
+                Text("White").tag("#FFFFFF")
+                Text("Black").tag("#1D1D1F")
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .controlSize(.small)
+            .fixedSize()
         }
     }
 
     private var preview: some View {
         ZStack {
             Color.black
-            if let icon, let image = DeckPreview.keyImage(path: icon, deck: deck) {
+            if let icon = button?.icon, let image = DeckPreview.keyImage(path: icon, deck: deck) {
                 Image(decorative: image, scale: 1).resizable().interpolation(.high)
             }
         }
@@ -74,13 +149,85 @@ struct IconRow: View {
             if case .openApp(let path) = choice, let generated = model.appIcon(for: path) {
                 model.setIcon(generated, button: id, on: deck)
             }
-        case .image: chooseImage()
-        case .none: model.setIcon(nil, button: id, on: deck)
+        case .image:
+            chooseImage()
+        case .text:
+            let words = ActionNames.summary(choice.action).detail ?? ActionNames.summary(choice.action).title
+            let text = String(words.prefix(14))
+            model.setTile(IconTile(kind: .text, text: text.isEmpty ? "Key" : text, symbol: nil, style: nil,
+                                   background: Self.swatches[0], foreground: nil), button: id, on: deck)
+        case .library:
+            model.setTile(IconTile(kind: .symbol, text: nil, symbol: "star", style: "fill", background: Self.swatches[9],
+                                   foreground: nil), button: id, on: deck)
+            choosingSymbol = true
         }
     }
 
     private func chooseImage() {
         guard let source = Chooser.image(), let copy = model.importImage(source) else { return }
         model.setIcon(copy, button: id, on: deck)
+    }
+}
+
+/// The library: search the 1,530 symbols, Bold or Fill, click one.
+struct SymbolPicker: View {
+    let library: SymbolLibrary?
+    let selected: String?
+    @State var style: String
+    let pick: (String, String) -> Void
+    @State private var search = ""
+
+    init(library: SymbolLibrary?, selected: String?, style: String, pick: @escaping (String, String) -> Void) {
+        self.library = library
+        self.selected = selected
+        _style = State(initialValue: style)
+        self.pick = pick
+    }
+
+    var body: some View {
+        let names = (library?.names ?? []).filter { search.isEmpty || $0.contains(search.lowercased()) }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                TextField("Search symbols", text: $search).textFieldStyle(.roundedBorder)
+                Picker("", selection: $style) {
+                    Text("Bold").tag("bold")
+                    Text("Fill").tag("fill")
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
+            if let library {
+                ScrollView {
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(38), spacing: 4), count: 7), spacing: 4) {
+                        ForEach(names, id: \.self) { name in
+                            Button { pick(name, style) } label: {
+                                Text(library.character(name) ?? "?")
+                                    .font(Font(library.font(SymbolLibrary.Style(rawValue: style) ?? .bold, size: 20)))
+                                    .frame(width: 38, height: 38)
+                                    .background(RoundedRectangle(cornerRadius: 6)
+                                        .fill(name == selected ? Color.accentColor.opacity(0.25) : Color.primary.opacity(0.05)))
+                            }
+                            .buttonStyle(.plain)
+                            .help(name)
+                        }
+                    }
+                }
+                .frame(height: 260)
+                Text("\(names.count) symbols · Phosphor (MIT)").font(.system(size: 10.5)).foregroundStyle(.secondary)
+            } else {
+                Text("The symbol library isn't in this build.").foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .frame(width: 360)
+    }
+}
+
+extension Color {
+    /// `Color(hex: "#0A84FF")`.
+    init(hex: String) {
+        let value = UInt32(hex.dropFirst(hex.hasPrefix("#") ? 1 : 0), radix: 16) ?? 0
+        self.init(rgb: value)
     }
 }

@@ -33,8 +33,10 @@ private func refreshed(_ environment: ShellEnvironment) async {
 }
 
 @Test func fallsBackOnHangInputOrNoMarkers() async throws {         // T-080
-    for (body, why) in [("sleep 30", "timed out"), ("read x; exit 0", "output"), ("echo hi; exit 1", "1")] {
-        let environment = ShellEnvironment(shell: try fakeShell(body), timeout: 0.5, base: ["PATH": "/usr/bin:/bin"])
+    // Only the hang needs a short timeout; the others finish at once, and a short timeout under a busy test run
+    // could cut them off first (seen 20/11/2026 with the app's snapshot tests running alongside).
+    for (body, why, timeout) in [("sleep 30", "timed out", 0.5), ("read x; exit 0", "output", 2.5), ("echo hi; exit 1", "1", 2.5)] {
+        let environment = ShellEnvironment(shell: try fakeShell(body), timeout: timeout, base: ["PATH": "/usr/bin:/bin"])
         let started = Date()
         await refreshed(environment)
         #expect(Date().timeIntervalSince(started) < 3, "\(body)")

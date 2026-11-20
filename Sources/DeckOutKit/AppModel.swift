@@ -27,6 +27,8 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var configNotice: String?
     /// Why the last chosen picture wasn't used.
     @Published public var iconProblem: String?
+    /// The icon library (the app's own; tests set the repo's).
+    var symbolLibrary: SymbolLibrary? = SymbolLibrary.shared
     /// The window is in lock photo mode (N4): the deck shows the photo; the editor its framing.
     @Published public internal(set) var photoMode = false
     /// While in photo mode, the real N4 shows the photo too.

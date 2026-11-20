@@ -34,9 +34,6 @@ Next free ID: BL-033
 - BL-003 [P1] [bug] `BrightnessControl` reads 0 for a monitor at start-up and reload and then trusts its cache, so the
   first brightness turn can set a monitor to ~5 %. REQUIREMENTS says brightness is read on first interaction after
   idle. Pre-existing (v1.0.0). `BrightnessControl.swift` (19/11/2026)
-- BL-004 [P2] [bug] The N4's internet tile sometimes shows red ("no reply") for its first reading after the daemon
-  starts (2 of ~7 starts), never afterwards. Log which step failed (lookup, `sendto`, timeout, `recv`) with `errno`,
-  and show "–" rather than red for a new probe's first reading. `LatencyProbe.swift`, `Daemon.swift` (19/11/2026)
 - BL-005 [P2] [debt] A reload redraws every screen on every deck (N3 6, N4 14): 75–158 ms measured 19/11/2026, on
   the main thread, so a press during a reload waits for it. Redraw only the screens whose content changed (compare
   each deck's layout plan before and after). Matters once the config app reloads on every edit (plan 3): most edits

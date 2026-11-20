@@ -196,10 +196,18 @@ extension AppModel {
         }
     }
 
+    /// Sets a block's tap, keeping what it shows, except that an app's own icon follows the app, as on a key. A tap
+    /// never puts an icon on a block that has none.
     public func setStripTap(_ choice: ActionChoice, block id: String) {
+        guard let store else { return }
+        let folder = IconFiles.folder(forConfig: store.path)
         editStripBlock(id, "Change Tap") { block in
             block.action = choice == .nothing ? nil : choice.action
             block.step = choice.step
+            if case .openApp(let path) = choice, !path.isEmpty, block.type == .picture, block.tile == nil,
+               let icon = block.icon, Self.followsApp(icon), let appIcon = IconFiles.appIcon(appPath: path, folder: folder) {
+                block.icon = appIcon
+            }
         }
     }
 

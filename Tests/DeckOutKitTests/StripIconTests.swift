@@ -4,7 +4,7 @@ import Testing
 @testable import DeckOutKit
 
 // A strip block takes a key's icons: a text or symbol tile drawn at the strip's shape, an image, or none. Setting
-// its tap never changes what it shows (the owner: a block stays blank until its icon is picked).
+// its tap never puts an icon on it (the owner: a block stays blank until its icon is picked).
 @MainActor @Test func stripIconEdits() throws {   // T-157
     let notes = "/System/Applications/Notes.app"
     var config = AppConfig.empty
@@ -43,4 +43,51 @@ import Testing
     model.setStripTile(tile, block: "2")
     model.setStripIcon("/icons/image-1.png", block: "2")
     #expect(model.stripBlock("2") == StripBlockConfig(type: .picture, icon: "/icons/image-1.png"))
+}
+
+// A block showing its tap's app's own icon follows the tap to another app, as a key does (BL-030); the person's own
+// image, a text tile or no icon stays.
+@MainActor @Test func stripAppIconFollowsTheTap() throws {   // T-165
+    let notes = "/System/Applications/Notes.app"
+    let calculator = "/System/Applications/Calculator.app"
+    let model = try previewModel(AppConfig.empty, deck: .n4, selection: "1")
+    let store = try #require(model.store)
+    let notesIcon = try #require(model.appIcon(for: notes))
+    let calculatorIcon = try #require(IconFiles.appIcon(appPath: calculator, folder: IconFiles.folder(forConfig: store.path)))
+
+    // Notes' icon on a block that opens Notes: the tap goes to Calculator, so does the icon, in one undo step.
+    model.setStripTap(.openApp(notes), block: "1")
+    model.setStripIcon(notesIcon, block: "1")
+    model.setStripTap(.openApp(calculator), block: "1")
+    #expect(model.stripBlock("1") == StripBlockConfig(type: .picture, action: "app:" + calculator, icon: calculatorIcon))
+    store.undo()
+    #expect(model.stripBlock("1") == StripBlockConfig(type: .picture, action: "app:" + notes, icon: notesIcon))
+    // A tap that isn't Open App keeps the icon.
+    model.setStripTap(.runCommand("echo hi"), block: "1")
+    #expect(model.stripBlock("1") == StripBlockConfig(type: .picture, action: "shell:echo hi", icon: notesIcon))
+
+    // A chosen image stays.
+    let source = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-src-\(UUID().uuidString).png").path
+    let rep = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 8, pixelsHigh: 8, bitsPerSample: 8,
+                                            samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+    try #require(rep.representation(using: .png, properties: [:])).write(to: URL(fileURLWithPath: source))
+    let image = try #require(model.importImage(source))
+    model.setStripTap(.openApp(notes), block: "2")
+    model.setStripIcon(image, block: "2")
+    model.setStripTap(.openApp(calculator), block: "2")
+    #expect(model.stripBlock("2") == StripBlockConfig(type: .picture, action: "app:" + calculator, icon: image))
+
+    // A text tile stays.
+    let tile = IconTile(kind: .text, text: "Notes", symbol: nil, style: nil, background: "#0A84FF", foreground: nil)
+    model.setStripTap(.openApp(notes), block: "3")
+    model.setStripTile(tile, block: "3")
+    let drawn = try #require(model.stripBlock("3")?.icon)
+    model.setStripTap(.openApp(calculator), block: "3")
+    #expect(model.stripBlock("3") == StripBlockConfig(type: .picture, action: "app:" + calculator, icon: drawn, tile: tile))
+
+    // An icon block with no icon gets none.
+    model.setStripIcon(nil, block: "4")
+    model.setStripTap(.openApp(calculator), block: "4")
+    #expect(model.stripBlock("4") == StripBlockConfig(type: .picture, action: "app:" + calculator))
 }

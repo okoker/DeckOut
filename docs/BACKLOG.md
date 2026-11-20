@@ -91,10 +91,6 @@ Next free ID: BL-033
   paused while the Mac is locked, cut off if it hangs. What's in the folder runs unattended, so the folder gets the
   config's checks (owned by the person, not writable by others). Design with a mockup first; touches the agent,
   which runs them. `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
-- BL-030 [P2] [bug] A strip block's App image doesn't follow its tap's app: change an Open App tap from Notes to
-  Safari and the block keeps Notes' icon, still marked App ("The app's own icon"); a key follows. The owner's rule
-  is that a tap never changes what a block shows, so: either an image that already is the app's follows (as on a
-  key), or the caption changes. Owner's call. `IconRow.swift`, `AppModel+Editing.swift` (plan 7 review, 20/11/2026)
 - BL-031 [P2] [bug] Sheets and undo: ⌘Z in the command window or a preset sheet, with nothing left to undo in its
   field, undoes the last deck change behind it (the command window can then close, its typing gone); the command
   window also closes, losing its text, when the deck on screen changes (unplug, agent restart). Skip the store's

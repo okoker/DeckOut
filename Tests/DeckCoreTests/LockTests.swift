@@ -171,3 +171,33 @@ private func quadrantPhoto(width: Int, height: Int) -> CGImage {
     _ = cache.image(for: "/b.jpg")
     #expect(loads == 3)
 }
+
+@Test func previewSeesAReplacedPhoto() throws {                     // T-177
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-photo-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    let url = folder.appendingPathComponent("photo.jpg")
+    try Data("first photo".utf8).write(to: url)
+    var loads = 0
+    let cache = LockPhoto.PreviewCache { _ in
+        loads += 1
+        return quadrantPhoto(width: 80, height: 40)
+    }
+    _ = cache.image(for: url.path)
+    _ = cache.image(for: url.path)
+    #expect(loads == 1)                          // unchanged: still decoded once
+
+    // Replaced at the same path (a script writing today's photo): decoded again.
+    try Data("second, longer photo".utf8).write(to: url, options: .atomic)
+    _ = cache.image(for: url.path)
+    #expect(loads == 2)
+    _ = cache.image(for: url.path)
+    #expect(loads == 2)
+
+    // Rewritten in place, same size: its modification time moves on, so it's decoded again.
+    let handle = try FileHandle(forWritingTo: url)
+    try handle.write(contentsOf: Data("SECOND, LONGER PHOTO".utf8))
+    try handle.close()
+    try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: 60)], ofItemAtPath: url.path)
+    _ = cache.image(for: url.path)
+    #expect(loads == 3)
+}

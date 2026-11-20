@@ -149,7 +149,8 @@ the job definition it registered: a changed plist needs a new label.
   go.
 - **Show on the deck** (on by default): the real N4 shows what the window shows, whatever changed it (a move, undo,
   a hand edit, a reconnect), at most every 50 ms with the last one always sent; it goes back to its keys on Done, and
-  when the only deck goes away. The agent decodes the photo once per preview.
+  when the only deck goes away. The agent decodes the photo once per preview, and the app once while it's open; both decode it again when the
+  file at that path is replaced or rewritten (told by its file number, size and modified time, not by reading it).
 
 ## First run and removal
 - **The hand-installed controller** (the README's `com.streamdeck.controller`): when its plist is in

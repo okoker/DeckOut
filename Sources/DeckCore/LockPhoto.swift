@@ -92,20 +92,29 @@ public enum LockPhoto {
     }
 
     /// The decoded photo while the app's preview is up: a drag sends a framing per move, and decoding a phone photo
-    /// each time would lag. Holds one photo, by path.
+    /// each time would lag. Holds one photo, by path and by how the file stands on disk (file number, size, modified
+    /// time: one `stat`, not a read), so a photo replaced or rewritten at the same path is decoded again.
     public final class PreviewCache {
         private let loader: (String) -> CGImage?
-        private var cached: (path: String, image: CGImage)?
+        private var cached: (path: String, stamp: [Int]?, image: CGImage)?
 
         public init(load: @escaping (String) -> CGImage? = LockPhoto.load(path:)) {
             loader = load
         }
 
         public func image(for path: String) -> CGImage? {
-            if let cached, cached.path == path { return cached.image }
+            let stamp = Self.stamp(path)
+            if let cached, cached.path == path, cached.stamp == stamp { return cached.image }
             guard let image = loader(path) else { return nil }
-            cached = (path, image)
+            cached = (path, stamp, image)
             return image
+        }
+
+        /// The file as it stands, without reading it; nil when it can't be looked at.
+        private static func stamp(_ path: String) -> [Int]? {
+            var st = stat()
+            guard stat(path, &st) == 0 else { return nil }
+            return [Int(st.st_ino), Int(st.st_size), st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec]
         }
 
         public func clear() { cached = nil }

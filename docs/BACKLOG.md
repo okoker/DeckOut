@@ -47,9 +47,6 @@ Next free ID: BL-034
 - BL-016 [P2] [bug] When the lock-photo preview's file can't be read, the agent tries to load it twice per draw
   (cache miss, then the fallback load): two warnings per move and reload. Return early on a failed preview load.
   `Daemon.swift` (`drawLockPhoto`), `LockPhoto.swift` (plan 4 review)
-- BL-017 [P2] [bug] The app's lock-photo cache is never cleared: a hand-set photo path (v1.0.0 string form) whose file
-  is replaced keeps showing, and clamping with, the old picture. Key the cache by path and modification date.
-  `AppModel.swift` (plan 4 review)
 - BL-018 [P2] [debt] Chosen lock photos (and pictures) are never deleted: every Choose leaves a file in the config
   folder. Clean up at quit, keeping anything the config or the undo history still names. `IconFiles.swift`
   (plan 4 review)

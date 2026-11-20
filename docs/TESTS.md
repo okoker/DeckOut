@@ -181,6 +181,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-174 | `MonitorSettingsTests/licencesFitTheAboutTab` | Every line of the three licences About shows (DeckOut, m1ddc, Phosphor) fits the tab's 464 pt (520 less padding and a scroll bar) in the licence font; at 10.5 pt the longest measured 506 pt and broke |
 | T-175 | `ShortcutNamesTests/aShortcutMadeMeanwhileIsOffered`, `theListIsntReadUntilAPickerNeedsIt` | The Shortcut picker's list is read again when DeckOut comes to the front and when a picker appears again, so a Shortcut made meanwhile is offered (was read once per launch: BL-014); coming to the front never starts the first read. Runs against a stand-in for `/usr/bin/shortcuts`, never the person's own Shortcuts |
 | T-176 | `MissingFilesTests/makeExecutableSaysWhyNot` | When Make Executable fails (staged: the script's folder can't be entered) the editor says why, and the message goes when another control is selected or a retry works; the words for someone else's script ("owner") and a disk that can't be changed (BL-012: it used to do nothing visible) |
+| T-177 | `LockTests/previewSeesAReplacedPhoto` | The lock photo cache (the app's, and the agent's during a preview) decodes a photo again when the file at its path is replaced, or rewritten in place with the same size and a new modified time; unchanged, it isn't decoded again (BL-017: a replaced photo kept showing until a relaunch) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

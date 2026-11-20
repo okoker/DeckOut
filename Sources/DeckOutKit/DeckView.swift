@@ -10,6 +10,8 @@ public struct DeckView: View {
     let captions: [String: String]
     /// Controls whose files are gone: a small red mark.
     let marks: Set<String>
+    /// Drawn faintly across the screens' area, under them (lock photo mode: what falls between the screens).
+    let backdrop: CGImage?
     @Binding var selection: String?
 
     public static let ringWidth: CGFloat = 3
@@ -17,12 +19,19 @@ public struct DeckView: View {
     static let red = Color(rgb: 0xFF3B30)
 
     public init(face: DeckFace, images: [String: CGImage], captions: [String: String], marks: Set<String> = [],
-                selection: Binding<String?>) {
+                backdrop: CGImage? = nil, selection: Binding<String?>) {
         self.face = face
         self.images = images
         self.captions = captions
         self.marks = marks
+        self.backdrop = backdrop
         _selection = selection
+    }
+
+    /// The area the screens span (the N4's 800 × 464 face at half scale).
+    var screensFrame: CGRect {
+        face.controls.filter { $0.kind == .key || $0.kind == .stripBlock }.map(\.frame)
+            .reduce(CGRect.null) { $0.union($1) }
     }
 
     public var body: some View {
@@ -35,6 +44,13 @@ public struct DeckView: View {
                 .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.07), lineWidth: 1))
                 .shadow(color: .black.opacity(0.30), radius: 20, y: 11)
+            if let backdrop {
+                Image(decorative: backdrop, scale: 1).resizable().interpolation(.high)
+                    .frame(width: screensFrame.width, height: screensFrame.height)
+                    .opacity(0.32)
+                    .position(x: screensFrame.midX, y: screensFrame.midY)
+                    .allowsHitTesting(false)
+            }
             if let strip = stripFrame {
                 stripPanel(strip)
             }

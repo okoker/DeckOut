@@ -28,12 +28,20 @@ public struct MainWindow: View {
                     }
                 }
                 if model.shown != nil {
-                    PresetMenu(model: model).padding(.leading, 10)
+                    PresetMenu(model: model, disabled: model.photoMode).padding(.leading, 10)
                 }
             }
             ToolbarItemGroup(placement: .primaryAction) {
                 if model.shown != nil {
                     BrightnessSlider(model: model)
+                }
+                if model.shown == .n4 {
+                    Toggle(isOn: Binding(get: { model.photoMode },
+                                         set: { $0 ? model.enterPhotoMode() : model.leavePhotoMode() })) {
+                        Text("Lock Photo…")
+                    }
+                    .toggleStyle(.button)
+                    .help("Choose, move and zoom the photo the N4 shows while your Mac is locked")
                 }
             }
         }
@@ -52,7 +60,15 @@ public struct MainWindow: View {
         case .plugIn: PlugInScreen()
         case .pickDeck: PickDeckScreen { model.show($0) }
         case .deck(let deck):
-            DeckStage(model: model, face: DeckFace.of(deck))
+            if model.photoMode && deck == .n4 {
+                HStack(spacing: 0) {
+                    PhotoStage(model: model)
+                    Divider()
+                    PhotoInspector(model: model).frame(width: 300)
+                }
+            } else {
+                DeckStage(model: model, face: DeckFace.of(deck))
+            }
         }
     }
 }

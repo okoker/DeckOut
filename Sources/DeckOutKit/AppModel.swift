@@ -137,6 +137,7 @@ public final class AppModel: ObservableObject {
     /// The person picked a deck (toolbar button or "Pick a deck").
     public func show(_ deck: DeckKind) {
         guard connectedDecks.contains(deck), shown != deck else { return }
+        if photoMode { leavePhotoMode() }
         shown = deck
         selection = nil
         rebuildStaticImages()
@@ -145,11 +146,13 @@ public final class AppModel: ObservableObject {
     private func followDecks() {
         if case .deck(let deck) = Self.deckScreen(shown: shown, connected: connectedDecks) {
             if deck != shown {
+                if photoMode { leavePhotoMode() }
                 shown = deck
                 selection = nil
                 rebuildStaticImages()
             }
         } else {
+            photoMode = false          // no N4 to preview on
             shown = nil
             selection = nil
         }

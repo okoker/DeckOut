@@ -1,6 +1,7 @@
 import AppKit
 import DeckCore
 import Foundation
+import SwiftUI
 import Testing
 @testable import DeckOutKit
 
@@ -66,4 +67,41 @@ private func n4Config() -> AppConfig {
     #expect(model.lockPhoto == nil)
     store.undo()
     #expect(model.lockPhoto?.path == path)
+}
+
+/// A test photo: sky, sun, hills (so the cut across the screens is easy to see).
+private func scenicPhoto() throws -> String {
+    let w = 1600, h = 1000
+    let ctx = try #require(CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                     space: CGColorSpaceCreateDeviceRGB(),
+                                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+    let colors = [CGColor(red: 0.12, green: 0.23, blue: 0.54, alpha: 1), CGColor(red: 0.96, green: 0.62, blue: 0.04, alpha: 1)]
+    let gradient = try #require(CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: nil))
+    ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: h), end: CGPoint(x: 0, y: 0), options: [])
+    ctx.setFillColor(red: 1, green: 0.96, blue: 0.8, alpha: 1)
+    ctx.fillEllipse(in: CGRect(x: 1000, y: 450, width: 220, height: 220))
+    ctx.setFillColor(red: 0.26, green: 0.08, blue: 0.03, alpha: 1)
+    ctx.fill(CGRect(x: 0, y: 0, width: w, height: 260))
+    let image = try #require(ctx.makeImage())
+    let path = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-scene-\(UUID().uuidString).png").path
+    let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+    try png.write(to: URL(fileURLWithPath: path))
+    return path
+}
+
+@MainActor @Test func photoModeDraws() throws {   // T-138 (design check)
+    let model = try previewModel(n4Config(), deck: .n4, selection: nil)
+    #expect(model.choosePhoto(try scenicPhoto()))
+    model.setFraming(zoom: 1.3, offsetY: 0.05, name: "Zoom Lock Photo")
+    model.photoMode = true
+    let view = HStack(spacing: 0) {
+        PhotoStage(model: model)
+        Divider()
+        PhotoInspector(model: model).frame(width: 300)
+    }
+    for (hidden, dark) in [(false, false), (true, false), (true, true)] {
+        model.showHiddenParts = hidden
+        let png = try Snapshot.windowPNG(view, size: MainWindow.size, dark: dark)
+        try png.write(to: snapshotFolder.appendingPathComponent("photo-\(hidden ? "hidden" : "plain")-\(dark ? "dark" : "light").png"))
+    }
 }

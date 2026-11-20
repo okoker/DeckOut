@@ -2,7 +2,7 @@ import AppKit
 import DeckCore
 
 #if DEBUG
-/// Debug builds: `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--after <seconds>]` draws the real main window,
+/// Debug builds: `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--photo] [--after <seconds>]` draws the real main window,
 /// title bar and toolbar included, to a PNG and quits. For design checks and test sessions without a screen
 /// recording permission: a window may draw itself.
 @MainActor
@@ -20,6 +20,10 @@ enum WindowSnapshot {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + max(0, after - 1)) {
             if let id = value("--select") { model.selection = id }
+            if arguments.contains("--photo") {
+                model.showOnDeck = false          // a snapshot never touches the real N4
+                model.enterPhotoMode()
+            }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + after) {
             guard let window = NSApp.windows.first(where: { $0.isVisible && $0.contentView != nil }),

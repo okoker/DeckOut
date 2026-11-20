@@ -52,6 +52,22 @@ public enum IconFiles {
         return path
     }
 
+    /// The N4's lock photo, copied into the config folder as it is (the agent downscales on decode):
+    /// `<config folder>/lock-photo-<hash>.<ext>`. Throws for a file that isn't a picture.
+    public static func importLockPhoto(from source: String, configPath: String) throws -> String {
+        guard let data = FileManager.default.contents(atPath: source),
+              let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
+              CGImageSourceGetCount(imageSource) > 0,
+              CGImageSourceCreateThumbnailAtIndex(imageSource, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                                                   kCGImageSourceThumbnailMaxPixelSize: 64] as CFDictionary) != nil
+        else { throw ImportError.notAnImage }
+        let folder = (configPath as NSString).deletingLastPathComponent
+        let ext = (source as NSString).pathExtension.lowercased()
+        let path = folder + "/lock-photo-\(hash(data)).\(ext.isEmpty ? "jpg" : ext)"
+        guard write(data, to: path, folder: folder) else { throw ImportError.notSaved }
+        return path
+    }
+
     // MARK: - Private
 
     private static func render(_ image: NSImage, pixels: Int) -> Data? {

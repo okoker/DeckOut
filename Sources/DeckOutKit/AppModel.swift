@@ -27,6 +27,18 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var configNotice: String?
     /// Why the last chosen picture wasn't used.
     @Published public var iconProblem: String?
+    /// The window is in lock photo mode (N4): the deck shows the photo; the editor its framing.
+    @Published public internal(set) var photoMode = false
+    /// While in photo mode, the real N4 shows the photo too.
+    @Published public var showOnDeck = true { didSet { if photoMode { sendPreview(force: true) } } }
+    /// Draw faintly what falls between the screens.
+    @Published public var showHiddenParts = false
+    /// Why the last chosen lock photo wasn't used.
+    @Published public var photoProblem: String?
+    /// The lock photo decoded for the drawing (by path; downscaled like the agent's).
+    let photoCache = LockPhoto.PreviewCache()
+    var lastPreviewSent = Date.distantPast
+    var previewScheduled = false
     /// The deck on screen; nil on "Plug in your deck" and "Pick a deck".
     @Published public internal(set) var shown: DeckKind?
     @Published public var selection: String? { didSet { iconProblem = nil } }

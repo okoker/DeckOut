@@ -141,6 +141,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-134 | `LockTests/panelIsWhatSlicesCut` | The app's drawing of the lock photo (the framed panel) is exactly what the deck's slices cut, each slice its rectangle turned 180° |
 | T-135 | `LockTests/offsetsClampToTheEdge` | The photo's offsets have limits at each zoom; clamped to them, the photo sits where it did, so a drag past the edge and back moves it at once (no dead zone); zoom stays 1–10 |
 | T-136 | `LockTests/previewDecodesOnce` | While the app's preview is up, the agent decodes the photo once, not per framing sent during a drag |
+| T-137 | `LockPhotoModeTests/choosingCopiesAndChecks` | A chosen lock photo is copied into the config folder (`lock-photo-<hash>`, 0600) and starts centred at zoom 1; a file that isn't a picture is refused with a message and the config keeps its photo |
+| T-138 | `LockPhotoModeTests/framingIsClampedAndUndoable` | Moving the photo is clamped at its edge and a whole drag is one undo step; zoom stays 1–10; Reset centres it; Remove takes it off and undo brings it back |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

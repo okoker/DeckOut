@@ -10,7 +10,8 @@
   **Retire It**. The owner found issues (list below) and asked to fix them before UAT goes on.
 
 ### UAT issues (owner) — to fix first
-- (the owner's list goes here)
+- BL-026 the Run Command field can't be read; BL-027 strip blocks can't get a key's icons; BL-028 the preset
+  pull-down vanishes after New Preset. Fixing on `deckout-7-uat-fixes` (from `deckout-6-settings`).
 
 ### Environment state — the decks now run on DeckOut Dev
 - The hand install is retired: `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` (its
@@ -19,9 +20,9 @@
   of the live one; log `~/Library/Logs/DeckOut Dev/agent.log`). Accessibility for it is probably not granted yet.
 - Rollback to the hand install: DeckOut Dev → Settings → Stop and Remove; then `mv` the `.retired-by-deckout` plist
   back and `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.streamdeck.controller.plist`.
-- Test sessions change: the dev agent is now the live controller. `make install-dev` replaces what runs the owner's
-  decks (the app restarts the agent on the new build); there's no hand-install daemon to stop and restart unless
-  the owner rolls back. Ask the owner which way before the next session.
+- Test sessions: the dev agent is the live controller, and stays so while fixing (owner, 20/11/2026: the decks
+  going blank during an install is fine). `make install-dev` replaces what runs the owner's decks (the app restarts
+  the agent on the new build).
 
 ### Gotchas
 - KI-008: installing over an unregistered dev agent then registering kills the first start; the app now unregisters

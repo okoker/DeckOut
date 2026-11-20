@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-026
+Next free ID: BL-030
 
 ---
 
@@ -100,3 +100,24 @@ Next free ID: BL-026
   (plan 6 review)
 - BL-025 [P2] [debt] `AppModel.m1ddcPath` repeats `BrightnessControl.findM1DDC`'s search. Make the DeckCore one
   public and use it. `AppModel+Settings.swift`, `BrightnessControl.swift` (plan 6 review)
+- BL-026 [P1] [bug] The Run Command field can't be read: beside its label in the 300 px editor it shows about 27
+  monospaced characters a line and at most 6 lines, so a long command (the strip's iTerm `osascript` one) scrolls
+  inside the field and can only be read by copying it out. Give it the editor's full width, more lines, and room to
+  read a long one. `ActionFields.swift`, `EditorKit.swift` (`CommitTextField`) (UAT, 20/11/2026)
+- BL-027 [P1] [feature] A strip block can't get an icon the way a key can: "A picture" takes only an image file (no
+  Text or Library tile), and the editor puts what the block shows above what a tap does, so adding a script or
+  command with its own icon to the strip isn't something a person finds. Give strip blocks the keys' icon choices,
+  drawn at the strip's 176 × 112, and lay the editor out like a key's. `StripEditor.swift`, `IconRow.swift`,
+  `TileRenderer.swift`, `StripBlockConfig` (UAT, 20/11/2026)
+- BL-028 [P1] [bug] After New Preset the preset pull-down vanished and there was no way back (the N4 was left live
+  on a blank "Preset 2"). Likely cause, not yet reproduced: New Preset and Rename swap the pull-down for a name
+  field in the toolbar that only goes away on Return, Esc or losing focus, and nothing tells a person so.
+  `Toolbar.swift` (`PresetMenu`) (UAT, 20/11/2026)
+- BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three
+  live readings (internet, CPU and memory, volume) are written into the agent, so each new one needs code. Owner
+  (20/11/2026): new kinds are not built into the app. They live in a folder people put them into, in a documented
+  standard format; the app picks them up at its next launch and offers them in the strip block's Shows pull-down.
+  Starting idea: each one is a command and how often to run it, shown as the text it prints with an optional label;
+  paused while the Mac is locked, cut off if it hangs. What's in the folder runs unattended, so the folder gets the
+  config's checks (owned by the person, not writable by others). Design with a mockup first; touches the agent,
+  which runs them. `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)

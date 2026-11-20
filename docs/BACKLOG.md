@@ -46,9 +46,6 @@ Next free ID: BL-033
   edits, show the agent's config (or its file's state) instead. `AppModel.swift` (plan 2 review)
 - BL-012 [P2] [bug] Make Executable does nothing visible when it fails (e.g. a script the person doesn't own). Show
   why. `AppModel+Editing.swift` (plan 3 review)
-- BL-013 [P2] [bug] An emptied Host field on an internet strip block saves an empty host, and the block stays red,
-  though the placeholder suggests the default is used. Save the default host for an empty field. `StripEditor.swift`
-  (plan 3 review)
 - BL-014 [P2] [feature] Shortcut list and recorder: the list of Apple Shortcuts is read once per launch (a Shortcut
   made after opening DeckOut needs a relaunch); media keys pressed in the recorder show nothing (they arrive as system
   events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the

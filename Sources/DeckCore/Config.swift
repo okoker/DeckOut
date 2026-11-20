@@ -319,8 +319,11 @@ public struct StripBlockConfig: Codable, Equatable {
     /// `picture` blocks: how the app made `icon`, so it can edit it again. The agent ignores it and draws `icon`.
     public var tile: IconTile?
 
+    /// The host an internet block pings when none is set, or an empty one is.
+    public static let defaultHost = "one.one.one.one"
+
     public init(type: StripBlockType, action: String? = nil, step: Int? = nil, icon: String? = nil,
-                host: String = "one.one.one.one", arrowMs: Double = 2, timeoutS: Double = 3, tile: IconTile? = nil) {
+                host: String = defaultHost, arrowMs: Double = 2, timeoutS: Double = 3, tile: IconTile? = nil) {
         self.type = type
         self.action = action
         self.step = step
@@ -343,7 +346,9 @@ public struct StripBlockConfig: Codable, Equatable {
         action = try c.decodeIfPresent(String.self, forKey: .action)
         step = try c.decodeIfPresent(Int.self, forKey: .step)
         icon = try c.decodeIfPresent(String.self, forKey: .icon)
-        host = try c.decodeIfPresent(String.self, forKey: .host) ?? "one.one.one.one"
+        // An empty host (a Host field emptied before BL-013's fix saved one) pings the default, as a missing one does.
+        let host = try c.decodeIfPresent(String.self, forKey: .host) ?? ""
+        self.host = host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Self.defaultHost : host
         arrowMs = try c.decodeIfPresent(Double.self, forKey: .arrowMs) ?? 2
         timeoutS = try c.decodeIfPresent(Double.self, forKey: .timeoutS) ?? 3
         tile = (try? c.decodeIfPresent(IconTile.self, forKey: .tile)) ?? nil     // one that doesn't read: none

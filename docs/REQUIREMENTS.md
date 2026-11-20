@@ -100,7 +100,7 @@ deck. Full example: `config.example.json`.
 - **Steps on presses:** a key, knob press, strip block or swipe may carry a signed `step` (`5` up, `-5` down) for the
   stepped actions (`system_volume`, `display_brightness`, `zr7_volume`). A knob turn's step is its `rotate.step`
   (default 1) times the turn's direction.
-- **Strip block `type`:** `internet` (`host`, default `one.one.one.one`; `arrow_ms`, default 2, 0 or more; `timeout_s`, default 3, 0.1–60 — out-of-range numbers are refused at load),
+- **Strip block `type`:** `internet` (`host`, default `one.one.one.one`, also for an empty or blank one; `arrow_ms`, default 2, 0 or more; `timeout_s`, default 3, 0.1–60 — out-of-range numbers are refused at load),
   `load`, `volume`, `picture` (shows `icon`), `empty`. A tap runs the block's `action`. An unknown type makes the whole
   file invalid.
 - **`swipe.action`:** one action for a swipe on the strip. **`lock_photo`:** shown across the N4 while the Mac is locked.

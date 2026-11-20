@@ -304,3 +304,12 @@ private let presetsConfig = """
     let plain = String(decoding: try JSONEncoder().encode(StripBlockConfig(type: .picture, icon: "/i.png")), as: UTF8.self)
     #expect(!plain.contains("tile"))
 }
+
+@Test func emptyHostReadsAsTheDefault() throws {                    // T-166
+    // A Host field emptied before BL-013's fix saved `"host": ""`, and the agent pinged nothing: such a file reads as
+    // the default host, in the agent and in the app.
+    for host in [#""""#, #""  ""#, #"" \n""#] {
+        let c = try parse(#"{ "decks": { "n4": { "brightness": 50, "strip": { "1": { "type": "internet", "host": "# + host + " } } } } }")
+        #expect(c.n4?.strip["1"]?.host == StripBlockConfig.defaultHost, "\(host)")
+    }
+}

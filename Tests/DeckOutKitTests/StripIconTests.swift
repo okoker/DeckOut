@@ -91,3 +91,18 @@ import Testing
     model.setStripTap(.openApp(calculator), block: "4")
     #expect(model.stripBlock("4") == StripBlockConfig(type: .picture, action: "app:" + calculator))
 }
+
+// An emptied Host field saves the default host its placeholder shows, not an empty one the agent can't ping (BL-013);
+// a typed host is saved trimmed.
+@MainActor @Test func emptiedHostSavesTheDefault() throws {   // T-166
+    var config = AppConfig.empty
+    config.setStripBlock("1", StripBlockConfig(type: .internet, host: "example.net"))
+    let model = try previewModel(config, deck: .n4, selection: "1")
+    for typed in ["", "   ", " \n"] {
+        model.setStripHost("example.net", block: "1")
+        model.setStripHost(typed, block: "1")
+        #expect(model.stripBlock("1")?.host == StripBlockConfig.defaultHost, "\(typed.debugDescription)")
+    }
+    model.setStripHost(" example.org\n", block: "1")
+    #expect(model.stripBlock("1")?.host == "example.org")
+}

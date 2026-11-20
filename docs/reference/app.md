@@ -100,11 +100,12 @@ the job definition it registered: a changed plist needs a new label.
   Fill, MIT), searched in a popover. The preview is the key as the deck shows it.
 - **Strip blocks** are laid out like a key: **Tap** (the key's actions) first, then **Shows**: An image (the key's
   [App | Image | Text | Library], App only for an Open App tap; text and symbols drawn at 352 × 224, 2× the block's
-  176 × 112, text sizes scaled to the shorter side, with the block's own `tile`), Internet latency (host, arrow
-  threshold in ms, red after s), CPU and memory, Volume, or Nothing. The two are independent, except that a block
-  showing an app's own icon follows its tap to another app, as a key does, in the same undo step (your image, text
-  or symbol stays). Setting a tap never puts an image on a block (a new block stays blank until its image is picked,
-  a live reading stays); a live reading drops the image.
+  176 × 112, text sizes scaled to the shorter side, with the block's own `tile`), Internet latency (host, trimmed —
+  an emptied field saves the default its placeholder shows, `one.one.one.one`; arrow threshold in ms, red after s),
+  CPU and memory, Volume, or Nothing. The two are independent, except that a block showing an app's own icon follows
+  its tap to another app, as a key does, in the same undo step (your image, text or symbol stays). Setting a tap
+  never puts an image on a block (a new block stays blank until its image is picked, a live reading stays); a live
+  reading drops the image.
 - **Files that are gone:** keys, presses and taps whose app, file, folder, script, icon or picture is missing get a
   red mark on the drawing and the reason in the editor; a script that isn't executable gets Make Executable (adds
   the owner's execute bit); a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS

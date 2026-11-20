@@ -54,8 +54,8 @@ struct StripEditor: View {
     @ViewBuilder
     private func internetFields(_ block: StripBlockConfig) -> some View {
         FieldRow("Host") {
-            CommitTextField(value: block.host, placeholder: "one.one.one.one") { host in
-                model.editStripBlock(control.id) { $0.host = host.trimmingCharacters(in: .whitespaces) }
+            CommitTextField(value: block.host, placeholder: StripBlockConfig.defaultHost) { host in
+                model.setStripHost(host, block: control.id)
             }
         }
         FieldRow("Arrow at") {

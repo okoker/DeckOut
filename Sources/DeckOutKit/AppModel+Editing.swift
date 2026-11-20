@@ -196,6 +196,13 @@ extension AppModel {
         }
     }
 
+    /// The host an internet block pings, as typed in its Host field (trimmed). An emptied field means the default
+    /// host its placeholder shows, not an empty one the agent can't ping.
+    public func setStripHost(_ host: String, block id: String) {
+        let host = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        editStripBlock(id) { $0.host = host.isEmpty ? StripBlockConfig.defaultHost : host }
+    }
+
     /// Sets a block's tap, keeping what it shows, except that an app's own icon follows the app, as on a key. A tap
     /// never puts an icon on a block that has none.
     public func setStripTap(_ choice: ActionChoice, block id: String) {

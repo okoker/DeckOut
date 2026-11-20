@@ -76,6 +76,10 @@ public final class AppModel: ObservableObject {
     private var watchers: Set<AnyCancellable> = []
     /// Apple Shortcuts by name, for "Run a Shortcut" (read with `shortcuts list` when first needed).
     @Published public var shortcutNames: [String]?
+    /// The tool that lists them (tests set a stand-in, so they never read the person's own Shortcuts).
+    var shortcutsTool = "/usr/bin/shortcuts"
+    /// A read of the list is under way (main thread only).
+    var readingShortcuts = false
 
     public nonisolated static let notAnsweringText = "DeckOut's background part isn't answering."
 
@@ -446,6 +450,7 @@ public final class AppModel: ObservableObject {
     /// down.
     public func becameActive() async {
         store?.externalChange()
+        if shortcutNames != nil { loadShortcutNames() }   // only once a picker has needed the list
         await inTurn { await self.recheckRegistration() }
     }
 

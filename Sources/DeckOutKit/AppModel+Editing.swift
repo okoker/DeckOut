@@ -115,13 +115,16 @@ extension AppModel {
 
     // MARK: - Apple Shortcuts
 
-    /// Reads the person's Shortcuts once (`/usr/bin/shortcuts list`, as an argument array).
+    /// Reads the person's Shortcuts (`/usr/bin/shortcuts list`, as an argument array) in the background: each time a
+    /// Shortcut picker appears, and each time DeckOut comes to the front after one has, so a Shortcut made meanwhile
+    /// is offered without a relaunch. The list on screen stays while it's read again; a read under way isn't doubled.
     public func loadShortcutNames() {
-        guard shortcutNames == nil else { return }
-        shortcutNames = []
+        guard !readingShortcuts else { return }
+        readingShortcuts = true
+        let tool = shortcutsTool
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
+            process.executableURL = URL(fileURLWithPath: tool)
             process.arguments = ["list"]
             let pipe = Pipe()
             process.standardOutput = pipe
@@ -133,7 +136,10 @@ extension AppModel {
                 names = String(decoding: data, as: UTF8.self).split(separator: "\n").map(String.init)
                     .filter { !$0.isEmpty }.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
             }
-            DispatchQueue.main.async { self?.shortcutNames = names }
+            DispatchQueue.main.async {
+                self?.shortcutNames = names
+                self?.readingShortcuts = false
+            }
         }
     }
 }

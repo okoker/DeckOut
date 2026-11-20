@@ -92,7 +92,10 @@ the job definition it registered: a changed plist needs a new label.
   text replacements and spelling fixes off whatever the macOS settings); Save (the prominent button, ⌘Return)
   applies it, Cancel (Esc) changes nothing.
 - **Keyboard shortcuts** are recorded by pressing them; only keys in the agent's own table (`KeyNames`) are taken.
-- **Apple Shortcuts** come from `shortcuts list` (run by the app, as an argument array); a text field if none.
+- **Apple Shortcuts** come from `shortcuts list` (run by the app, as an argument array); a text field if none. It is
+  read each time a Shortcut picker appears and each time DeckOut comes to the front after one has, so a Shortcut made
+  meanwhile is offered without a relaunch; the list on screen stays while it's read again. Until a picker needs it,
+  the tool isn't run.
 - **Icons** ([App | Image | Text | Library], and No Icon): the app's own icon for Open App (rendered to a 256 px PNG
   in `<config folder>/icons/`, following the app unless you chose another icon); a picture you choose (decoded and
   saved as a PNG at most 512 px on a side in `icons/`; a file that isn't a picture is refused with a message); text

@@ -69,6 +69,10 @@ public final class AppModel: ObservableObject {
     @Published public var executableProblem: String?
     /// Edit in Window…'s command window, while it's open.
     @Published public var commandEdit: CommandEdit?
+    /// Allow…'s watch for the Accessibility grant (`watchAccessibility`).
+    var accessibilityWatch: Task<Void, Never>?
+    /// A text field (any, in any window) has been typed in and not yet left: Edit → Undo stays on for its typing.
+    @Published public private(set) var typingInAField = false
     /// Upright images of the shown deck's keys and picture blocks, rebuilt when the config changes.
     @Published public private(set) var staticImages: [String: CGImage] = [:]
     /// Upright images of the live strip blocks, rebuilt with each push.
@@ -112,6 +116,11 @@ public final class AppModel: ObservableObject {
         self.registrar = registrar
         link?.onNotAnswering = { [weak self] in await self?.tryAgain() }   // as Try Again does, in turn
         store?.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &watchers)
+        // macOS says a field's editing began at its first keystroke and ended when it's left (on the main thread).
+        NotificationCenter.default.publisher(for: NSText.didBeginEditingNotification)
+            .sink { [weak self] _ in self?.typingInAField = true }.store(in: &watchers)
+        NotificationCenter.default.publisher(for: NSText.didEndEditingNotification)
+            .sink { [weak self] _ in self?.typingInAField = false }.store(in: &watchers)
         store?.$config.sink { [weak self] config in   // the store publishes on the main actor
             guard let self, config != self.config else { return }
             self.config = config

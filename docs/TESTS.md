@@ -187,6 +187,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-180 | `CommandEditorTests/theCommandWindowOutlivesTheEditor` | The command window hangs on the main window, not on the key's editor: it shows while no editor is on screen and stays open when the deck unplugs (it used to close with the editor, losing its typing: BL-031); Save then writes to the key it was opened for |
 | T-181 | `IconRowTests/libraryWritesNothingUntilASymbolIsClicked` | Clicking Library in a key's icon row (real window, real segmented control) opens the symbols and writes nothing: it used to put a star on the key at once, so looking and closing left the star (BL-022). A click in the library writes that symbol: a new one in Fill on the library's dark grey, one already on the key keeping its colours |
 | T-182 | `IconRowTests/boldOrFillRestylesTheChosenSymbol` | Bold / Fill in the symbol picker restyles the symbol already chosen at once (it used to wait for the next click: BL-022); with no symbol chosen it writes nothing |
+| T-183 | `CommandEditorTests/undoIsGreyedOnlyWithNothingToUndo` | Edit → Undo / Redo are off with nothing to undo / redo (they were always on: BL-015) and follow the deck's history; typing in a real text field turns both on (a greyed item would swallow ⌘Z, and the field has none of its own), clicking into a field without typing doesn't, leaving it turns them off again |
+| T-184 | `CommandEditorTests/allowWatchesOnce` | A second Allow… click stops the first minute-long Accessibility watch and starts one in its place (each click used to schedule its own 30 checks: BL-015) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

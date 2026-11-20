@@ -341,9 +341,16 @@ extension AppModel {
         if let pane = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(pane)
         }
-        for second in stride(from: 2, through: 60, by: 2) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(second)) { [weak self] in
-                guard let self, self.link?.status?.accessibility == false else { return }
+        watchAccessibility()
+    }
+
+    /// One watch at a time: another click starts the minute again rather than a second watch beside it (BL-015).
+    func watchAccessibility() {
+        accessibilityWatch?.cancel()
+        accessibilityWatch = Task { [weak self] in
+            for _ in 0..<30 {
+                try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled, let self, self.link?.status?.accessibility == false else { return }
                 self.link?.refreshStatus()
             }
         }

@@ -125,3 +125,42 @@ let longCommand = #"osascript -e 'tell application "iTerm2" to create window wit
     try #require(model.commandEdit).save("echo new")
     #expect(model.store?.config.button(.n4, "key_3")?.action == "shell:echo new")
 }
+
+// Edit → Undo / Redo are greyed out when there's nothing to undo or redo (BL-015: they never were), but never while a
+// field has been typed in: a greyed item swallows ⌘Z, and a text field has no ⌘Z of its own, so its typing could no
+// longer be undone. macOS says a field's editing began at its first keystroke, and ended when it's left.
+@MainActor @Test func undoIsGreyedOnlyWithNothingToUndo() throws {   // T-183
+    let model = try previewModel(AppConfig.empty, deck: .n4, selection: "key_3")
+    #expect(!UndoCommands.isEnabled(undo: true, model: model), "nothing to undo")
+    #expect(!UndoCommands.isEnabled(undo: false, model: model), "nothing to redo")
+
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 120), styleMask: [.titled],
+                          backing: .buffered, defer: false)
+    let field = NSTextField(frame: NSRect(x: 10, y: 10, width: 200, height: 24))
+    window.contentView?.addSubview(field)
+    #expect(window.makeFirstResponder(field))
+    #expect(!UndoCommands.isEnabled(undo: true, model: model), "a field clicked into, nothing typed")
+    let editor = try #require(window.firstResponder as? NSTextView)
+    editor.insertText("abc", replacementRange: NSRange(location: NSNotFound, length: 0))
+    #expect(UndoCommands.isEnabled(undo: true, model: model), "typing can be undone")
+    #expect(UndoCommands.isEnabled(undo: false, model: model), "and redone")
+    #expect(window.makeFirstResponder(nil))
+    #expect(!UndoCommands.isEnabled(undo: true, model: model), "the field was left")
+
+    model.setAction(.runCommand("echo one"), button: "key_3", on: .n4)
+    #expect(UndoCommands.isEnabled(undo: true, model: model) && !UndoCommands.isEnabled(undo: false, model: model))
+    model.store?.undo()
+    #expect(!UndoCommands.isEnabled(undo: true, model: model) && UndoCommands.isEnabled(undo: false, model: model))
+}
+
+// Allow… (Accessibility) watches for the grant for a minute; a second click restarts that watch instead of starting
+// another beside it (BL-015: each click scheduled its own 30 checks).
+@MainActor @Test func allowWatchesOnce() throws {   // T-184
+    let model = try previewModel(AppConfig.empty, deck: .n4, selection: nil)
+    model.watchAccessibility()
+    let first = try #require(model.accessibilityWatch)
+    model.watchAccessibility()
+    #expect(first.isCancelled, "the first watch stopped")
+    #expect(model.accessibilityWatch?.isCancelled == false, "the second one runs")
+    model.accessibilityWatch?.cancel()
+}

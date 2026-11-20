@@ -38,15 +38,9 @@ Next free ID: BL-034
   events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the
   key sent is right: both sides work by position). Say media keys aren't recordable; label with the layout's
   character. `ShortcutRecorder.swift` (plan 3 review)
-- BL-015 [P2] [debt] Small loose ends from the plan 3 review: the Undo / Redo menu items are never greyed out; each
-  Allow… click schedules its own 30 status checks; a slider pause of over a second mid-drag makes two undo steps
-  (bracket with `onEditingChanged` instead of a time gap). `Toolbar.swift`, `AppModel+Editing.swift`
 - BL-018 [P2] [debt] Chosen lock photos (and pictures) are never deleted: every Choose leaves a file in the config
   folder. Clean up at quit, keeping anything the config or the undo history still names. `IconFiles.swift`
   (plan 4 review)
-- BL-019 [P2] [bug] Undo groups moves, zooms and slider steps by a one-second gap, not by gesture: a pause mid-drag
-  makes two steps, two quick drags one. Pass a per-gesture token through `ConfigStore.change` (with BL-015's
-  slider). `ConfigStore.swift`, `PhotoStage.swift` (plan 4 review)
 - BL-020 [P2] [debt] The self-test checks that a tile's PNG exists and is in the app's config, not that the agent drew
   it (status or log), and each run leaves its tile PNGs in `icons/`. `SelfTest.swift` (plan 5 review)
 - BL-023 [P2] [debt] The icons folder only grows: every colour tap or text edit writes a new `tile-<hash>.png`. Sweep

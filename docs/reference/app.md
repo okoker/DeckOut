@@ -73,8 +73,10 @@ the job definition it registered: a changed plist needs a new label.
   `ConfigFile.save` (which refuses a config that wouldn't load back; the first save over a file keeps
   `.before-app`), then the agent is asked to reload (it logs one line per app reload). Undo / redo (Edit menu, ⌘Z /
   ⇧⌘Z, named for the change) put back whole configs; a text field being edited undoes its typing first; in a sheet
-  (the command window, a preset's name) ⌘Z / ⇧⌘Z only touch its typing, never the deck behind it; a slider
-  drag is one undo step; up to 200 steps. Before each change the file is read again if it changed on disk (a hand
+  (the command window, a preset's name) ⌘Z / ⇧⌘Z only touch its typing, never the deck behind it; slider steps
+  less than a second apart are one undo step (KI-012); up to 200 steps. Undo / Redo are greyed out with nothing to
+  undo / redo, but stay on once any field has been typed in, until it's left (macOS's begin / end editing
+  notices): a greyed item would swallow ⌘Z, and a field has no ⌘Z of its own. Before each change the file is read again if it changed on disk (a hand
   edit is built on, and the undo history starts again from it, with a notice in the status line); a file that
   doesn't load is never saved over, the status line says why, and it is read again before every change until it
   loads. A failed save is shown; the next change tries again. Coming back to the app picks up a hand edit too.
@@ -137,7 +139,7 @@ the job definition it registered: a changed plist needs a new label.
   is blank and live; Rename renames the preset the sheet was opened for. Picking one makes it live on the deck.
 - **Accessibility:** a keyboard shortcut or media key on a control, with the agent not allowed, shows a note with
   Allow…: the agent asks macOS to list it, the Accessibility pane opens, and the app checks again every 2 s for a
-  minute.
+  minute (one watch: another click starts the minute again).
 
 ## Lock photo mode (N4)
 - **Lock Photo…** in the toolbar (N4 on screen) switches the window into photo mode; Done (or switching deck,
@@ -147,7 +149,7 @@ the job definition it registered: a changed plist needs a new label.
   of drag = the face's width), pinch, scroll or the slider to zoom (100–400 % on the slider, up to 1000 % by pinch).
 - **Framing** is kept within its limits (`LockPhoto.clamped`): the photo always covers the face. A drag applies each
   move's change to where the photo is, so past the edge and back it follows at once. Moves (or zooms) less than a
-  second apart are one undo step (BL-019: by gesture); Reset centres it at 100 %; Remove Photo takes it off
+  second apart are one undo step (KI-012); Reset centres it at 100 %; Remove Photo takes it off
   (undoable). Scroll zoom is exponential and ignores momentum.
 - **Choose…** saves the photo in the config folder as `lock-photo-<hash>.jpg` (0600), at most 3200 px on a side,
   read through ImageIO; a file over 100 MB or one that isn't a picture is refused with a message. The original can

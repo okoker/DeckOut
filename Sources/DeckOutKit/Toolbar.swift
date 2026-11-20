@@ -150,10 +150,18 @@ struct UndoCommands: View {
             Self.perform(undo: true, in: NSApp.keyWindow, store: model.store)
         }
         .keyboardShortcut("z", modifiers: .command)
+        .disabled(!Self.isEnabled(undo: true, model: model))
         Button(model.store?.redoName.map { "Redo \($0)" } ?? "Redo") {
             Self.perform(undo: false, in: NSApp.keyWindow, store: model.store)
         }
         .keyboardShortcut("z", modifiers: [.command, .shift])
+        .disabled(!Self.isEnabled(undo: false, model: model))
+    }
+
+    /// Greyed out with nothing to undo (redo), but never while a field has been typed in: a greyed item swallows ⌘Z,
+    /// and a text field has no ⌘Z of its own (macOS's key bindings have none), so its typing couldn't be undone.
+    static func isEnabled(undo: Bool, model: AppModel) -> Bool {
+        model.typingInAField || (undo ? model.store?.canUndo : model.store?.canRedo) == true
     }
 
     /// Typing in the focused field first. Deck changes only from the main window: in a sheet (Edit in Window…, a

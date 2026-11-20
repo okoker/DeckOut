@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-034
+Next free ID: BL-035
 
 ---
 
@@ -51,3 +51,11 @@ Next free ID: BL-034
   action the swipe (or any key) can take, run by the agent, which saves the new `active_preset` so the app shows it.
   Presets already live where the agent can read them (design: Non-goals). `ActionDispatcher.swift`, `Daemon.swift`,
   `ActionChoice.swift`
+- BL-034 [P1] [bug] Owner's hand-check of the 20/11/2026 fixes in the real app (build 261120.165253 or later); each
+  is test-proven but not clicked. BL-031: in Edit in Window…, ⌘Z past the typing leaves the deck change behind it;
+  New Preset… and Rename… still open, and ⌘Z in them only undoes typing; the command window stays open through an
+  unplug. BL-022: Library on a key with a text icon, closed without a pick, leaves the key as it was; a picked symbol
+  then Bold / Fill changes the key at once. BL-015: Edit → Undo is greyed with nothing to undo; after typing in a
+  field, ⌘Z undoes the typing. BL-007: a wide picture on an N3 key shows boxed on black, not squashed. Then delete
+  the backup `~/.config/vsd-dev.bak-2026-11-20` (the start-up icon cleanup removed exactly the 31 predicted files).
+  Run lines in `PROGRESS.md`.

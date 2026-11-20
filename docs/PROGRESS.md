@@ -3,11 +3,13 @@
 ## Session Handover — 20/11/2026: nine backlog fixes on top of the UAT fixes; the owner re-tests them
 
 ### What was done
-- DeckOut phases 2–6 are on chained local branches (`deckout-2-app-shell` → … → `deckout-6-settings`); the owner's
-  first UAT issues are fixed on `deckout-7-uat-fixes` (plan 7, from `deckout-6-settings`): BL-026 command field,
+- DeckOut phases 2–6 were built on chained branches (`deckout-2-app-shell` → … → `deckout-6-settings`); the owner's
+  first UAT issues were fixed on `deckout-7-uat-fixes` (plan 7, from `deckout-6-settings`): BL-026 command field,
   BL-027 strip images, BL-028 / BL-011 presets. Then, on the same branch, seven backlog fixes (one commit each):
   BL-006, BL-009, BL-010, BL-030, BL-013, BL-021, BL-032; then BL-005 (a reload sends only the screens that changed);
-  then BL-003 (monitor brightness never jumps to 5 %; m1ddc patched, uncommitted until the owner says). Installed to `~/Applications/DeckOut Dev.app`. Not pushed, merged or signed. Rulings per plan:
+  then BL-003 (monitor brightness never jumps to 5 %; m1ddc patched). Installed to `~/Applications/DeckOut Dev.app`.
+  All of it fast-forwarded into `main` and pushed, and the branches deleted (owner, 20/11/2026); not signed or
+  released, and the README still describes the hand install (rewritten at release). Rulings per plan:
   `.superpowers/sdd/<plan>/progress.md`.
 
 ### The owner's checks (quit and reopen DeckOut Dev first: the new app restarts the agent)
@@ -60,15 +62,15 @@
 
 ### What's next
 1. The owner re-tests plan 7, then the rest of UAT (plug / unplug; every editor; presets; ⌘Z in fields;
-   Accessibility; lock photo gestures; Settings); fixes on `deckout-7-uat-fixes`, tests first.
-2. Then merge, signing, release (design phase 7). Next: live strip blocks people add (BL-029), designed first.
+   Accessibility; lock photo gestures; Settings); fixes on `main`, tests first.
+2. Then signing, release (design phase 7). Next: live strip blocks people add (BL-029), designed first.
 
 ## Current Status
-DeckOut Dev (`~/Applications`, a debug build of `deckout-7-uat-fixes`) drives the TreasLin N3 and the MiraBox N4
+DeckOut Dev (`~/Applications`, a debug build of `main`) drives the TreasLin N3 and the MiraBox N4
 through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) is in the owner's
 UAT: it runs the deck controller from its bundle, edits every control, presets, brightness, the lock photo, generated
 icons, monitors and its own removal.
-20/11/2026 — BL-003 on `deckout-7-uat-fixes` (uncommitted): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
+20/11/2026 — BL-003 on `deckout-7-uat-fixes` (ae9ee09): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
 20/11/2026 — BL-005 on `deckout-7-uat-fixes` (to 38094e3): `swift test` 217/217 (new T-169), watched; `make install-dev` (build 261120.103217), one `--snapshot` run: KI-008 on the restart, the app re-registered 10 s later, window "Deck controller running"; the agent drew 6 of 6 and 14 of 14 on connect; one `--post-reload` with nothing changed: "Drew 0 of 6 slots on n3 in 1 ms", "Drew 0 of 14 slots on n4 in 4 ms", "Reloaded in 7 ms" (433–453 ms before). Not checked: a changed key and an unlock on the decks (owner, at UAT).
 20/11/2026 — Seven backlog fixes on `deckout-7-uat-fixes` (to 1b615ac): `swift test` 210/210 (new T-162–T-168), watched; `make install-dev` (build 261120.035630), then one `--snapshot` run of the real app: it asked the old agent to restart, the new one hit KI-008 and the app's own recovery re-registered it 10 s later; the window said "Deck controller running" (the new agent's build), and the agent drew the N3 and the N4's lock photo (Mac locked). Not checked: live strip pushes (paused while locked), every click (owner, at UAT).
 20/11/2026 — DeckOut plan 7 on `deckout-7-uat-fixes`: `swift test` 198/198 (new T-153–T-161; T-132 changed), watched; `make install-dev` installed it. Not checked: the clicks in the real window (owner, at UAT; the app was theirs and open).
@@ -76,7 +78,7 @@ icons, monitors and its own removal.
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- UAT of DeckOut (handover above), then merge, signing and release (design phase 7). Backlog: `docs/BACKLOG.md`.
+- UAT of DeckOut (handover above), then signing and release (design phase 7). Backlog: `docs/BACKLOG.md`.
 
 ## Completed
 

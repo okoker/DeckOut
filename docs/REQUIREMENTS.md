@@ -180,7 +180,9 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 
 ### Dependency
 
-`m1ddc` is the only external dependency. Install via `brew install m1ddc`. Without it, all other daemon features work — brightness actions simply log a warning.
+`m1ddc` (MIT, version 1.3.1) ships inside DeckOut, built from the vendored source (`Vendor/m1ddc`) into
+`DeckOut.app/Contents/Helpers/m1ddc`; the agent uses that copy, else Homebrew's (`brew install m1ddc`, for a hand
+install). Without either, all other features work — brightness actions log a warning.
 
 ## LCD Icons
 - Optional `icon` field per LCD key in config; sent to the deck as JPEG via CRT BAT (header with length and wire

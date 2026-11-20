@@ -3,6 +3,7 @@
 #   make app VARIANT=release  DeckOut itself, release build
 #   make install-dev          the dev variant, installed to ~/Applications/DeckOut Dev.app
 #   make test                 swift test
+# m1ddc (MIT, Vendor/m1ddc) is built from source into Contents/Helpers, for monitor brightness.
 # Signing here is ad hoc only. Signing with a certificate is a separate step, run with the owner's go.
 
 VARIANT ?= dev
@@ -38,6 +39,11 @@ app:
 	if [ -f Packaging/AppIcon.icns ]; then cp Packaging/AppIcon.icns "$(APP)/Contents/Resources/"; fi
 	cp Packaging/Resources/Phosphor-Bold.ttf Packaging/Resources/Phosphor-Fill.ttf Packaging/Resources/phosphor-icons.json \
 	    Packaging/Resources/Phosphor-LICENSE.txt "$(APP)/Contents/Resources/"
+	mkdir -p "$(APP)/Contents/Helpers" build
+	clang -Wall -Werror -Wextra -fmodules -arch arm64 -mmacosx-version-min=15.0 -I Vendor/m1ddc/headers \
+	    -framework CoreDisplay Vendor/m1ddc/sources/*.m -o build/m1ddc
+	cp build/m1ddc "$(APP)/Contents/Helpers/m1ddc"
+	codesign --force -s - -i $(BUNDLE_ID).m1ddc "$(APP)/Contents/Helpers/m1ddc"
 	codesign --force -s - -i $(LABEL) "$(APP)/Contents/MacOS/DeckOutAgent"
 	codesign --force -s - "$(APP)"
 	scripts/check-bundle.sh "$(APP)"

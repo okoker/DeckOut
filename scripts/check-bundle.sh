@@ -37,6 +37,10 @@ helper_id=$(codesign -dv "$app/Contents/MacOS/DeckOutAgent" 2>&1 | sed -n 's/^Id
 app_id=$(codesign -dv "$app" 2>&1 | sed -n 's/^Identifier=//p')
 [ "$app_id" = "$id" ] || fail "app signed as '$app_id', not $id"
 codesign --verify --strict "$app" || fail "signature doesn't verify"
+m1ddc="$app/Contents/Helpers/m1ddc"
+[ -x "$m1ddc" ] || fail "no Contents/Helpers/m1ddc"
+[ "$(lipo -archs "$m1ddc")" = "arm64" ] || fail "m1ddc isn't arm64 only"
+[ "$(codesign -dv "$m1ddc" 2>&1 | sed -n 's/^Identifier=//p')" = "$id.m1ddc" ] || fail "m1ddc not signed as $id.m1ddc"
 for res in Phosphor-Bold.ttf Phosphor-Fill.ttf phosphor-icons.json Phosphor-LICENSE.txt; do
     [ -f "$app/Contents/Resources/$res" ] || fail "missing resource $res"
 done

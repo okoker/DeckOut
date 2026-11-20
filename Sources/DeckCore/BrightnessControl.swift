@@ -42,7 +42,7 @@ final class BrightnessControl {
             return nil
         }
         guard let path = Self.findM1DDC() else {
-            print("BrightnessControl: m1ddc not found — install with 'brew install m1ddc'")
+            print("BrightnessControl: m1ddc not found (not in the app, nor Homebrew's)")
             return nil
         }
         self.m1ddcPath = path
@@ -325,8 +325,10 @@ final class BrightnessControl {
         }
     }
 
-    private static func findM1DDC() -> String? {
-        ["/opt/homebrew/bin/m1ddc", "/usr/local/bin/m1ddc"]
-            .first { FileManager.default.isExecutableFile(atPath: $0) }
+    /// The app's own copy (`DeckOut.app/Contents/Helpers/m1ddc`), else Homebrew's.
+    static func findM1DDC(bundleURL: URL = Bundle.main.bundleURL,
+                          executable: (String) -> Bool = { FileManager.default.isExecutableFile(atPath: $0) }) -> String? {
+        [bundleURL.appendingPathComponent("Contents/Helpers/m1ddc").path, "/opt/homebrew/bin/m1ddc", "/usr/local/bin/m1ddc"]
+            .first(where: executable)
     }
 }

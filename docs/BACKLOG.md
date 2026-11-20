@@ -37,8 +37,6 @@ Next free ID: BL-034
 - BL-008 [P2] [bug] The app draws the config file on disk, not the one the agent loaded: after a hand edit without a
   reload, the drawing shows icons the deck doesn't. Plan 3's save-then-reload covers the app's own edits; for hand
   edits, show the agent's config (or its file's state) instead. `AppModel.swift` (plan 2 review)
-- BL-012 [P2] [bug] Make Executable does nothing visible when it fails (e.g. a script the person doesn't own). Show
-  why. `AppModel+Editing.swift` (plan 3 review)
 - BL-014 [P2] [feature] Shortcut recorder: media keys pressed in the recorder show nothing (they arrive as system
   events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the
   key sent is right: both sides work by position). Say media keys aren't recordable; label with the layout's

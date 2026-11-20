@@ -118,7 +118,8 @@ the job definition it registered: a changed plist needs a new label.
   reading drops the image.
 - **Files that are gone:** keys, presses and taps whose app, file, folder, script, icon or picture is missing get a
   red mark on the drawing and the reason in the editor; a script that isn't executable gets Make Executable (adds
-  the owner's execute bit); a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS
+  the owner's execute bit; when that fails it says why under the button, e.g. "Only the script's owner can make it
+  executable.", until another control is selected); a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS
   will ask the first time.
 - **Test** runs the action in the agent exactly as a press would (minus the lock check) and shows the exit status,
   output or error; commands stop at 30 s.

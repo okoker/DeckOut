@@ -64,7 +64,9 @@ public final class AppModel: ObservableObject {
     var previewScheduled = false
     /// The deck on screen; nil on "Plug in your deck" and "Pick a deck".
     @Published public internal(set) var shown: DeckKind?
-    @Published public var selection: String? { didSet { iconProblem = nil } }
+    @Published public var selection: String? { didSet { iconProblem = nil; executableProblem = nil } }
+    /// Why Make Executable didn't work, shown under its button until another control is selected.
+    @Published public var executableProblem: String?
     /// Upright images of the shown deck's keys and picture blocks, rebuilt when the config changes.
     @Published public private(set) var staticImages: [String: CGImage] = [:]
     /// Upright images of the live strip blocks, rebuilt with each push.

@@ -94,6 +94,7 @@ struct ProblemNote: View {
                         Button("Make Executable") { model.makeExecutable(path) }.controlSize(.small)
                     }
                 }
+                if let why = model.executableProblem { FieldNote(text: why, warning: true) }
             }
             if let path = filePath,
                let note = MissingFiles.guardedFolderNote(path, home: FileManager.default.homeDirectoryForCurrentUser.path) {

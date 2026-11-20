@@ -261,7 +261,7 @@ extension AppModel {
     }
 
     public func makeExecutable(_ path: String) {
-        _ = MissingFiles.makeExecutable(path)
+        executableProblem = MissingFiles.makeExecutable(path)
         objectWillChange.send()
     }
 }

@@ -41,8 +41,8 @@ private func tempFile(_ name: String, mode: mode_t) throws -> String {
     #expect(MissingFiles.scriptProblem(plain) == .notExecutable)
     #expect(MissingFiles.scriptProblem("/nonexistent/x.sh") == .missing)
 
-    // Fix it on request: user execute bit only.
-    #expect(MissingFiles.makeExecutable(plain))
+    // Fix it on request: user execute bit only (nil: nothing went wrong).
+    #expect(MissingFiles.makeExecutable(plain) == nil)
     var st = stat()
     stat(plain, &st)
     #expect(st.st_mode & 0o777 == 0o744)
@@ -54,4 +54,29 @@ private func tempFile(_ name: String, mode: mode_t) throws -> String {
         #expect(MissingFiles.guardedFolderNote(path, home: "/Users/x") != nil, "\(path)")
     }
     #expect(MissingFiles.guardedFolderNote("/Users/x/bin/f.sh", home: "/Users/x") == nil)
+}
+
+@MainActor @Test func makeExecutableSaysWhyNot() throws {   // T-176
+    // A script whose folder can't be entered: the change fails, and the editor says why under the button.
+    let plain = try tempFile("plain.sh", mode: 0o644)
+    let folder = (plain as NSString).deletingLastPathComponent
+    chmod(folder, 0o000)
+    defer { chmod(folder, 0o755) }
+    let model = try previewModel(.empty, deck: .n4, selection: "key_1")
+    model.makeExecutable(plain)
+    #expect(model.executableProblem == MissingFiles.whyNotExecutable(EACCES))
+
+    // Another control selected: the message goes.
+    model.selection = "key_2"
+    #expect(model.executableProblem == nil)
+
+    // It works once the folder can be entered: no message.
+    chmod(folder, 0o755)
+    model.makeExecutable(plain)
+    #expect(model.executableProblem == nil)
+    #expect(MissingFiles.scriptProblem(plain) == nil)
+
+    // The words for the usual causes: someone else's script, a disk that can't be changed.
+    #expect(MissingFiles.whyNotExecutable(EPERM).contains("owner"))
+    #expect(MissingFiles.whyNotExecutable(EROFS).contains("can't be changed"))
 }

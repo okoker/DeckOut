@@ -53,11 +53,22 @@ public enum MissingFiles {
         return FileManager.default.isExecutableFile(atPath: path) ? nil : .notExecutable
     }
 
-    /// Adds the owner's execute bit (`chmod u+x`), when the person asks; true on success.
-    public static func makeExecutable(_ path: String) -> Bool {
+    /// Adds the owner's execute bit (`chmod u+x`), when the person asks; nil when done, else why not, in words.
+    public static func makeExecutable(_ path: String) -> String? {
         var st = stat()
-        guard stat(path, &st) == 0 else { return false }
-        return chmod(path, (st.st_mode & 0o7777) | S_IXUSR) == 0
+        guard stat(path, &st) == 0 else { return whyNotExecutable(errno) }
+        return chmod(path, (st.st_mode & 0o7777) | S_IXUSR) == 0 ? nil : whyNotExecutable(errno)
+    }
+
+    /// Why a script couldn't be made executable, from the error the system gave.
+    public static func whyNotExecutable(_ code: Int32) -> String {
+        switch code {
+        case EPERM: return "Only the script's owner can make it executable."
+        case EROFS: return "The script is on a disk that can't be changed."
+        case EACCES: return "DeckOut can't get into the script's folder."
+        case ENOENT: return "The script isn't there any more."
+        default: return "It couldn't be made executable (\(String(cString: strerror(code))))."
+        }
     }
 
     /// A note when the file sits where macOS asks before a background program reads it.

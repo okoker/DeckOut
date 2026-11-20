@@ -12,3 +12,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 - 08 — DeckOut plan 3, editing (20/11/2026): every control set from the app, presets, brightness, Test, undo → `08_deckout_plan3_editing.md`
 - 09 — DeckOut plan 4, lock photo (20/11/2026): the N4 photo chosen, moved and zoomed from the app, live on the deck → `09_deckout_plan4_lock_photo.md`
 - 10 — DeckOut plan 5, icons (20/11/2026): keys show text or a symbol on a colour, made in the app → `10_deckout_plan5_icons.md`
+- 11 — DeckOut plan 6, Settings (20/11/2026): monitors named and ordered, m1ddc inside the app, retiring the hand install → `11_deckout_plan6_settings.md`

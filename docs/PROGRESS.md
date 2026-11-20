@@ -1,13 +1,13 @@
 # Progress
 
-## Session Handover — 20/11/2026: eight backlog fixes on top of the UAT fixes; the owner re-tests both
+## Session Handover — 20/11/2026: nine backlog fixes on top of the UAT fixes; the owner re-tests them
 
 ### What was done
 - DeckOut phases 2–6 are on chained local branches (`deckout-2-app-shell` → … → `deckout-6-settings`); the owner's
   first UAT issues are fixed on `deckout-7-uat-fixes` (plan 7, from `deckout-6-settings`): BL-026 command field,
   BL-027 strip images, BL-028 / BL-011 presets. Then, on the same branch, seven backlog fixes (one commit each):
-  BL-006, BL-009, BL-010, BL-030, BL-013, BL-021, BL-032; then BL-005 (a reload sends only the screens that changed).
-  Installed to `~/Applications/DeckOut Dev.app`. Not pushed, merged or signed. Rulings per plan:
+  BL-006, BL-009, BL-010, BL-030, BL-013, BL-021, BL-032; then BL-005 (a reload sends only the screens that changed);
+  then BL-003 (monitor brightness never jumps to 5 %; m1ddc patched, uncommitted until the owner says). Installed to `~/Applications/DeckOut Dev.app`. Not pushed, merged or signed. Rulings per plan:
   `.superpowers/sdd/<plan>/progress.md`.
 
 ### The owner's checks (quit and reopen DeckOut Dev first: the new app restarts the agent)
@@ -21,6 +21,9 @@
   lock and unlock: every screen is sent again (`Drew 14 of 14`).
 - Presets: New Preset… → Cancel adds nothing; Return creates; a taken name greys out Create with the reason; Rename;
   the menu order; the name selected when the sheet opens; Save and Create look right (snapshots can't show them).
+- Monitor brightness: the first turn after a restart or 30 s idle moves from where the monitors really are (the log
+  says `read display 1 → 100`), never to 5 %; the HUD's text sits in the middle of its box; About says
+  "m1ddc 1.3.1 (patched)".
 
 ### Environment state — the decks now run on DeckOut Dev
 - The hand install is retired: `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` (its
@@ -65,17 +68,33 @@ DeckOut Dev (`~/Applications`, a debug build of `deckout-7-uat-fixes`) drives th
 through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) is in the owner's
 UAT: it runs the deck controller from its bundle, edits every control, presets, brightness, the lock photo, generated
 icons, monitors and its own removal.
+20/11/2026 — BL-003 on `deckout-7-uat-fixes` (uncommitted): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
 20/11/2026 — BL-005 on `deckout-7-uat-fixes` (to 38094e3): `swift test` 217/217 (new T-169), watched; `make install-dev` (build 261120.103217), one `--snapshot` run: KI-008 on the restart, the app re-registered 10 s later, window "Deck controller running"; the agent drew 6 of 6 and 14 of 14 on connect; one `--post-reload` with nothing changed: "Drew 0 of 6 slots on n3 in 1 ms", "Drew 0 of 14 slots on n4 in 4 ms", "Reloaded in 7 ms" (433–453 ms before). Not checked: a changed key and an unlock on the decks (owner, at UAT).
 20/11/2026 — Seven backlog fixes on `deckout-7-uat-fixes` (to 1b615ac): `swift test` 210/210 (new T-162–T-168), watched; `make install-dev` (build 261120.035630), then one `--snapshot` run of the real app: it asked the old agent to restart, the new one hit KI-008 and the app's own recovery re-registered it 10 s later; the window said "Deck controller running" (the new agent's build), and the agent drew the N3 and the N4's lock photo (Mac locked). Not checked: live strip pushes (paused while locked), every click (owner, at UAT).
 20/11/2026 — DeckOut plan 7 on `deckout-7-uat-fixes`: `swift test` 198/198 (new T-153–T-161; T-132 changed), watched; `make install-dev` installed it. Not checked: the clicks in the real window (owner, at UAT; the app was theirs and open).
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
-20/11/2026 — DeckOut plan 6 on `deckout-6-settings`: `swift test` 185/185 (new T-144–T-152), watched; test sessions 6–7: `--selftest` 23/23 (the app's own m1ddc lists "LG HDR 4K · Left / Right", both answer a brightness read; Stop and Remove stays removed 15 s later with launchd holding no job); the old-controller screen in the real window. Not checked: Retire It on the real plist, Settings by hand (owner, at UAT).
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
 - UAT of DeckOut (handover above), then merge, signing and release (design phase 7). Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 20/11/2026 — Monitor brightness moves from where the monitor really is, never jumping to 5 %
+- **Reference:** `docs/REQUIREMENTS.md` (External Monitor Brightness), `docs/reference/app.md` (Settings: m1ddc),
+  `Vendor/m1ddc/README.md`; T-170–T-173; BL-003.
+- **For a person:** the first brightness turn after the agent started, or after 30 s idle, could take a monitor at
+  100 % to 5 %. m1ddc read the monitor's reply 10 ms after asking (DDC/CI wants 40) and printed whatever was in the
+  buffer: an empty or shifted reply came out as `0`. It now waits 50 ms, takes only a valid reply and asks again;
+  the agent reads each monitor on the first turn instead of trusting a start-up reading, and a monitor that gives no
+  reading is left alone with "Left: Monitor Error" on screen. Start-up no longer reads the monitors (31 ms, was ~0.4 s).
+- **Decision (owner, 20/11/2026):** leave a monitor with no reading alone, saying "Monitor Error" (it covers cases not
+  seen yet); patch DeckOut's own m1ddc and ship it in the app; offer the patch upstream afterwards. (CL calls:) a
+  reading outside 0–100 counts as none; the HUD shrinks text that wouldn't fit its box, and centres it.
+- **Checked:** run line above. Upstream 1.3.2 reads the same way (waydabber/m1ddc#37 notes it); the patch follows
+  ddcutil's and MonitorControl's 50 ms wait and reply checks (read at source). A fresh reviewer: no bugs; T-172's
+  idle window widened (it could flake under load). Left as is: Switch Monitor pressed within ~50 ms of a turn can
+  read the monitor before the turn's write lands (as before), so the next turn starts one step off.
 
 ### 20/11/2026 — A reload redraws only the screens that changed, in milliseconds
 - **Reference:** `docs/reference/n4.md` (Locked Mac; Running it), `docs/reference/device_quirks.md`,
@@ -125,20 +144,6 @@ icons, monitors and its own removal.
 - **Checked:** `swift test` 198/198, installed. Building found why the command couldn't be read: multi-line fields
   drew on one line (the rounded-border style). A fresh reviewer found every field autocorrecting typed words, the
   command's included: fixed test-first. Its minors are BL-030–BL-032.
-
-### 20/11/2026 — DeckOut takes over from the hand install, ships m1ddc, and has Settings
-- **Reference:** `docs/reference/app.md` (First run and removal; Settings); plan
-  `docs/superpowers/plans/2026-11-19-deckout-6-settings-first-run.md`; T-144–T-152; BL-024–BL-025.
-- **For a person:** nothing to install for monitor brightness: DeckOut carries m1ddc. Settings lists your monitors,
-  tells two identical ones apart as Left and Right, checks each answers, and lets you name them and set the order the
-  Switch Monitor key goes through. On first open DeckOut offers to retire the hand-installed controller (kept, so it
-  can be put back). Stop and Remove takes DeckOut out of Login Items for removal.
-- **Decision (owner, 19/11/2026):** m1ddc vendored from source (1.3.1; 1.3.2 was a day old). (CL calls:) retiring
-  moves the plist aside rather than deleting it; the README's install text changes when the app ships.
-- **Checked:** `swift test` 185/185; sessions 6–7 (run line above). A fresh reviewer found Stop and Remove quietly
-  undone by the app's own recovery (critical), monitor reordering that showed nothing, and silent non-answering
-  monitors; all fixed test-first, and the removal fix proven live.
-
 
 ## History
 Older work: `old_progress/README.md`.

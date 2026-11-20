@@ -31,9 +31,6 @@ Next free ID: BL-033
   without re-enumerating, its keys could show the deck's own logo until the next lock / unlock or replug. On
   `NSWorkspace.didWakeNotification`: re-run the start-up sequence, redraw, recheck the lock. Untested here — this Mac
   never system-sleeps. `Daemon.swift` (19/11/2026)
-- BL-003 [P1] [bug] `BrightnessControl` reads 0 for a monitor at start-up and reload and then trusts its cache, so the
-  first brightness turn can set a monitor to ~5 %. REQUIREMENTS says brightness is read on first interaction after
-  idle. Pre-existing (v1.0.0). `BrightnessControl.swift` (19/11/2026)
 - BL-007 [P2] [bug] The app's N3 key preview letterboxes a non-square icon, while the deck's N3 pipeline
   (`ImageLoader.loadAsJPEG`) stretches it into the square, so the drawing differs from the deck for such icons. Draw
   the N3 preview the deck's way. `DeckFace.swift` (`DeckPreview.keyImage`), `ImageLoader.swift` (plan 2 review)

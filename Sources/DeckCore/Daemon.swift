@@ -49,9 +49,8 @@ public final class Daemon {
         let memLevel: PressureLevel?
     }
 
-    /// Monitor brightness (DDC via `m1ddc`). One control lives across reloads: building it runs `m1ddc` once per
-    /// monitor, which can take half a second or hang on a monitor that never answers, so it is built off the
-    /// main thread, and again only when `displays` changes.
+    /// Monitor brightness (DDC via `m1ddc`). One control lives across reloads: building it runs `m1ddc` to list the
+    /// monitors, which can stall, so it is built off the main thread, and again only when `displays` changes.
     private var brightness: BrightnessControl?
     private var brightnessBuilding = false
     private(set) var brightnessGeneration = 0      // a build that finishes after a newer one started is dropped

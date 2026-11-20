@@ -168,19 +168,28 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - Knob rotation fires async `m1ddc set luminance` calls with debouncing (80 ms) to keep the knob responsive
 - Knob press cycles the brightness target: All connected displays → each display individually → back to All
 - After 30 seconds of inactivity, the target auto-reverts to All
-- A floating HUD overlay (80 pt text) appears on all screens showing current brightness and target mode
-- Brightness is read from hardware on first interaction after idle, then cached during active use to avoid flaky DDC/CI reads
+- A floating HUD overlay (80 pt text, smaller when a message wouldn't fit) appears on all screens showing current
+  brightness and target mode
+- Brightness is read from the monitor on the first turn after start-up, a reload, 30 s idle or a failed write, then
+  tracked during active use (start-up only finds the monitors: a reading taken then could be stale by the first turn)
+- A monitor that gives no valid reading (m1ddc fails, or prints something outside 0–100) is never moved from a guess:
+  the turn leaves it alone, the HUD says "Left: Monitor Error" (by its name), and the next turn reads it again; the
+  other monitors still move
 
 ### Known DDC/CI quirks
 
 - LG monitors do **not** show their native OSD bar for DDC/CI brightness changes (only for physical button presses) — hence the custom HUD
-- `m1ddc get luminance` can return stale values on some LG models — the daemon reads once then tracks state internally
+- Stock `m1ddc get luminance` (1.3.1 and 1.3.2) reads the reply 10 ms after asking and decodes it unchecked: on the
+  LG HDR 4K pair about half of back-to-back reads came back empty, shifted or as an echo of the request, printed as
+  `0` (or 41984) with exit 0. DeckOut's patched m1ddc waits 50 ms, checks the reply and asks again (up to 4 times)
+- `m1ddc get input-alt` (LG's alternate address) never gets a real reply on that LG; the patched m1ddc says so
 - `m1ddc chg luminance` (relative change) is unreliable on some LG panels — the daemon uses absolute `set luminance` instead
 - Display numbers from `m1ddc` can change across reboots — the daemon matches by serial number, not display number
 
 ### Dependency
 
-`m1ddc` (MIT, version 1.3.1) ships inside DeckOut, built from the vendored source (`Vendor/m1ddc`) into
+`m1ddc` (MIT, version 1.3.1, patched: reads wait 50 ms, are checked and asked again; `Vendor/m1ddc/README.md`)
+ships inside DeckOut, built from the vendored source (`Vendor/m1ddc`) into
 `DeckOut.app/Contents/Helpers/m1ddc`; the agent uses that copy, else Homebrew's (`brew install m1ddc`, for a hand
 install). Without either, all other features work — brightness actions log a warning.
 

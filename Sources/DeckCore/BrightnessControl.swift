@@ -9,7 +9,7 @@ final class BrightnessControl {
         let serial: String
         let m1ddcIndex: Int
         let cgDisplayID: UInt32
-        var brightness: Int       // 0–100, cached
+        var brightness: Int?      // 0–100 as last read or set; nil = not known, so read before moving
     }
 
     enum TargetMode: Equatable {
@@ -23,29 +23,33 @@ final class BrightnessControl {
     private let configuredDisplays: [DisplayConfig]
     private(set) var connectedDisplays: [ConnectedDisplay] = []
     private var targetMode: TargetMode = .all
-    private var cacheValid = false
 
     private let queue = DispatchQueue(label: "streamdeck.brightness")
-    private let writeQueue = DispatchQueue(label: "streamdeck.m1ddc.write", qos: .userInteractive)
+    let writeQueue = DispatchQueue(label: "streamdeck.m1ddc.write", qos: .userInteractive)   // internal: tests wait on it
+    private let idleTimeout: TimeInterval
+    private let hud: (String) -> Void
     private var inactivityTimer: DispatchSourceTimer?
     private var debounceTimer: DispatchSourceTimer?
     private var pendingDelta: Int = 0
 
-    private static let inactivityTimeout: TimeInterval = 30
     private static let debounceInterval: TimeInterval = 0.08
 
     // MARK: - Init
 
-    init?(displays: [DisplayConfig]) {
+    /// `m1ddcPath`, `idleTimeout` and `hud` are for tests: a stand-in m1ddc, a short idle time, the messages shown.
+    init?(displays: [DisplayConfig], m1ddcPath: String? = nil, idleTimeout: TimeInterval = 30,
+          hud: @escaping (String) -> Void = { text in DispatchQueue.main.async { BrightnessHUD.show(text: text) } }) {
         guard !displays.isEmpty else {
             print("BrightnessControl: no displays configured")
             return nil
         }
-        guard let path = Self.findM1DDC() else {
+        guard let path = m1ddcPath ?? Self.findM1DDC() else {
             print("BrightnessControl: m1ddc not found (not in the app, nor Homebrew's)")
             return nil
         }
         self.m1ddcPath = path
+        self.idleTimeout = idleTimeout
+        self.hud = hud
         print("BrightnessControl: using m1ddc at \(path)")
         self.configuredDisplays = displays
         refreshDisplays()
@@ -96,17 +100,14 @@ final class BrightnessControl {
 
             // Show mode label IMMEDIATELY — don't block on hardware reads
             let label = currentModeLabel()
-            DispatchQueue.main.async {
-                BrightnessHUD.show(text: "◉ \(label)")
-            }
-
-            // Cache was already synced by refreshDisplays above
-            cacheValid = true
+            hud("◉ \(label)")
 
             let targets = currentTargetIndices()
-            let brightness = targets.isEmpty ? 0 : connectedDisplays[targets[0]].brightness
-            DispatchQueue.main.async {
-                BrightnessHUD.show(text: "◉ \(label)  \(brightness)%")
+            readUnknown(targets)
+            if let error = monitorError(targets) {
+                hud(error)
+            } else if let first = targets.first, let brightness = connectedDisplays[first].brightness {
+                hud("◉ \(label)  \(brightness)%")
             }
 
             resetInactivityTimer()
@@ -115,8 +116,10 @@ final class BrightnessControl {
 
     // MARK: - Display discovery
 
+    /// Finds which m1ddc display each configured monitor is now. Brightness isn't read here: a reading taken before
+    /// the first turn could be stale, or a bad reply (BL-003), so every monitor starts unknown and a turn reads it.
     func refreshDisplays() {
-        guard let output = runProcess(m1ddcPath, args: ["display", "list", "detailed"]) else {
+        guard let output = runProcess(m1ddcPath, args: ["display", "list", "detailed"])?.output else {
             print("BrightnessControl: failed to list displays")
             return
         }
@@ -126,19 +129,17 @@ final class BrightnessControl {
         var connected: [ConnectedDisplay] = []
         for cfg in configuredDisplays {
             if let block = blocks.first(where: { $0.anSerial == cfg.serial }) {
-                let brightness = readBrightness(displayNumber: block.number)
                 connected.append(ConnectedDisplay(
                     name: cfg.name, serial: cfg.serial,
                     m1ddcIndex: block.number,
                     cgDisplayID: block.displayID,
-                    brightness: brightness))
-                print("BrightnessControl: \(cfg.name) (\(cfg.serial)) → display \(block.number), brightness \(brightness)")
+                    brightness: nil))
+                print("BrightnessControl: \(cfg.name) (\(cfg.serial)) → display \(block.number)")
             } else {
                 print("BrightnessControl: \(cfg.name) (\(cfg.serial)) not connected")
             }
         }
         connectedDisplays = connected
-        cacheValid = true
     }
 
     // MARK: - m1ddc parsing
@@ -183,25 +184,44 @@ final class BrightnessControl {
 
     // MARK: - Brightness operations
 
-    private func readBrightness(displayNumber: Int) -> Int {
+    /// The monitor's brightness, or nil when there's no valid reading: m1ddc couldn't start or failed (it says
+    /// "DDC communication failure" when the monitor gave no valid reply), or printed something that isn't 0–100.
+    /// Never a guess: a guess moves a monitor from the wrong place (BL-003: 100 % read as 0 went to 5 %).
+    private func readBrightness(displayNumber: Int) -> Int? {
         let t0 = CFAbsoluteTimeGetCurrent()
-        guard let output = runProcess(m1ddcPath, args: ["display", "\(displayNumber)", "get", "luminance"]) else {
-            return 50
-        }
+        let result = runProcess(m1ddcPath, args: ["display", "\(displayNumber)", "get", "luminance"])
         let ms = Int((CFAbsoluteTimeGetCurrent() - t0) * 1000)
-        let val = Int(output.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 50
-        print("BrightnessControl: read display \(displayNumber) → \(val) (\(ms)ms)")
-        return val
+        let text = result?.output.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard let result, result.status == 0, let value = Int(text), (0...100).contains(value) else {
+            let why = result.map { "exit \($0.status): \(text)" } ?? "m1ddc didn't start"
+            print("BrightnessControl: read display \(displayNumber) → no reading (\(why)) (\(ms)ms)")
+            return nil
+        }
+        print("BrightnessControl: read display \(displayNumber) → \(value) (\(ms)ms)")
+        return value
     }
 
-    private func syncCacheFromHardware() {
-        for idx in currentTargetIndices() {
+    /// Reads each target whose brightness isn't known; one that gives no reading stays unknown, and is left alone.
+    private func readUnknown(_ targets: [Int]) {
+        for idx in targets where connectedDisplays[idx].brightness == nil {
             connectedDisplays[idx].brightness = readBrightness(displayNumber: connectedDisplays[idx].m1ddcIndex)
         }
-        cacheValid = true
     }
 
-    /// Async write — doesn't block caller. Invalidates cache on failure.
+    /// "Left: Monitor Error" (every target with no reading, by name), or nil when all have one.
+    private func monitorError(_ targets: [Int]) -> String? {
+        let failed = targets.filter { connectedDisplays[$0].brightness == nil }.map { connectedDisplays[$0].name }
+        return failed.isEmpty ? nil : "\(failed.joined(separator: ", ")): Monitor Error"
+    }
+
+    /// After a failed write the monitor's brightness isn't known: the next turn reads it.
+    private func forgetBrightness(displayNumber: Int) {
+        for idx in connectedDisplays.indices where connectedDisplays[idx].m1ddcIndex == displayNumber {
+            connectedDisplays[idx].brightness = nil
+        }
+    }
+
+    /// Async write — doesn't block caller. On failure the monitor's brightness is forgotten.
     private func writeBrightnessAsync(displayNumber: Int, value: Int) {
         let path = m1ddcPath
         writeQueue.async { [weak self] in
@@ -215,11 +235,11 @@ final class BrightnessControl {
                 proc.waitUntilExit()
                 if proc.terminationStatus != 0 {
                     print("BrightnessControl: m1ddc set failed (exit \(proc.terminationStatus)) for display \(displayNumber)")
-                    self?.queue.async { self?.cacheValid = false }
+                    self?.queue.async { self?.forgetBrightness(displayNumber: displayNumber) }
                 }
             } catch {
                 print("BrightnessControl: m1ddc launch failed: \(error)")
-                self?.queue.async { self?.cacheValid = false }
+                self?.queue.async { self?.forgetBrightness(displayNumber: displayNumber) }
             }
         }
     }
@@ -232,24 +252,22 @@ final class BrightnessControl {
         let targets = currentTargetIndices()
         guard !targets.isEmpty else { return }
 
-        // First interaction after idle → read real brightness from hardware
-        if !cacheValid {
-            syncCacheFromHardware()
-        }
+        // First turn after start-up or idle, or after a failed write: read the monitors first
+        readUnknown(targets)
 
         for idx in targets {
-            let newVal = max(0, min(100, connectedDisplays[idx].brightness + delta))
-            if newVal != connectedDisplays[idx].brightness {
+            guard let current = connectedDisplays[idx].brightness else { continue }   // no reading: left alone
+            let newVal = max(0, min(100, current + delta))
+            if newVal != current {
                 writeBrightnessAsync(displayNumber: connectedDisplays[idx].m1ddcIndex, value: newVal)
                 connectedDisplays[idx].brightness = newVal
             }
         }
 
-        let brightness = connectedDisplays[targets[0]].brightness
-        let label = currentModeLabel()
-
-        DispatchQueue.main.async {
-            BrightnessHUD.show(text: "☀ \(brightness)%  \(label)")
+        if let error = monitorError(targets) {
+            hud(error)
+        } else if let brightness = connectedDisplays[targets[0]].brightness {
+            hud("☀ \(brightness)%  \(currentModeLabel())")
         }
     }
 
@@ -278,15 +296,14 @@ final class BrightnessControl {
     private func resetInactivityTimer() {
         inactivityTimer?.cancel()
         let timer = DispatchSource.makeTimerSource(queue: queue)
-        timer.schedule(deadline: .now() + Self.inactivityTimeout)
+        timer.schedule(deadline: .now() + idleTimeout)
         timer.setEventHandler { [weak self] in
             guard let self = self else { return }
-            self.cacheValid = false
+            // Idle: the monitors may have been changed with their own buttons, so the next turn reads them
+            for idx in self.connectedDisplays.indices { self.connectedDisplays[idx].brightness = nil }
             if self.targetMode != .all {
                 self.targetMode = .all
-                DispatchQueue.main.async {
-                    BrightnessHUD.show(text: "◉ All")
-                }
+                self.hud("◉ All")
                 print("BrightnessControl: inactivity → reverted to all displays")
             }
         }
@@ -308,7 +325,8 @@ final class BrightnessControl {
 
     // MARK: - Process helpers
 
-    private func runProcess(_ path: String, args: [String]) -> String? {
+    /// What the program printed and its exit status; nil if it couldn't start.
+    private func runProcess(_ path: String, args: [String]) -> (output: String, status: Int32)? {
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: path)
         proc.arguments = args
@@ -320,7 +338,7 @@ final class BrightnessControl {
             // Read stdout BEFORE waitUntilExit to avoid pipe buffer deadlock
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             proc.waitUntilExit()
-            return String(data: data, encoding: .utf8)
+            return (String(decoding: data, as: UTF8.self), proc.terminationStatus)
         } catch {
             return nil
         }

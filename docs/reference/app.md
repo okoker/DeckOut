@@ -175,8 +175,11 @@ the job definition it registered: a changed plist needs a new label.
   down reorder; monitors in `displays` that aren't connected show with Forget; Look Again; the list refreshes when
   Settings opens and when screens change. A monitor without a serial ("(null)") isn't listed.
 - **About:** version and build; the DeckOut, Phosphor and m1ddc licences, from the app's Resources.
-- **m1ddc** 1.3.1 (MIT) is built from `Vendor/m1ddc` into `Contents/Helpers/m1ddc`; the agent and the app use it
-  before Homebrew's (the agent logs which).
+- **m1ddc** 1.3.1 (MIT), patched (About says so), is built from `Vendor/m1ddc` into `Contents/Helpers/m1ddc`; the
+  agent and the app use it before Homebrew's (the agent logs which). The patch makes a read wait 50 ms, decode only a
+  valid reply, and ask again up to 4 times; a read that gets none exits 1 instead of printing `0`
+  (`Vendor/m1ddc/README.md`). Homebrew's stock m1ddc can still print a bad `0`; the agent never moves a monitor from a
+  reading outside 0–100 or a failed one, but can't tell a bad `0` from a real one.
 
 ## Debug builds
 - `--unregister`: take the agent out of launchd and Login Items, then quit (test sessions).

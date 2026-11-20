@@ -1,69 +1,54 @@
 # Progress
 
-## Session Handover — 20/11/2026: nine backlog fixes on top of the UAT fixes; the owner re-tests them
+## Session Handover — 20/11/2026: BL-003 done, everything on `main`; next: finish UAT and release (phase 7)
 
 ### What was done
-- DeckOut phases 2–6 were built on chained branches (`deckout-2-app-shell` → … → `deckout-6-settings`); the owner's
-  first UAT issues were fixed on `deckout-7-uat-fixes` (plan 7, from `deckout-6-settings`): BL-026 command field,
-  BL-027 strip images, BL-028 / BL-011 presets. Then, on the same branch, seven backlog fixes (one commit each):
-  BL-006, BL-009, BL-010, BL-030, BL-013, BL-021, BL-032; then BL-005 (a reload sends only the screens that changed);
-  then BL-003 (monitor brightness never jumps to 5 %; m1ddc patched). Installed to `~/Applications/DeckOut Dev.app`.
-  All of it fast-forwarded into `main` and pushed, and the branches deleted (owner, 20/11/2026); not signed or
-  released, and the README still describes the hand install (rewritten at release). Rulings per plan:
-  `.superpowers/sdd/<plan>/progress.md`.
+- ae9ee09 BL-003: DeckOut's m1ddc is patched (reads wait 50 ms, are checked, asked again; `Vendor/m1ddc/README.md`);
+  the agent reads each monitor on the first turn and never moves one from a guess; the HUD fits and centres its
+  text. The owner turned the knob on the decks: it works.
+- 95eecc1: `deckout-7-uat-fixes` (plans 2–7, backlog fixes, BL-003) fast-forwarded into `main` and pushed; every
+  `deckout-*` branch deleted (owner). Work happens on `main` now.
+- Upstream: waydabber/m1ddc#81 (from the fork okoker/m1ddc) offers the same patch. If it merges, vendor upstream
+  again and drop ours.
 
-### The owner's checks (quit and reopen DeckOut Dev first: the new app restarts the agent)
-- Command: type in the panel without Return, click Edit in Window…: the typing is there; Save (⌘Return, now the
-  blue button) applies, Esc cancels; `' " --` and command words stay as typed in both.
-- Strip: a block shows Tap first, then Shows → An image → Text / Library / Image, drawn wide on the N4. A block
-  showing Notes' own icon, its tap changed to another app, shows that app's icon (BL-030); a text image on a block
-  with no tap starts as "Block". An internet block's Host emptied goes back to one.one.one.one and turns green.
-- Every editor: Clear Key / Block / Knob sits at the bottom of the panel, with no stray scroll.
-- Change one key's icon on each deck: only that screen redraws (the agent log says `Drew 1 of 6` / `Drew 1 of 14`);
-  lock and unlock: every screen is sent again (`Drew 14 of 14`).
-- Presets: New Preset… → Cancel adds nothing; Return creates; a taken name greys out Create with the reason; Rename;
-  the menu order; the name selected when the sheet opens; Save and Create look right (snapshots can't show them).
-- Monitor brightness: the first turn after a restart or 30 s idle moves from where the monitors really are (the log
-  says `read display 1 → 100`), never to 5 %; the HUD's text sits in the middle of its box; About says
-  "m1ddc 1.3.1 (patched)".
+### Uncommitted state
+- This handover only. `.DS_Store` and `_user_private/` stay untracked.
 
-### Environment state — the decks now run on DeckOut Dev
-- The hand install is retired: `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` (its
-  program is still in `~/Library/Application Support/StreamDeckController/`). The dev agent is registered and drives
-  both decks (`io.github.okoker.deckout.dev.agent`, debug build, ad hoc; config `~/.config/vsd-dev/config.json`, a copy
-  of the live one; log `~/Library/Logs/DeckOut Dev/agent.log`). Accessibility for it is probably not granted yet.
-- Rollback to the hand install: DeckOut Dev → Settings → Stop and Remove; then `mv` the `.retired-by-deckout` plist
-  back and `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.streamdeck.controller.plist`.
-- Test sessions: the dev agent is the live controller, and stays so while fixing (owner, 20/11/2026: the decks
-  going blank during an install is fine). `make install-dev` replaces what runs the owner's decks (the app restarts
-  the agent on the new build).
+### Environment state
+- The decks run on DeckOut Dev (`~/Applications`, debug build 261120.111028 of ae9ee09; agent
+  `io.github.okoker.deckout.dev.agent`; config `~/.config/vsd-dev/config.json`; log `~/Library/Logs/DeckOut Dev/agent.log`).
+  The hand install is retired (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout`); rollback:
+  DeckOut Dev → Settings → Stop and Remove, `mv` the plist back, `launchctl bootstrap gui/$(id -u) <plist>`.
+- `make install-dev` restarts the agent on the new build; KI-008 darkens the decks ~10 s until the app re-registers.
 
-### Gotchas
-- KI-008: replacing the bundle (`make install-dev`, registered or not) can get the agent's next start killed by a
-  launch constraint; the app unregisters and registers afresh by itself after 10 s ("registered again" in its
-  output), so the decks are dark ~10 s after an install.
-- A reload sends only the screens whose image changed, so it no longer repaints a deck showing something stale;
-  locking and unlocking the Mac, or replugging, does. Stale keys during UAT more likely mean a second agent drawing.
-- `--selftest` ends with Stop and Remove (it leaves the dev agent unregistered): don't run it while the owner uses
-  DeckOut Dev for their decks.
-- Tests: `ImageRenderer` draws AppKit controls as yellow placeholders (use `Snapshot.windowPNG`); read tile pixels as
-  sRGB bytes (`NSBitmapImageRep.colorAt` goes through generic RGB); `#expect` can't take mutating calls or deep
-  double-optionals; snapshot tests starve the main thread, so XPC / link waits are 10 s.
+### Release gotchas (phase 7)
+- The signed DeckOut is a different app from DeckOut Dev: its own bundle id, agent and config folder (`~/.config/vsd`,
+  not `vsd-dev`). The UAT edits live in `vsd-dev/config.json`, and its generated icons point into
+  `~/.config/vsd-dev/icons/`: carry config and icons over (owner's go), and Stop and Remove DeckOut Dev first (two
+  agents fire every press twice). The signed agent needs Accessibility granted again.
+- Nothing for signing exists yet: no Makefile target, no gitignored identity file (design: Constraints; Signing during
+  development). Before the first signed build the owner checks who issued the certificate (only builds after
+  01/02/2027 need a G2 one). Every `codesign` / `notarytool` run needs the owner's go; never pick the identity.
+- Untested: KI-008 under a Developer ID signature; launchd taking the agent plist from a quarantined download on
+  macOS 27 (design: Testing). Fresh-install tests need a macOS VM tool: ask before installing one.
+- Docs at release: README rewrite (it still describes the hand install), the design's "✅ BUILT" marker, a pointer
+  from the ideas note. VERSION says 2.0.0.
 
-### Recorded only here (still open)
+### Still open, recorded only here
 - Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M6 `--show-lock-photo`
   ignores reloads; M10 unverified: `NSXPCListener(machServiceName:)` with a name the job doesn't own may crash-loop
   under KeepAlive; M11 unverified: a `.zshrc` touching Documents / Desktop / iCloud prompts in the agent's name.
 - Older: the volume tile shows "0%" on outputs with no volume control; knob inputs skip the lock recheck (≤5 s
   window); a deck reconnecting at the lock screen shows its layout ≤5 s before the photo; an unplug mid-redraw logs
   up to 15 warnings.
-- Signing: check which authority issued the Developer ID certificate before the first signed build (only builds after
-  01/02/2027 need a G2 one).
 
 ### What's next
-1. The owner re-tests plan 7, then the rest of UAT (plug / unplug; every editor; presets; ⌘Z in fields;
-   Accessibility; lock photo gestures; Settings); fixes on `main`, tests first.
-2. Then signing, release (design phase 7). Next: live strip blocks people add (BL-029), designed first.
+1. Ask the owner which UAT checks are left (the list: `git show 95eecc1:docs/PROGRESS.md`, "The owner's checks";
+   brightness done). Fixes on `main`, tests first.
+2. Write the phase 7 plan (`docs/superpowers/plans/`): signing target + identity file, release build, notarise, the
+   GitHub release, README rewrite, moving the owner's decks to the signed app, fresh-install test in a VM. Each
+   signing, notarising, publishing and install act gets its own go.
+3. Then BL-029 (live strip blocks people add), designed first.
 
 ## Current Status
 DeckOut Dev (`~/Applications`, a debug build of `main`) drives the TreasLin N3 and the MiraBox N4

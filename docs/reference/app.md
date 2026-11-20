@@ -60,7 +60,7 @@ the job definition it registered: a changed plist needs a new label.
   plugged in; unplugged, the other one shows, else "Plug in your deck" (T-118).
 - **The deck:** drawn from `DeckFace` (the N4 at half its measured key-image pixels; the N3 by eye from the photo),
   showing each key's icon and the strip's picture blocks as the deck shows them (`DeckPreview`: the N4's own drawing
-  code; the N3 preview fits a non-square icon where the deck stretches it, BL-007), and the live blocks from the
+  code; both decks and their previews keep a non-square icon's shape, on black), and the live blocks from the
   images the agent draws. Knobs carry a caption of what turning them does. A click
   selects a control (red ring); a click on the stage clears it.
 - **Editor** (right-hand panel, for the selected control): see Editing.

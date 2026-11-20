@@ -196,7 +196,8 @@ install). Without either, all other features work — brightness actions log a w
 ## LCD Icons
 - Optional `icon` field per LCD key in config; sent to the deck as JPEG via CRT BAT (header with length and wire
   slot), 1024-byte chunks, then STP
-- N3: 85×85 JPEG, turned 90° + 180°, shifted −9 / +8 px to sit centred on the LCD. No icon = black
+- N3: 85×85 JPEG, turned 90° + 180°, shifted −9 / +8 px to sit centred on the LCD; the icon keeps its shape,
+  fitted inside a 4 px margin on black (as on the N4). No icon = black
 - N4: keys 112×112 JPEG turned 180°, no offset; strip blocks 176×112 turned 180° (`picture` blocks show an icon).
   Slots: top-row keys 11–15, bottom-row keys 6–10, strip blocks 1–4. No icon = black
 - An optional `tile` per key records how the app generated its icon (text or a library symbol on a colour) so it can

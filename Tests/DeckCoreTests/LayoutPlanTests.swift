@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Testing
 @testable import DeckCore
@@ -71,4 +72,42 @@ private let sample = """
     let path = try redTopBlueBottomPNG()
     #expect(try decodeImage(LayoutPlan.render(.icon(path), slot: 1, model: .n3)).width == 85)
     #expect(try decodeImage(LayoutPlan.render(.icon(path), slot: 11, model: .n4)).width == 112)
+}
+
+/// The bounds of `image`'s red pixels, `y` counted from the top row.
+private func redBox(_ image: CGImage) -> CGRect {
+    let w = image.width, h = image.height
+    var buf = [UInt8](repeating: 0, count: w * h * 4)
+    let ctx = CGContext(data: &buf, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                        space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+    var box = CGRect.null
+    for y in 0..<h {
+        for x in 0..<w {
+            let i = (y * w + x) * 4
+            if buf[i] > 128 && buf[i + 1] < 100 && buf[i + 2] < 100 { box = box.union(CGRect(x: x, y: y, width: 1, height: 1)) }
+        }
+    }
+    return box
+}
+
+// The N3 keeps a non-square icon's shape, on black, as the N4 and the app's drawing of both decks do (BL-007: it
+// stretched it into the square, so a wide photo came out squashed on the deck and not in the app). A 2:1 picture
+// fills the 77 pt between the margins one way and half that the other: in the app, upright, 77 wide × ~39 high; in
+// the JPEG sent to the N3, turned 90° for the deck, ~39 wide and as long as a square icon is (the N3's own offsets
+// put a few pixels of every icon past the JPEG's edge, as before).
+@Test func n3KeepsTheIconsShape() throws {   // T-185
+    func red(width: Int, height: Int) throws -> String {
+        try writePNG(width: width, height: height) { ctx in
+            ctx.setFillColor(red: 1, green: 0, blue: 0, alpha: 1)
+            ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        }
+    }
+    let wide = try red(width: 200, height: 100)
+    let app = redBox(try #require(DeckPreview.keyImage(path: wide, deck: .n3)))
+    #expect(abs(app.width - 77) <= 2 && abs(app.height - 38.5) <= 2, "app \(app)")
+    let square = redBox(try decodeImage(try #require(ImageLoader.loadAsJPEG(path: try red(width: 100, height: 100)))))
+    let deck = redBox(try decodeImage(try #require(ImageLoader.loadAsJPEG(path: wide))))
+    #expect(abs(deck.width - 38.5) <= 2, "deck \(deck): half the long side")
+    #expect(abs(deck.height - square.height) <= 1, "deck \(deck), square \(square): as long as a square icon")
 }

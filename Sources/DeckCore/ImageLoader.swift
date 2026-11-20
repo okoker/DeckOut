@@ -68,7 +68,8 @@ enum ImageLoader {
         ctx.rotate(by: CGFloat.pi)
         ctx.translateBy(x: -cx, y: -cy)
 
-        ctx.draw(cropped, in: drawRect)
+        // Kept in shape, centred, as the N4 and the app draw it (BL-007: it was stretched into the square).
+        ctx.draw(cropped, in: Canvas.aspectFit(CGSize(width: cropped.width, height: cropped.height), in: drawRect))
 
         guard let rotated = ctx.makeImage() else {
             print("Warning: could not create rotated image")

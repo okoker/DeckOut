@@ -31,9 +31,6 @@ Next free ID: BL-034
   without re-enumerating, its keys could show the deck's own logo until the next lock / unlock or replug. On
   `NSWorkspace.didWakeNotification`: re-run the start-up sequence, redraw, recheck the lock. Untested here — this Mac
   never system-sleeps. `Daemon.swift` (19/11/2026)
-- BL-007 [P2] [bug] The app's N3 key preview letterboxes a non-square icon, while the deck's N3 pipeline
-  (`ImageLoader.loadAsJPEG`) stretches it into the square, so the drawing differs from the deck for such icons. Draw
-  the N3 preview the deck's way. `DeckFace.swift` (`DeckPreview.keyImage`), `ImageLoader.swift` (plan 2 review)
 - BL-014 [P2] [feature] Shortcut recorder: media keys pressed in the recorder show nothing (they arrive as system
   events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the
   key sent is right: both sides work by position). Say media keys aren't recordable; label with the layout's

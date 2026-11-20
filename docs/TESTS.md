@@ -189,6 +189,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-182 | `IconRowTests/boldOrFillRestylesTheChosenSymbol` | Bold / Fill in the symbol picker restyles the symbol already chosen at once (it used to wait for the next click: BL-022); with no symbol chosen it writes nothing |
 | T-183 | `CommandEditorTests/undoIsGreyedOnlyWithNothingToUndo` | Edit → Undo / Redo are off with nothing to undo / redo (they were always on: BL-015) and follow the deck's history; typing in a real text field turns both on (a greyed item would swallow ⌘Z, and the field has none of its own), clicking into a field without typing doesn't, leaving it turns them off again |
 | T-184 | `CommandEditorTests/allowWatchesOnce` | A second Allow… click stops the first minute-long Accessibility watch and starts one in its place (each click used to schedule its own 30 checks: BL-015) |
+| T-185 | `LayoutPlanTests/n3KeepsTheIconsShape` | The N3 keeps a 2:1 icon's shape, on black, as the app's preview does (BL-007: the deck stretched it into the square, the app didn't): the app draws it 77 × ~39 upright; the JPEG sent to the N3 (turned 90°) is ~39 wide and as long as a square icon is (the N3's −9 / +8 px offsets put a few pixels of every icon past the JPEG's edge, as before) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

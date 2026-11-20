@@ -6,6 +6,7 @@ import SwiftUI
 /// its stage with the inspector beside it, and a status line.
 public struct MainWindow: View {
     @ObservedObject var model: AppModel
+    @State private var presetSheet: PresetSheet?
 
     public static let size = CGSize(width: 946, height: 488)   // below the toolbar: 946 × 544 with it
 
@@ -28,7 +29,7 @@ public struct MainWindow: View {
                     }
                 }
                 if model.shown != nil {
-                    PresetMenu(model: model, disabled: model.photoMode).padding(.leading, 10)
+                    PresetMenu(model: model, sheet: $presetSheet, disabled: model.photoMode).padding(.leading, 10)
                 }
             }
             ToolbarItemGroup(placement: .primaryAction) {
@@ -45,8 +46,23 @@ public struct MainWindow: View {
                 }
             }
         }
+        .sheet(item: $presetSheet, content: presetNameSheet)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             Task { await model.becameActive() }
+        }
+    }
+
+    /// The preset sheets live on the window, not in the toolbar item (a sheet from a toolbar item is unreliable).
+    @ViewBuilder
+    private func presetNameSheet(_ sheet: PresetSheet) -> some View {
+        switch sheet {
+        case .new:
+            PresetNameSheet(title: "New Preset", action: "Create",
+                            name: model.shown.flatMap { model.config?.suggestedPresetName($0) } ?? "",
+                            current: nil, taken: model.presetNames) { model.newPreset(named: $0) }
+        case .rename(let name):
+            PresetNameSheet(title: "Rename “\(name)”", action: "Rename", name: name, current: name,
+                            taken: model.presetNames) { model.renamePreset(name, to: $0) }
         }
     }
 

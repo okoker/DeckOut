@@ -2,63 +2,123 @@ import AppKit
 import DeckCore
 import SwiftUI
 
-/// The preset pull-down: the deck's presets with a check on the live one, then New Preset, Duplicate, Rename, then
-/// Delete. New and Rename edit the name in place, with no dialog: Return applies, Esc cancels. Delete asks nothing;
-/// ⌘Z brings it back. Picking a preset makes it live on the deck.
+/// Which preset sheet is open: New Preset, or Rename for the preset named when it opened.
+enum PresetSheet: Identifiable {
+    case new
+    case rename(String)
+
+    var id: String {
+        switch self {
+        case .new: return "new"
+        case .rename(let name): return "rename:" + name
+        }
+    }
+}
+
+/// The preset pull-down (owner, 20/11/2026): the live preset (✓), then Default when another is live; New Preset…,
+/// Rename…, Duplicate, Delete; a line; the other presets. It never leaves the toolbar: names are typed in a sheet
+/// with Cancel. Delete asks nothing; ⌘Z brings it back. Picking a preset makes it live on the deck.
 struct PresetMenu: View {
     @ObservedObject var model: AppModel
+    @Binding var sheet: PresetSheet?
     var disabled = false
-    @State private var renaming = false
-    @State private var draft = ""
-    @FocusState private var focused: Bool
 
     var body: some View {
+        let live = model.livePreset
+        let layout = PresetMenuLayout.items(presets: model.presetNames, live: live)
         HStack(spacing: 6) {
             Text("Preset").foregroundStyle(.secondary)
-            if renaming {
-                TextField("Name", text: $draft)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 150)
-                    .focused($focused)
-                    .onSubmit(commit)
-                    .onExitCommand { renaming = false }
-                    .onChange(of: focused) { _, isFocused in if !isFocused { renaming = false } }
-                    .onAppear { focused = true }
-            } else {
-                Menu {
-                    ForEach(model.presetNames, id: \.self) { name in
-                        Button { model.makeLive(name) } label: {
-                            if name == model.livePreset { Label(name, systemImage: "checkmark") } else { Text(name) }
-                        }
-                    }
+            Menu {
+                ForEach(layout.top, id: \.self) { presetItem($0, live: live) }
+                Button("New Preset…") { sheet = .new }
+                Button("Rename “\(live)”…") { sheet = .rename(live) }
+                Button("Duplicate “\(live)”") { model.duplicateLivePreset() }
+                Button("Delete “\(live)”") { model.deleteLivePreset() }
+                    .disabled(model.presetNames.count <= 1)
+                if !layout.rest.isEmpty {
                     Divider()
-                    Button("New Preset") { if let name = model.newPreset() { startRenaming(name) } }
-                    Button("Duplicate") { model.duplicateLivePreset() }
-                    Button("Rename") { startRenaming(model.livePreset) }
-                    Divider()
-                    Button("Delete") { model.deleteLivePreset() }
-                        .disabled(model.presetNames.count <= 1)
-                } label: {
-                    Text(model.livePreset)
+                    ForEach(layout.rest, id: \.self) { presetItem($0, live: live) }
                 }
-                .fixedSize()
+            } label: {
+                Text(live)
             }
+            .fixedSize()
         }
         .disabled(disabled)
         .opacity(disabled ? 0.45 : 1)
     }
 
-    private func startRenaming(_ name: String) {
-        draft = name
-        renaming = true
+    private func presetItem(_ name: String, live: String) -> some View {
+        Button { model.makeLive(name) } label: {
+            if name == live { Label(name, systemImage: "checkmark") } else { Text(name) }
+        }
+    }
+}
+
+/// The pull-down's order: the live preset first, then Default (the first preset in the file, whatever it's called)
+/// when another is live; the rest, in file order, go below the actions.
+enum PresetMenuLayout {
+    static func items(presets: [String], live: String) -> (top: [String], rest: [String]) {
+        guard let first = presets.first, first != live else { return ([live], presets.filter { $0 != live }) }
+        let top = [live, first]
+        return (top, presets.filter { !top.contains($0) })
+    }
+}
+
+/// Names a new preset or renames one. Cancel (Esc) changes nothing; Create / Rename (Return) applies, greyed out
+/// while the name is empty or taken, with the reason under the field.
+struct PresetNameSheet: View {
+    static let size = CGSize(width: 340, height: 150)
+    let title: String
+    let action: String
+    let current: String?          // the preset being renamed: keeping its own name is fine
+    let taken: [String]
+    let commit: (String) -> Bool
+    @State private var name: String
+    @FocusState private var focused: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    init(title: String, action: String, name: String, current: String?, taken: [String],
+         commit: @escaping (String) -> Bool) {
+        self.title = title
+        self.action = action
+        self.current = current
+        self.taken = taken
+        self.commit = commit
+        _name = State(initialValue: name)
     }
 
-    private func commit() {
-        if model.renameLivePreset(to: draft) {
-            renaming = false
-        } else {
-            NSSound.beep()          // empty, or another preset already has that name
+    static func problem(_ name: String, taken: [String], current: String?) -> String? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "Type a name." }
+        if trimmed != current, taken.contains(trimmed) { return "There's already a preset called “\(trimmed)”." }
+        return nil
+    }
+
+    var body: some View {
+        let problem = Self.problem(name, taken: taken, current: current)
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.headline)
+            TextField("Name", text: $name)
+                .textFieldStyle(.roundedBorder)
+                .focused($focused)
+            Text(problem ?? " ")
+                .font(.system(size: 11))
+                .foregroundStyle(Color(rgb: 0xFF453A))
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button(action) {
+                    if commit(name) { dismiss() } else { NSSound.beep() }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(problem != nil)
+            }
         }
+        .padding(20)
+        .frame(width: Self.size.width)
+        .onAppear { focused = true }
     }
 }
 

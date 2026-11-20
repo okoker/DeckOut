@@ -79,18 +79,30 @@ extension AppConfig {
         edit(deck) { $0.activePreset = name } n3: { $0.activePreset = name }
     }
 
-    /// A blank layout named "Preset N" (N one more than the presets there are, or the next free), made live.
-    public mutating func newPreset(deck: DeckKind) -> String {
-        ensureDeck(deck)
-        let name = freeName(in: presetNames(deck), from: presetNames(deck).count + 1) { "Preset \($0)" }
-        edit(deck) {
-            $0.presets.append(N4Preset(name: name, keys: [:], strip: [:]))
-            $0.activePreset = name
+    /// The name New Preset offers: "Preset N", N one more than the presets there are (or the next free).
+    public func suggestedPresetName(_ deck: DeckKind) -> String {
+        var config = self
+        config.ensureDeck(deck)                 // a deck with no section yet has its Default
+        let names = config.presetNames(deck)
+        return freeName(in: names, from: names.count + 1) { "Preset \($0)" }
+    }
+
+    /// A blank layout under `name` (trimmed), made live. False, and nothing changed, for an empty or taken name.
+    @discardableResult
+    public mutating func addPreset(_ name: String, deck: DeckKind) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        var config = self
+        config.ensureDeck(deck)
+        guard !trimmed.isEmpty, !config.presetNames(deck).contains(trimmed) else { return false }
+        config.edit(deck) {
+            $0.presets.append(N4Preset(name: trimmed, keys: [:], strip: [:]))
+            $0.activePreset = trimmed
         } n3: {
-            $0.presets.append(N3Preset(name: name, buttons: [:]))
-            $0.activePreset = name
+            $0.presets.append(N3Preset(name: trimmed, buttons: [:]))
+            $0.activePreset = trimmed
         }
-        return name
+        self = config
+        return true
     }
 
     /// A copy of `name`'s layout called "<name> copy" (then "copy 2", …), made live. Returns its name.

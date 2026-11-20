@@ -258,12 +258,12 @@ extension AppModel {
         store?.change("Switch Preset") { $0.makeLive(name, deck: shown) }
     }
 
-    /// Returns the new preset's name (it is live).
-    public func newPreset() -> String? {
-        guard let shown else { return nil }
-        var made: String?
-        store?.change("New Preset") { made = $0.newPreset(deck: shown) }
-        return made
+    /// A new, empty preset under `name`, made live. False (nothing changes, no undo step) for an empty or taken name.
+    public func newPreset(named name: String) -> Bool {
+        guard let shown else { return false }
+        var added = false
+        store?.change("New Preset") { added = $0.addPreset(name, deck: shown) }
+        return added
     }
 
     public func duplicateLivePreset() {
@@ -275,16 +275,16 @@ extension AppModel {
         }
     }
 
-    /// False when the name is empty or taken (nothing changes).
-    public func renameLivePreset(to name: String) -> Bool {
+    /// Renames `name`, the preset the sheet was opened for (not whichever is live now). False when the new name is
+    /// empty or taken (nothing changes).
+    public func renamePreset(_ name: String, to newName: String) -> Bool {
         guard let shown else { return false }
-        let live = livePreset
         var renamed = false
         store?.change("Rename Preset") { config in
             config.ensureDeck(shown)
-            renamed = config.renamePreset(live, to: name, deck: shown)
+            renamed = config.renamePreset(name, to: newName, deck: shown)
         }
-        return renamed || name.trimmingCharacters(in: .whitespaces) == live
+        return renamed || newName.trimmingCharacters(in: .whitespacesAndNewlines) == name
     }
 
     public func deleteLivePreset() {

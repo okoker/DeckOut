@@ -17,11 +17,18 @@ private let twoPresets = AppConfig(n4: N4Section(
     config.makeLive("Music", deck: .n4)
     #expect(config.livePreset(.n4) == "Music")
 
-    // New: a blank layout under the first free name, and live.
-    let made = config.newPreset(deck: .n4)
-    #expect(made == "Preset 3")
+    // New: a blank layout under the name given (the sheet offers the first free "Preset N"), and live.
+    #expect(config.suggestedPresetName(.n4) == "Preset 3")
+    let made = config.addPreset("Preset 3", deck: .n4)
+    #expect(made)
     #expect(config.livePreset(.n4) == "Preset 3")
     #expect(config.n4?.presets.last?.keys.isEmpty == true)
+    // An empty name or one already taken: false, and nothing changes.
+    let before = config
+    let blankName = config.addPreset("  ", deck: .n4)
+    let takenName = config.addPreset(" Music ", deck: .n4)
+    #expect(!blankName && !takenName)
+    #expect(config == before)
 
     // Duplicate: a copy of the layout, live.
     config.makeLive("Work", deck: .n4)
@@ -40,8 +47,11 @@ private let twoPresets = AppConfig(n4: N4Section(
 
     // The N3 the same way; a deck with no section yet gets one.
     var empty = AppConfig.empty
-    let n3Made = empty.newPreset(deck: .n3)
-    #expect(n3Made == "Preset 2")
+    #expect(empty.suggestedPresetName(.n3) == "Preset 2")
+    let refused = empty.addPreset(" ", deck: .n3)
+    #expect(!refused && empty == AppConfig.empty)        // not even a section added
+    let n3Made = empty.addPreset("Preset 2", deck: .n3)
+    #expect(n3Made)
     #expect(empty.presetNames(.n3) == ["Default", "Preset 2"])
 
     // Brightness, per deck, 0–100.
@@ -55,7 +65,7 @@ private let twoPresets = AppConfig(n4: N4Section(
     var config = twoPresets
     // Never the last one.
     var single = AppConfig.empty
-    _ = single.newPreset(deck: .n4)
+    _ = single.addPreset("Preset 2", deck: .n4)
     _ = single.deletePreset("Default", deck: .n4)
     let lastDeleted = single.deletePreset("Preset 2", deck: .n4)
     #expect(!lastDeleted)
@@ -90,4 +100,61 @@ private let twoPresets = AppConfig(n4: N4Section(
     store.undo()
     #expect(store.config.brightness(.n4) == 75)    // one undo for the whole drag
     #expect(!store.canUndo)
+}
+
+// The pull-down (owner, 20/11/2026): the live preset first, then Default (the first in the file) when another is
+// live; the other presets below the actions.
+@Test func presetMenuOrder() {   // T-159
+    let presets = ["Default", "Work", "Music"]
+    let home = PresetMenuLayout.items(presets: presets, live: "Default")
+    #expect(home.top == ["Default"] && home.rest == ["Work", "Music"])
+    let work = PresetMenuLayout.items(presets: presets, live: "Work")
+    #expect(work.top == ["Work", "Default"] && work.rest == ["Music"])
+    let renamed = PresetMenuLayout.items(presets: ["Home", "Work"], live: "Work")    // a renamed Default keeps its place
+    #expect(renamed.top == ["Work", "Home"] && renamed.rest.isEmpty)
+}
+
+@Test func presetNameProblems() {   // T-159
+    let taken = ["Default", "Work"]
+    #expect(PresetNameSheet.problem("  ", taken: taken, current: nil) == "Type a name.")
+    #expect(PresetNameSheet.problem(" Work ", taken: taken, current: nil) == "There's already a preset called “Work”.")
+    #expect(PresetNameSheet.problem("Work", taken: taken, current: "Work") == nil)      // renaming to its own name
+    #expect(PresetNameSheet.problem("Evening", taken: taken, current: nil) == nil)
+}
+
+// New Preset is one undo step; a refused name (the sheet would say why) changes nothing and leaves no step. Cancel
+// never reaches the model.
+@MainActor @Test func newPresetUndoesInOne() throws {   // T-159
+    let model = try previewModel(twoPresets, deck: .n4, selection: nil)
+    let store = try #require(model.store)
+    let added = model.newPreset(named: "Evening")
+    #expect(added && model.livePreset == "Evening" && model.presetNames == ["Work", "Music", "Evening"])
+    store.undo()
+    #expect(model.livePreset == "Work" && model.presetNames == ["Work", "Music"])
+    #expect(!store.canUndo)
+    let taken = model.newPreset(named: "Music")
+    #expect(!taken && !store.canUndo && store.config == twoPresets)
+}
+
+// Rename renames the preset the sheet was opened for, even if another became live meanwhile (BL-011).
+@MainActor @Test func renameNamesThePresetItWasOpenedFor() throws {   // T-159
+    let model = try previewModel(twoPresets, deck: .n4, selection: nil)
+    model.makeLive("Music")
+    let renamed = model.renamePreset("Work", to: "Day")
+    #expect(renamed && model.presetNames == ["Day", "Music"] && model.livePreset == "Music")
+}
+
+@MainActor @Test func presetSheetsDraw() throws {   // T-159 (design check)
+    let sheets = [
+        ("new", PresetNameSheet(title: "New Preset", action: "Create", name: "Preset 3", current: nil,
+                                taken: ["Default", "Work"]) { _ in true }),
+        ("rename-taken", PresetNameSheet(title: "Rename Preset", action: "Rename", name: "Default", current: "Work",
+                                         taken: ["Default", "Work"]) { _ in true }),
+    ]
+    for (name, sheet) in sheets {
+        for dark in [false, true] {
+            try Snapshot.windowPNG(sheet, size: PresetNameSheet.size, dark: dark)
+                .write(to: snapshotFolder.appendingPathComponent("preset-sheet-\(name)-\(dark ? "dark" : "light").png"))
+        }
+    }
 }

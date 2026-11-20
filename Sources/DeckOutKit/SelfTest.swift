@@ -76,13 +76,14 @@ enum SelfTest {
 
         // Presets: new (live), switch back, delete it.
         let before = model.livePreset
-        let made = model.newPreset()
-        check(made != nil && model.livePreset == made, "new preset \(made ?? "?") is live")
+        let made = model.config?.suggestedPresetName(deck) ?? "Self-test"
+        let added = model.newPreset(named: made)
+        check(added && model.livePreset == made, "new preset \(made) is live")
         await wait(1)
         check(model.link?.status?.activePresets[deck.rawValue] == made, "the agent shows the new preset")
         model.deleteLivePreset()      // the new one, which is live
         model.makeLive(before)
-        check(!model.presetNames.contains(made ?? "-"), "new preset deleted")
+        check(!model.presetNames.contains(made), "new preset deleted")
         check(model.livePreset == before, "back on \(before)")
 
         // Brightness: a drag is one undo step.

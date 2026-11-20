@@ -1,24 +1,28 @@
 # Progress
 
-## Session Handover — 19/11/2026 (late night, owner away)
+## Session Handover — 20/11/2026 (early morning): ready for UAT
 
-**Autonomous run to UAT** (owner, 19/11/2026): build DeckOut through phase 6 while the owner is away, then UAT.
-Standing go for live test sessions (stop the installed daemon → register the dev agent on a copy of the config →
-test → unregister → start the installed daemon again and check it). Commits on local branches, not pushed or merged
-until UAT. No signing. Downloads allowed: m1ddc source, Phosphor icons. Plans and ledgers:
-`docs/superpowers/plans/2026-11-19-deckout-{2,3}-*.md`, `.superpowers/sdd/<plan>/progress.md`.
+**The unattended run is done: DeckOut phases 2–6 are built** on local branches, each from the one before
+(`deckout-2-app-shell` → `-3-editing` → `-4-lock-photo` → `-5-icons` → `-6-settings`); `deckout-6-settings` has it
+all (49 commits on top of main; 185 tests). Not pushed, not merged, not signed. Each plan: tests first, a live test
+session on this Mac, a fresh reviewer, fixes test-first. Plans and ledgers (every ruling made on the owner's behalf):
+`docs/superpowers/plans/2026-11-19-deckout-{2..6}-*.md`, `.superpowers/sdd/<plan>/progress.md`.
 
-### Where it stands
-- Plan 2 (the app shell) built on `deckout-2-app-shell`: 127 tests, two test sessions, fresh review fixed (I1, I2);
-  minors are BL-006–BL-010. Plan 3 (editing) built on `deckout-3-editing` (from plan 2's branch): 152 tests, test
-  session 3 (`--selftest` 12/12), fresh review fixed (I1–I3, M1, M7); minors BL-011–BL-015. Plan 4 (lock photo) built on
-  `deckout-4-lock-photo`: 161 tests, session 4 (`--selftest` with a lock photo), review fixed (I1–I4, M2, M4);
-  minors BL-016–BL-019. Plan 5 (icons) built on
-  `deckout-5-icons`: 172 tests, session 5, review fixed (I1, I2, M1–M3, M8); minors BL-020–BL-023. Next: plan 6
-  (settings, monitors, first run) on `deckout-6-settings`; its vendored m1ddc and first pieces sit uncommitted in the
-  tree until that branch. Downloads verified and parked in the session scratchpad:
-  Phosphor 2.1.2 (npm sha512 matched), m1ddc 1.3.1 (Homebrew's sha256 matched; 1.3.2 is a day old, not adopted).
-- The installed daemon is the plan 1 build, running; the dev app is `~/Applications/DeckOut Dev.app`, unregistered.
+### UAT (owner)
+- The app is `~/Applications/DeckOut Dev.app` (the dev variant: its own config `~/.config/vsd-dev/config.json`, a
+  copy of the live one; its own logs). The installed daemon is running as before (pid 40245).
+- Open it. It first asks about the hand-installed controller: **Retire It** stops it and moves its plist aside
+  (rollback: move `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` back and
+  `launchctl bootstrap gui/$(id -u) <plist>`), **Not Now** runs both (presses fire twice). macOS shows "background
+  item added".
+- Check by hand (the sessions couldn't): plug / unplug decks with the window open; key presses on both decks; every
+  editor (shortcut recorder, app / file / script pickers, Run a Shortcut, Text and Library icons: does the popover open
+  on the first click, does a multi-line text show its lines, ⌥↩ for a new line); presets (does Rename get focus;
+  the preset pop-up looked greyed in snapshots); ⌘Z / ⇧⌘Z, also inside a text field; Accessibility (Allow… on a
+  shortcut key); lock photo mode (drag, pinch, scroll feel; lock the Mac); Settings (monitors, names, order, the
+  Switch Monitor key; Read Again; Stop and Remove → Start Again).
+- After UAT: merge (merging `deckout-6-settings` brings all five), the first signed build (check which authority
+  issued the Developer ID certificate first: only builds after 01/02/2027 need a G2 one), release.
 
 ### Recorded only here (still open)
 - Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M2 `ConfigFile.save`
@@ -35,19 +39,32 @@ until UAT. No signing. Downloads allowed: m1ddc source, Phosphor icons. Plans an
 
 ## Current Status
 One launchd daemon drives the TreasLin N3 and the MiraBox N4 (DeckOut plan 1 build, installed 19/11/2026). The DeckOut
-app shell (plan 2) is built on a local branch: it registers its agent, checks signatures both ways, and shows the
-plugged-in deck as it is, live strip included; editing comes with plan 3.
+app (design phases 2–6) is built on local branches, waiting for the owner's UAT: it runs the deck controller from
+its bundle, edits every control, presets, brightness, the lock photo, generated icons, monitors and its own removal.
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
+20/11/2026 — DeckOut plan 6 on `deckout-6-settings`: `swift test` 185/185 (new T-144–T-152), watched; test sessions 6–7: `--selftest` 23/23 (the app's own m1ddc lists "LG HDR 4K · Left / Right", both answer a brightness read; Stop and Remove stays removed 15 s later with launchd holding no job); the old-controller screen in the real window. Not checked: Retire It on the real plist, Settings by hand (owner, at UAT).
 20/11/2026 — DeckOut plan 5 on `deckout-5-icons`: `swift test` green (new T-139–T-143), watched; test session 5: `--selftest` passed with a text and a symbol tile drawn by the real app's bundled library; the app recovered from KI-008 by itself. Not checked: the pickers by hand (owner, at UAT).
 20/11/2026 — DeckOut plan 4 on `deckout-4-lock-photo`: `swift test` 161/161 (new T-134–T-138), watched; test session 4: `--selftest` passed with a generated lock photo moved while the N4 previewed it (agent: one decode, 17–33 ms per preview), Done back to keys, all undone; real-window snapshot of photo mode. Not checked: real drag / pinch / scroll (owner, at UAT).
 20/11/2026 — DeckOut plan 3 on `deckout-3-editing`: `swift test` 152/152 (new T-119–T-133), watched; test session 3 on this Mac without the owner: `--selftest` 12/12 against the live dev agent (key set and saved, Test ran `echo` in the agent, preset made live then deleted, brightness drag one undo, all undone), the app recovered from KI-008 by itself, update restart; real-window snapshots of the editors. Not checked: clicks, typing, focus (owner, at UAT).
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- DeckOut plan 6, settings / monitors / first run (`docs/superpowers/plans/2026-11-19-deckout-6-settings-first-run.md`),
-  then UAT. Backlog: BL-002–BL-023.
+- UAT of DeckOut (handover above), then merge, signing and release (design phase 7). Backlog: BL-002–BL-025.
 
 ## Completed
+
+### 20/11/2026 — DeckOut takes over from the hand install, ships m1ddc, and has Settings
+- **Reference:** `docs/reference/app.md` (First run and removal; Settings); plan
+  `docs/superpowers/plans/2026-11-19-deckout-6-settings-first-run.md`; T-144–T-152; BL-024–BL-025.
+- **For a person:** nothing to install for monitor brightness: DeckOut carries m1ddc. Settings lists your monitors,
+  tells two identical ones apart as Left and Right, checks each answers, and lets you name them and set the order the
+  Switch Monitor key goes through. On first open DeckOut offers to retire the hand-installed controller (kept, so it
+  can be put back). Stop and Remove takes DeckOut out of Login Items for removal.
+- **Decision (owner, 19/11/2026):** m1ddc vendored from source (1.3.1; 1.3.2 was a day old). (CL calls:) retiring
+  moves the plist aside rather than deleting it; the README's install text changes when the app ships.
+- **Checked:** `swift test` 185/185; sessions 6–7 (run line above). A fresh reviewer found Stop and Remove quietly
+  undone by the app's own recovery (critical), monitor reordering that showed nothing, and silent non-answering
+  monitors; all fixed test-first, and the removal fix proven live.
 
 ### 20/11/2026 — Keys can show text or a symbol on a colour, made in DeckOut
 - **Reference:** `docs/reference/app.md` (Icons); plan `docs/superpowers/plans/2026-11-19-deckout-5-icons.md`;
@@ -87,22 +104,6 @@ plugged-in deck as it is, live strip included; editing comes with plan 3.
 - **Checked:** `swift test` 152/152; test session 3 (run line above). A fresh reviewer found three important issues
   (edits blocked after a fixed problem; undo dropping a hand edit; phone photos coming out black), fixed test-first,
   plus two re-graded minors (a frozen slider in debug builds; a field re-committing after undo).
-
-### 19/11/2026 — DeckOut is an app: it runs the deck controller and shows your deck as it is
-- **Reference:** `docs/reference/app.md` (new); design `docs/design/config_app.md` (phase 2); plan
-  `docs/superpowers/plans/2026-11-19-deckout-2-app-shell.md`; T-095–T-118; KI-008 (rewritten); BL-006–BL-010.
-- **For a person:** DeckOut.app holds the deck controller, renamed DeckOutAgent, and starts it at login through
-  macOS's Login Items; no Terminal. Open the app and it shows the deck that's plugged in, drawn as it looks, with the
-  live strip moving; both plugged in, it asks which; none, it asks you to plug one in. It says when it's in the wrong
-  folder, switched off in Login Items, or can't reach the controller. Only DeckOut's own app can talk to the
-  controller. Nothing is editable yet (plan 3).
-- **Decision (owner, 19/11/2026):** build through phase 6 unattended, with test sessions on this Mac and local
-  commits; UAT at the end. (CL calls, in the plan:) ad hoc builds pin the app's exact binary; the app restarts an
-  agent of another build once; the dev variant has its own config and logs and installs to `~/Applications`.
-- **Checked:** `swift test` 127/127; two test sessions on this Mac (run line above). Session 2 found KI-008 again
-  with the new agent: a replaced, unregistered agent was killed on its first start and launchd lost the job; the
-  app now unregisters and registers it afresh when it doesn't answer. A fresh reviewer found two important issues
-  (a refused agent never reported; a vanished one still shown as running), both fixed test-first.
 
 ## History
 Older work: `old_progress/README.md`.

@@ -8,3 +8,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 - 04 — Brightness knob fixes (02/11/2026): mode cycle stuck on Left; HUD window over-release crash → `04_brightness_knob_fixes.md`
 - 05 — N4 support (19/11/2026): the MiraBox N4 next to the N3, live strip, lock photo → `05_n4_support.md`
 - 06 — DeckOut plan 1, the background part (19/11/2026): presets, photo framing, new actions, XPC service → `06_deckout_plan1_background.md`
+- 07 — DeckOut plan 2, the app shell (19/11/2026): the app runs its agent, signature checks, the deck drawing → `07_deckout_plan2_app_shell.md`

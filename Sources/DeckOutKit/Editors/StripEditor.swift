@@ -1,7 +1,8 @@
 import DeckCore
 import SwiftUI
 
-/// A strip block: what it shows (a live reading, a picture or nothing), its settings, and what a tap does.
+/// A strip block, laid out like a key: what a tap does, then what the block shows (an icon like a key's, a live
+/// reading, or nothing) and its settings. The two are independent: setting a tap never changes what it shows.
 struct StripEditor: View {
     @ObservedObject var model: AppModel
     let control: FaceControl
@@ -11,12 +12,20 @@ struct StripEditor: View {
         let type = block?.type ?? .empty
         let tap = ActionChoice(action: block?.action ?? "none", step: block?.step)
         VStack(alignment: .leading, spacing: 12) {
+            FieldRow("Tap") {
+                ActionPicker(slot: .stripTap, choice: tap) { model.setStripTap($0, block: control.id) }
+            }
+            ActionFields(model: model, slot: .stripTap, choice: tap) { model.setStripTap($0, block: control.id) }
+            ProblemNote(model: model, id: control.id, choice: tap)
+            if tap.needsAccessibility { AccessibilityBanner(model: model) }
+            Divider().padding(.vertical, 2)
             FieldRow("Shows") {
                 Picker("", selection: Binding(get: { type }, set: { model.setStripType($0, block: control.id) })) {
+                    Text("An icon").tag(StripBlockType.picture)
+                    Divider()
                     Text("Internet latency").tag(StripBlockType.internet)
                     Text("CPU and memory").tag(StripBlockType.load)
                     Text("Volume").tag(StripBlockType.volume)
-                    Text("A picture").tag(StripBlockType.picture)
                     Divider()
                     Text("Nothing").tag(StripBlockType.empty)
                 }
@@ -24,18 +33,14 @@ struct StripEditor: View {
             }
             switch type {
             case .internet: internetFields(block ?? StripBlockConfig(type: .internet))
-            case .picture: pictureFields(block)
+            case .picture:
+                IconRow(model: model, shape: .stripBlock, choice: tap, icon: block?.icon, tile: block?.tile,
+                        setIcon: { model.setStripIcon($0, block: control.id) },
+                        setTile: { model.setStripTile($0, block: control.id) })
             case .load: FieldNote(text: "CPU use and memory, every few seconds; red when the Mac is short of memory.")
             case .volume: FieldNote(text: "The Mac's volume, as it changes.")
             case .empty: EmptyView()
             }
-            Divider().padding(.vertical, 2)
-            FieldRow("Tap") {
-                ActionPicker(slot: .stripTap, choice: tap) { model.setStripTap($0, block: control.id) }
-            }
-            ActionFields(model: model, slot: .stripTap, choice: tap) { model.setStripTap($0, block: control.id) }
-            ProblemNote(model: model, id: control.id, choice: tap)
-            if tap.needsAccessibility { AccessibilityBanner(model: model) }
             Divider().padding(.vertical, 2)
             TestRow(choice: tap) { await model.test(tap) }
             Spacer(minLength: 0)
@@ -68,31 +73,6 @@ struct StripEditor: View {
                 Text("\(Int(block.timeoutS.rounded())) s without an answer").monospacedDigit()
             }
             .fixedSize()
-        }
-    }
-
-    @ViewBuilder
-    private func pictureFields(_ block: StripBlockConfig?) -> some View {
-        FieldRow("Picture") {
-            HStack(spacing: 7) {
-                if let icon = block?.icon {
-                    Text((icon as NSString).lastPathComponent).lineLimit(1).truncationMode(.middle)
-                } else {
-                    Text("None chosen").foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 4)
-                Button("Choose…") {
-                    guard let source = Chooser.image(), let copy = model.importImage(source) else { return }
-                    model.editStripBlock(control.id, "Change Picture") { $0.icon = copy }
-                }
-            }
-        }
-        if let problem = model.iconProblem { FieldNote(text: problem, warning: true) }
-        if let icon = block?.icon, let image = DeckPreview.stripPicture(path: icon) {
-            Image(decorative: image, scale: 1).resizable().interpolation(.high)
-                .frame(width: 88, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .padding(.leading, FieldRow<EmptyView>.labelWidth + 10)
         }
     }
 }

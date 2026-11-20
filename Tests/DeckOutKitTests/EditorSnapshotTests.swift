@@ -107,3 +107,29 @@ import Testing
     try Snapshot.windowPNG(picker, size: CGSize(width: 360, height: 340), dark: false)
         .write(to: snapshotFolder.appendingPathComponent("symbol-picker.png"))
 }
+
+// The strip editor sets a tap first, then what the block shows: an icon like a key's, or a live reading. PNGs for a
+// look; the tile shows in the drawing at the block's size.
+@MainActor @Test func stripEditorsDraw() throws {   // T-158 (design check)
+    let library = try #require(SymbolLibrary(folder: resourcesFolder))
+    var config = AppConfig.empty
+    config.setStripBlock("1", StripBlockConfig(type: .internet, action: "shell:" + longCommand))
+    config.setStripBlock("4", StripBlockConfig(type: .picture, icon: "/System/Applications/Notes.app/Contents/Resources/AppIcon.icns"))
+    let model = try previewModel(config, deck: .n4, selection: "3")
+    model.symbolLibrary = library
+    model.setStripTap(.runCommand("echo weather"), block: "3")
+    model.setStripTile(IconTile(kind: .text, text: "Weather", symbol: nil, style: nil, background: "#0A84FF", foreground: nil), block: "3")
+    model.setStripTile(IconTile(kind: .symbol, text: nil, symbol: "cloud-sun", style: "fill", background: "#5E5CE6", foreground: nil), block: "2")
+    let drawn = try #require(model.images["3"])
+    #expect(drawn.width == 176 && drawn.height == 112)
+    // The editor's preview has the control's shape: a square key, a wide block.
+    #expect(IconShape.stripBlock.previewSize == CGSize(width: 88, height: 56))
+    #expect(IconShape.key(.n4).previewSize == CGSize(width: 56, height: 56))
+    for (name, block) in [("text", "3"), ("symbol", "2"), ("image", "4"), ("internet", "1")] {
+        model.selection = block
+        for dark in [false, true] {
+            let png = try Snapshot.windowPNG(DeckStage(model: model, face: DeckFace.of(.n4)), size: MainWindow.size, dark: dark)
+            try png.write(to: snapshotFolder.appendingPathComponent("strip-\(name)-\(dark ? "dark" : "light").png"))
+        }
+    }
+}

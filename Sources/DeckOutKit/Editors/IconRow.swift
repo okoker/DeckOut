@@ -1,14 +1,33 @@
 import DeckCore
 import SwiftUI
 
-/// Icon: the app's own (Open App), an image you choose, text on a colour, or a symbol from the library; and the key
-/// as the deck will show it (mockup: [App | Image | Text | Library]).
+/// Which control an icon is for: a key's square, or a strip block's wide 176 × 112.
+enum IconShape: Equatable {
+    case key(DeckKind)
+    case stripBlock
+
+    var previewSize: CGSize { self == .stripBlock ? CGSize(width: 88, height: 56) : CGSize(width: 56, height: 56) }
+
+    /// The icon as the deck shows it on this control.
+    func preview(_ path: String) -> CGImage? {
+        switch self {
+        case .key(let deck): return DeckPreview.keyImage(path: path, deck: deck)
+        case .stripBlock: return DeckPreview.stripPicture(path: path)
+        }
+    }
+}
+
+/// Icon: the app's own (Open App), an image you choose, text on a colour, or a symbol from the library; and the
+/// control as the deck will show it (mockup: [App | Image | Text | Library]). Keys and strip blocks alike: the
+/// control's icon, how it was made, and how to set each come in.
 struct IconRow: View {
     @ObservedObject var model: AppModel
-    let deck: DeckKind
-    let id: String
-    let choice: ActionChoice
-    let button: ButtonConfig?
+    let shape: IconShape
+    let choice: ActionChoice          // the key's action or the block's tap: App is offered for Open App
+    let icon: String?
+    let tile: IconTile?
+    let setIcon: (String?) -> Void
+    let setTile: (IconTile) -> Void
     @State private var choosingSymbol = false
 
     enum Source: Hashable { case app, image, text, library }
@@ -31,17 +50,17 @@ struct IconRow: View {
                 .controlSize(.small)
                 .fixedSize()
             }
-            if let tile = button?.tile, source == .text {
+            if let tile, source == .text {
                 FieldRow("Text") {
                     CommitTextField(value: tile.text ?? "", placeholder: "Up to three lines", multiline: true) { text in
                         var changed = tile
                         changed.text = text
-                        model.setTile(changed, button: id, on: deck)
+                        setTile(changed)
                     }
                 }
                 colourRows(tile)
             }
-            if let tile = button?.tile, source == .library {
+            if let tile, source == .library {
                 FieldRow("Symbol") {
                     Button(tile.symbol ?? "Choose…") { choosingSymbol = true }
                         .popover(isPresented: $choosingSymbol, arrowEdge: .leading) {
@@ -49,7 +68,7 @@ struct IconRow: View {
                                 var changed = tile
                                 changed.symbol = name
                                 changed.style = style
-                                model.setTile(changed, button: id, on: deck)
+                                setTile(changed)
                             }
                         }
                 }
@@ -62,8 +81,8 @@ struct IconRow: View {
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 10) {
                         if source == .image { Button("Choose…", action: chooseImage).controlSize(.small) }
-                        if button?.icon != nil {
-                            Button("No Icon") { model.setIcon(nil, button: id, on: deck) }
+                        if icon != nil {
+                            Button("No Icon") { setIcon(nil) }
                                 .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary)
                         }
                     }
@@ -80,8 +99,8 @@ struct IconRow: View {
     }
 
     private var source: Source? {
-        if let tile = button?.tile { return tile.kind == .text ? .text : .library }
-        guard let icon = button?.icon else { return nil }
+        if let tile { return tile.kind == .text ? .text : .library }
+        guard let icon else { return nil }
         return isOpenApp && AppModel.followsApp(icon) ? .app : .image
     }
 
@@ -90,7 +109,7 @@ struct IconRow: View {
         case .app?: return "The app's own icon, as the deck shows it."
         case .image?: return "Your image, as the deck shows it."
         case .text?, .library?: return "As the deck shows it."
-        case nil: return "No icon: a black screen."
+        case nil: return shape == .stripBlock ? "No icon: a black block." : "No icon: a black screen."
         }
     }
 
@@ -107,7 +126,7 @@ struct IconRow: View {
                         .onTapGesture {
                             var changed = tile
                             changed.background = hex
-                            model.setTile(changed, button: id, on: deck)
+                            setTile(changed)
                         }
                         .accessibilityLabel(hex)
                         .accessibilityAddTraits(.isButton)
@@ -118,7 +137,7 @@ struct IconRow: View {
             Picker("", selection: Binding(get: { tile.foreground ?? "auto" }, set: { value in
                 var changed = tile
                 changed.foreground = value == "auto" ? nil : value
-                model.setTile(changed, button: id, on: deck)
+                setTile(changed)
             })) {
                 Text("Auto").tag("auto")
                 Text("White").tag("#FFFFFF")
@@ -134,11 +153,11 @@ struct IconRow: View {
     private var preview: some View {
         ZStack {
             Color.black
-            if let icon = button?.icon, let image = DeckPreview.keyImage(path: icon, deck: deck) {
+            if let icon, let image = shape.preview(icon) {
                 Image(decorative: image, scale: 1).resizable().interpolation(.high)
             }
         }
-        .frame(width: 56, height: 56)
+        .frame(width: shape.previewSize.width, height: shape.previewSize.height)
         .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(rgb: 0x3B3B3E), lineWidth: 1.5).padding(-1))
     }
@@ -162,24 +181,22 @@ struct IconRow: View {
     private func pick(_ new: Source) {
         switch new {
         case .app:
-            if case .openApp(let path) = choice, let generated = model.appIcon(for: path) {
-                model.setIcon(generated, button: id, on: deck)
-            }
+            if case .openApp(let path) = choice, let generated = model.appIcon(for: path) { setIcon(generated) }
         case .image:
             chooseImage()
         case .text:
-            model.setTile(IconTile(kind: .text, text: Self.defaultText(choice), symbol: nil, style: nil,
-                                   background: Self.swatches[0], foreground: nil), button: id, on: deck)
+            setTile(IconTile(kind: .text, text: Self.defaultText(choice), symbol: nil, style: nil,
+                             background: Self.swatches[0], foreground: nil))
         case .library:
-            model.setTile(IconTile(kind: .symbol, text: nil, symbol: "star", style: "fill", background: Self.swatches[9],
-                                   foreground: nil), button: id, on: deck)
+            setTile(IconTile(kind: .symbol, text: nil, symbol: "star", style: "fill", background: Self.swatches[9],
+                             foreground: nil))
             choosingSymbol = true
         }
     }
 
     private func chooseImage() {
         guard let source = Chooser.image(), let copy = model.importImage(source) else { return }
-        model.setIcon(copy, button: id, on: deck)
+        setIcon(copy)
     }
 }
 

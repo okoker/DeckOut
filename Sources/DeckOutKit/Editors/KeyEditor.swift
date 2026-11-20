@@ -17,7 +17,9 @@ struct KeyEditor: View {
             ActionFields(model: model, slot: .key, choice: choice) { model.setAction($0, button: control.id, on: deck) }
             ProblemNote(model: model, id: control.id, choice: choice)
             if control.kind == .key {
-                IconRow(model: model, deck: deck, id: control.id, choice: choice, button: button)
+                IconRow(model: model, shape: .key(deck), choice: choice, icon: button?.icon, tile: button?.tile,
+                        setIcon: { model.setIcon($0, button: control.id, on: deck) },
+                        setTile: { model.setTile($0, button: control.id, on: deck) })
             }
             if choice.needsAccessibility { AccessibilityBanner(model: model) }
             Divider().padding(.vertical, 2)

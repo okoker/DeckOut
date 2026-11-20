@@ -1,13 +1,14 @@
 # Progress
 
-## Session Handover — 20/11/2026: seven backlog fixes on top of the UAT fixes; the owner re-tests both
+## Session Handover — 20/11/2026: eight backlog fixes on top of the UAT fixes; the owner re-tests both
 
 ### What was done
 - DeckOut phases 2–6 are on chained local branches (`deckout-2-app-shell` → … → `deckout-6-settings`); the owner's
   first UAT issues are fixed on `deckout-7-uat-fixes` (plan 7, from `deckout-6-settings`): BL-026 command field,
   BL-027 strip images, BL-028 / BL-011 presets. Then, on the same branch, seven backlog fixes (one commit each):
-  BL-006, BL-009, BL-010, BL-030, BL-013, BL-021, BL-032. Installed to `~/Applications/DeckOut Dev.app`. Not pushed,
-  merged or signed. Rulings per plan: `.superpowers/sdd/<plan>/progress.md`.
+  BL-006, BL-009, BL-010, BL-030, BL-013, BL-021, BL-032; then BL-005 (a reload sends only the screens that changed).
+  Installed to `~/Applications/DeckOut Dev.app`. Not pushed, merged or signed. Rulings per plan:
+  `.superpowers/sdd/<plan>/progress.md`.
 
 ### The owner's checks (quit and reopen DeckOut Dev first: the new app restarts the agent)
 - Command: type in the panel without Return, click Edit in Window…: the typing is there; Save (⌘Return, now the
@@ -16,6 +17,8 @@
   showing Notes' own icon, its tap changed to another app, shows that app's icon (BL-030); a text image on a block
   with no tap starts as "Block". An internet block's Host emptied goes back to one.one.one.one and turns green.
 - Every editor: Clear Key / Block / Knob sits at the bottom of the panel, with no stray scroll.
+- Change one key's icon on each deck: only that screen redraws (the agent log says `Drew 1 of 6` / `Drew 1 of 14`);
+  lock and unlock: every screen is sent again (`Drew 14 of 14`).
 - Presets: New Preset… → Cancel adds nothing; Return creates; a taken name greys out Create with the reason; Rename;
   the menu order; the name selected when the sheet opens; Save and Create look right (snapshots can't show them).
 
@@ -34,6 +37,8 @@
 - KI-008: replacing the bundle (`make install-dev`, registered or not) can get the agent's next start killed by a
   launch constraint; the app unregisters and registers afresh by itself after 10 s ("registered again" in its
   output), so the decks are dark ~10 s after an install.
+- A reload sends only the screens whose image changed, so it no longer repaints a deck showing something stale;
+  locking and unlocking the Mac, or replugging, does. Stale keys during UAT more likely mean a second agent drawing.
 - `--selftest` ends with Stop and Remove (it leaves the dev agent unregistered): don't run it while the owner uses
   DeckOut Dev for their decks.
 - Tests: `ImageRenderer` draws AppKit controls as yellow placeholders (use `Snapshot.windowPNG`); read tile pixels as
@@ -60,17 +65,33 @@ DeckOut Dev (`~/Applications`, a debug build of `deckout-7-uat-fixes`) drives th
 through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) is in the owner's
 UAT: it runs the deck controller from its bundle, edits every control, presets, brightness, the lock photo, generated
 icons, monitors and its own removal.
+20/11/2026 — BL-005 on `deckout-7-uat-fixes` (to 38094e3): `swift test` 217/217 (new T-169), watched; `make install-dev` (build 261120.103217), one `--snapshot` run: KI-008 on the restart, the app re-registered 10 s later, window "Deck controller running"; the agent drew 6 of 6 and 14 of 14 on connect; one `--post-reload` with nothing changed: "Drew 0 of 6 slots on n3 in 1 ms", "Drew 0 of 14 slots on n4 in 4 ms", "Reloaded in 7 ms" (433–453 ms before). Not checked: a changed key and an unlock on the decks (owner, at UAT).
 20/11/2026 — Seven backlog fixes on `deckout-7-uat-fixes` (to 1b615ac): `swift test` 210/210 (new T-162–T-168), watched; `make install-dev` (build 261120.035630), then one `--snapshot` run of the real app: it asked the old agent to restart, the new one hit KI-008 and the app's own recovery re-registered it 10 s later; the window said "Deck controller running" (the new agent's build), and the agent drew the N3 and the N4's lock photo (Mac locked). Not checked: live strip pushes (paused while locked), every click (owner, at UAT).
 20/11/2026 — DeckOut plan 7 on `deckout-7-uat-fixes`: `swift test` 198/198 (new T-153–T-161; T-132 changed), watched; `make install-dev` installed it. Not checked: the clicks in the real window (owner, at UAT; the app was theirs and open).
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
 20/11/2026 — DeckOut plan 6 on `deckout-6-settings`: `swift test` 185/185 (new T-144–T-152), watched; test sessions 6–7: `--selftest` 23/23 (the app's own m1ddc lists "LG HDR 4K · Left / Right", both answer a brightness read; Stop and Remove stays removed 15 s later with launchd holding no job); the old-controller screen in the real window. Not checked: Retire It on the real plist, Settings by hand (owner, at UAT).
-20/11/2026 — DeckOut plan 5 on `deckout-5-icons`: `swift test` 172/172 on the branch (new T-139–T-143), watched; test session 5: `--selftest` passed with a text and a symbol tile drawn by the real app's bundled library; the app recovered from KI-008 by itself. Not checked: the pickers by hand (owner, at UAT).
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
 - UAT of DeckOut (handover above), then merge, signing and release (design phase 7). Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 20/11/2026 — A reload redraws only the screens that changed, in milliseconds
+- **Reference:** `docs/reference/n4.md` (Locked Mac; Running it), `docs/reference/device_quirks.md`,
+  `docs/REQUIREMENTS.md` (reload); plan `docs/superpowers/plans/2026-11-20-deckout-bl-005-redraw-changes.md`; T-169;
+  BL-005.
+- **For a person:** every edit in DeckOut, and every reload from a script, used to redraw all 20 screens (~0.45 s, with
+  presses waiting); now only the screens whose picture changed are sent, and a reload with nothing to send takes 7 ms.
+  A script that rewrites a key's icon at the same path and posts a reload still shows the new picture (icon files are
+  read again every time and compared by content); live blocks are drawn from their latest reading. Unlocking the Mac
+  repaints every screen, which puts right a deck that reset itself.
+- **Decision (owner, 20/11/2026):** every reload, the app's and outside ones, sends only changes; unlock repaints all.
+  (CL calls:) change is judged on the file's bytes, not its path, date or size; an icon that won't decode logs its
+  warning once, then stays black until its bytes change.
+- **Checked:** run line above. One implementer, read by CL, then a fresh reviewer: no critical or important issues;
+  its minor (a failed final packet left slots marked as shown) fixed. Parked: a huge file set as an icon is read in
+  full on every reload.
 
 ### 20/11/2026 — Seven backlog fixes: strip images follow the tap's app, Stop and Remove can't be undone behind your back, tidier editors
 - **Reference:** `docs/reference/app.md` (Launch; Editing; First run and removal), `docs/REQUIREMENTS.md` (XPC);
@@ -118,16 +139,6 @@ icons, monitors and its own removal.
   undone by the app's own recovery (critical), monitor reordering that showed nothing, and silent non-answering
   monitors; all fixed test-first, and the removal fix proven live.
 
-### 20/11/2026 — Keys can show text or a symbol on a colour, made in DeckOut
-- **Reference:** `docs/reference/app.md` (Icons); plan `docs/superpowers/plans/2026-11-19-deckout-5-icons.md`;
-  T-139–T-143; BL-020–BL-023.
-- **For a person:** besides an app's icon or your own picture, a key can show a word or two (wrapped, sized to fit)
-  or one of 1,530 symbols, on one of ten colours, with the text colour picked to read well. The key remembers how its
-  icon was made, so you can change the words or the colour later.
-- **Decision (owner, 19/11/2026):** the Phosphor library (MIT). (CL calls:) ten swatches and Auto / White / Black
-  instead of a colour well; tiles drawn by the app, the agent still draws a file.
-- **Checked:** `swift test` 172/172; test session 5 (run line above). A fresh reviewer found symbols drawn off-centre
-  and long text going unreadable, plus a typo in a tile able to stop the agent loading the file: all fixed test-first.
 
 ## History
 Older work: `old_progress/README.md`.

@@ -44,9 +44,6 @@ Next free ID: BL-034
 - BL-015 [P2] [debt] Small loose ends from the plan 3 review: the Undo / Redo menu items are never greyed out; each
   Allow… click schedules its own 30 status checks; a slider pause of over a second mid-drag makes two undo steps
   (bracket with `onEditingChanged` instead of a time gap). `Toolbar.swift`, `AppModel+Editing.swift`
-- BL-016 [P2] [bug] When the lock-photo preview's file can't be read, the agent tries to load it twice per draw
-  (cache miss, then the fallback load): two warnings per move and reload. Return early on a failed preview load.
-  `Daemon.swift` (`drawLockPhoto`), `LockPhoto.swift` (plan 4 review)
 - BL-018 [P2] [debt] Chosen lock photos (and pictures) are never deleted: every Choose leaves a file in the config
   folder. Clean up at quit, keeping anything the config or the undo history still names. `IconFiles.swift`
   (plan 4 review)
@@ -59,8 +56,6 @@ Next free ID: BL-034
   Library and closing the popover leaves the starting star on the key (undoable). `IconRow.swift` (plan 5 review)
 - BL-023 [P2] [debt] The icons folder only grows: every colour tap or text edit writes a new `tile-<hash>.png`. Sweep
   files no config or undo step names (with BL-018). `IconFiles.swift` (plan 5 review)
-- BL-025 [P2] [debt] `AppModel.m1ddcPath` repeats `BrightnessControl.findM1DDC`'s search. Make the DeckCore one
-  public and use it. `AppModel+Settings.swift`, `BrightnessControl.swift` (plan 6 review)
 - BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three
   live readings (internet, CPU and memory, volume) are written into the agent, so each new one needs code. Owner
   (20/11/2026): new kinds are not built into the app. They live in a folder people put them into, in a documented

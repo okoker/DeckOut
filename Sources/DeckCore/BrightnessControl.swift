@@ -1,6 +1,6 @@
 import Foundation
 
-final class BrightnessControl {
+public final class BrightnessControl {
 
     // MARK: - Types
 
@@ -344,8 +344,9 @@ final class BrightnessControl {
         }
     }
 
-    /// The app's own copy (`DeckOut.app/Contents/Helpers/m1ddc`), else Homebrew's.
-    static func findM1DDC(bundleURL: URL = Bundle.main.bundleURL,
+    /// The app's own copy (`DeckOut.app/Contents/Helpers/m1ddc`), else Homebrew's. The app's Settings use it too, so
+    /// monitors are listed with the m1ddc the agent drives them with.
+    public static func findM1DDC(bundleURL: URL = Bundle.main.bundleURL,
                           executable: (String) -> Bool = { FileManager.default.isExecutableFile(atPath: $0) }) -> String? {
         [bundleURL.appendingPathComponent("Contents/Helpers/m1ddc").path, "/opt/homebrew/bin/m1ddc", "/usr/local/bin/m1ddc"]
             .first(where: executable)

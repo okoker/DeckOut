@@ -172,6 +172,33 @@ private func quadrantPhoto(width: Int, height: Int) -> CGImage {
     #expect(loads == 3)
 }
 
+@Test func anUnreadablePreviewPhotoIsTriedOnce() {                  // T-178
+    var cacheLoads = 0, directLoads = 0
+    let framing = LockPhotoConfig(path: "/gone.jpg", zoom: 1)
+    let unreadable = LockPhoto.PreviewCache { _ in cacheLoads += 1; return nil }
+    // A preview whose photo can't be read: one try (one warning) per draw, not a second through the direct load.
+    let shown = LockPhoto.slicesToDraw(framing, previewing: true, cache: unreadable,
+                                       load: { _ in directLoads += 1; return nil })
+    #expect(shown.isEmpty)
+    #expect(cacheLoads + directLoads == 1)
+
+    // No preview up (the Mac locked): the config's photo is loaded directly, once, and drawn; the cache isn't used.
+    cacheLoads = 0
+    directLoads = 0
+    let locked = LockPhoto.slicesToDraw(framing, previewing: false, cache: unreadable,
+                                        load: { _ in directLoads += 1; return quadrantPhoto(width: 80, height: 40) })
+    #expect(!locked.isEmpty)
+    #expect(directLoads == 1 && cacheLoads == 0)
+
+    // A preview whose photo reads: drawn from the cache, no direct load.
+    directLoads = 0
+    let readable = LockPhoto.PreviewCache { _ in quadrantPhoto(width: 80, height: 40) }
+    let previewed = LockPhoto.slicesToDraw(framing, previewing: true, cache: readable,
+                                           load: { _ in directLoads += 1; return nil })
+    #expect(!previewed.isEmpty)
+    #expect(directLoads == 0)
+}
+
 @Test func previewSeesAReplacedPhoto() throws {                     // T-177
     let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-photo-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

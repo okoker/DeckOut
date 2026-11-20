@@ -5,11 +5,8 @@ import Foundation
 /// Settings: monitors for the brightness keys, the deck controller's state.
 extension AppModel {
 
-    /// The m1ddc the app and its agent use: the app's own, else Homebrew's.
-    var m1ddcPath: String? {
-        [Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/m1ddc").path,
-         "/opt/homebrew/bin/m1ddc", "/usr/local/bin/m1ddc"].first { FileManager.default.isExecutableFile(atPath: $0) }
-    }
+    /// The m1ddc the app and its agent use: the app's own, else Homebrew's (the agent's own search, not a copy).
+    var m1ddcPath: String? { BrightnessControl.findM1DDC() }
 
     /// Lists the monitors (`m1ddc display list detailed`) and checks each answers a brightness read (`display N get
     /// luminance`, read only, 3 s each at most), off the main thread.

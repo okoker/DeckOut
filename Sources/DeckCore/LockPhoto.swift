@@ -138,6 +138,14 @@ public enum LockPhoto {
         return slices(photo, rects: rects, framing: framing).compactMapValues { Canvas.encodeJPEG($0) }
     }
 
+    /// What the N4 shows for `framing`: the preview's photo (decoded once, from `cache`) while a preview is up, else
+    /// the photo loaded now. A preview photo that can't be read gives nothing: it was tried, and warned about, once.
+    static func slicesToDraw(_ framing: LockPhotoConfig, previewing: Bool, cache: PreviewCache,
+                             load: (String) -> CGImage? = LockPhoto.load(path:)) -> [UInt8: Data] {
+        guard let photo = previewing ? cache.image(for: framing.path) : load(framing.path) else { return [:] }
+        return jpegSlices(framing, photo: photo)
+    }
+
     // MARK: - Private
 
     private static func aspectFill(_ size: CGSize, in bounds: CGRect) -> CGRect {

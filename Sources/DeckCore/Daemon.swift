@@ -250,8 +250,7 @@ public final class Daemon {
     private func drawLockPhoto(_ connection: DeckConnection, everySlot: Bool = false) -> Bool {
         guard connection.model.kind == .n4, let framing = lockPhotoPreview ?? config.n4?.lockPhoto else { return false }
         let started = Date()
-        let preview = lockPhotoPreview.flatMap { previewPhotos.image(for: $0.path) }
-        let slices = LockPhoto.jpegSlices(framing, photo: preview)
+        let slices = LockPhoto.slicesToDraw(framing, previewing: lockPhotoPreview != nil, cache: previewPhotos)
         guard !slices.isEmpty else { return false }
         let sent = connection.drawChanged(slices, everySlot: everySlot)
         print("Drew lock photo on n4 (\(sent) of \(slices.count) slots) in \(Int(Date().timeIntervalSince(started) * 1000)) ms")

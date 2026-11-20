@@ -29,7 +29,9 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var oldControllerPending = false
     @Published public private(set) var keptOldController = false
     @Published public private(set) var oldControllerProblem: String?
+    @Published public private(set) var retiring = false
     @Published public private(set) var removed = false
+    @Published public private(set) var removalProblem: String?
     /// External monitors as m1ddc lists them now, and where each sits.
     @Published public internal(set) var monitors: [Monitor] = []
     @Published public internal(set) var monitorPlaces: [UInt32: String] = [:]
@@ -203,6 +205,7 @@ public final class AppModel: ObservableObject {
             log("not inside a DeckOut bundle")
             return
         }
+        guard !removed else { return }      // removed on purpose: only Start Again brings it back
         #if DEBUG
         if arguments.contains("--unregister") {
             do {
@@ -232,9 +235,9 @@ public final class AppModel: ObservableObject {
         await register()
     }
 
-    /// Registers the agent with macOS, then starts the link.
+    /// Registers the agent with macOS, then starts the link. Never while removed.
     func register() async {
-        guard let registrar else { return }
+        guard let registrar, !removed else { return }
         let state = await registrar.ensureRegistered()
         registration = state
         log("registration: \(state)")
@@ -242,9 +245,16 @@ public final class AppModel: ObservableObject {
     }
 
     /// Retire It: launchd stops the old controller and its plist moves aside (kept); then DeckOut registers.
-    public func retireOldController(launchctl: ([String]) -> Int32 = OldController.runLaunchctl) async {
+    public func retireOldController(launchctl: @escaping @Sendable ([String]) -> Int32 = { OldController.runLaunchctl($0) }) async {
+        guard !retiring else { return }      // a double click
+        retiring = true
+        defer { retiring = false }
+        let home = self.home
         do {
-            try OldController.retire(home: home, launchctl: launchctl)
+            try await Task.detached { try OldController.retire(home: home, launchctl: launchctl) }.value
+        } catch OldController.RetireError.stillRunning {
+            oldControllerProblem = "It's still running: launchd didn't stop it. Log out and back in, then try again."
+            return
         } catch {
             oldControllerProblem = "It couldn't be moved aside: \(error.localizedDescription)"
             return
@@ -262,27 +272,33 @@ public final class AppModel: ObservableObject {
         await register()
     }
 
-    /// Stops the deck controller and takes it out of Login Items (the first step of removing DeckOut).
+    /// Stops the deck controller and takes it out of Login Items (the first step of removing DeckOut). Removed is set
+    /// first and the link stopped, so nothing (the not-answering recovery, coming back to the app, the window opening
+    /// again) registers it again; only Start Again does.
     public func stopAndRemove() async {
         guard let registrar else { return }
+        removed = true
+        link?.stop()
         do {
             try await registrar.unregister()
-            removed = true
+            removalProblem = nil
             log("agent unregistered (removal)")
         } catch {
+            removalProblem = "macOS didn't take it out of Login Items: \(error.localizedDescription)"
             log("unregister failed: \(error.localizedDescription)")
         }
     }
 
     public func startAgain() async {
         removed = false
+        removalProblem = nil
         await register()
     }
 
     /// The app became active (back from System Settings, say): if the agent isn't registered and answering, look
     /// again. Switched off in Login Items while the window was open shows up here as needing approval.
     public func recheckRegistration() async {
-        guard let registrar, registration != nil, link?.state != .connected else { return }
+        guard let registrar, registration != nil, !removed, !oldControllerPending, link?.state != .connected else { return }
         let state = await registrar.ensureRegistered()
         let was = registration
         registration = state
@@ -295,7 +311,7 @@ public final class AppModel: ObservableObject {
     }
 
     private func registerAgain() async {
-        guard let registrar else { return }
+        guard let registrar, !removed else { return }
         let state = await registrar.registerAgain()
         registration = state
         log("registered again: \(state)")

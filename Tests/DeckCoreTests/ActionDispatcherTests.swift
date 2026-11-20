@@ -35,3 +35,18 @@ import Testing
     }
     #expect(fastFinished < 1, "the quick command waited \(fastFinished) s behind the slow one")
 }
+
+@Test func brightnessSaysWhyItCant() async {                         // T-152 (plan 6 review I2)
+    func problem(_ displays: [DisplayConfig]?) async -> String? {
+        let dispatcher = ActionDispatcher(config: AppConfig(displays: displays), brightness: nil,
+                                          environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]))
+        return await withCheckedContinuation { done in
+            DispatchQueue.main.async {
+                dispatcher.execute(ResolvedAction(action: "display_brightness", step: 5)) { done.resume(returning: $0.error) }
+            }
+        }
+    }
+    #expect(await problem(nil) == "Monitor brightness: no monitors set up (DeckOut → Settings → Monitors)")
+    #expect(await problem([DisplayConfig(name: "Left", serial: "S")])
+            == "Monitor brightness: monitors are set up but none could be reached (m1ddc missing, or no monitor answered)")
+}

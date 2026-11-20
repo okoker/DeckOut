@@ -54,6 +54,9 @@ struct GeneralSettings: View {
                 }
             }
             Section {
+                if let problem = model.removalProblem {
+                    Text(problem).foregroundStyle(.red)
+                }
                 LabeledContent("Login Items") {
                     HStack {
                         Text("Starts at login and runs in the background.")
@@ -62,7 +65,7 @@ struct GeneralSettings: View {
                     }
                 }
             } footer: {
-                Text("To remove DeckOut: Stop and Remove, then drag DeckOut to the Bin. Your settings stay in ~/.config/vsd.")
+                Text("To remove DeckOut: Stop and Remove, then drag DeckOut to the Bin. Your settings stay in \(model.configFolderForPeople).")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
@@ -86,14 +89,17 @@ struct MonitorSettings: View {
     var body: some View {
         Form {
             Section {
-                ForEach(model.monitors) { monitor in
+                ForEach(model.monitorsInOrder) { monitor in
                     let used = model.displayConfig(monitor.serial)
+                    let silent = monitor.answers == false
                     HStack(spacing: 10) {
                         Toggle("", isOn: Binding(get: { used != nil }, set: { model.useMonitor(monitor, $0) }))
                             .labelsHidden()
+                            .disabled(silent && used == nil)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(model.monitorLabel(monitor))
-                            Text("Serial \(monitor.serial)").font(.caption).foregroundStyle(.secondary)
+                            Text(silent ? "Doesn't answer brightness control" : "Serial \(monitor.serial)")
+                                .font(.caption).foregroundStyle(silent ? Color(rgb: 0xFF9F0A) : .secondary)
                         }
                         Spacer()
                         if let used {
@@ -129,7 +135,10 @@ struct MonitorSettings: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear { if model.monitors.isEmpty { model.loadMonitors() } }
+        .onAppear { model.loadMonitors() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+            model.loadMonitors()
+        }
     }
 }
 

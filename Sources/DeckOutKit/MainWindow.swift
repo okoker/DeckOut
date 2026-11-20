@@ -55,10 +55,10 @@ public struct MainWindow: View {
         switch model.screen {
         case .moveToApplications(let message): MoveToApplicationsScreen(message: message)
         case .oldController:
-            OldControllerScreen(problem: model.oldControllerProblem,
+            OldControllerScreen(problem: model.oldControllerProblem, busy: model.retiring,
                                 retire: { Task { await model.retireOldController() } },
                                 keep: { Task { await model.keepOldController() } })
-        case .removed: RemovedScreen { Task { await model.startAgain() } }
+        case .removed: RemovedScreen(configFolder: model.configFolderForPeople) { Task { await model.startAgain() } }
         case .starting: StartingScreen()
         case .needsApproval: NeedsApprovalScreen { SMAppService.openSystemSettingsLoginItems() }
         case .agentProblem(let message): AgentProblemScreen(message: message) { Task { await model.tryAgain() } }

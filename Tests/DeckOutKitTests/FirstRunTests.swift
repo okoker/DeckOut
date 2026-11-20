@@ -42,8 +42,8 @@ private final class CountingService: ServiceManaging, @unchecked Sendable {
     let fresh = CountingService()
     let second = try model(home: home, service: fresh)
     await second.launch(arguments: ["DeckOut"], bundlePath: "/Users/x/Applications/DeckOut Dev.app")
-    var launchctl: [[String]] = []
-    await second.retireOldController { launchctl.append($0); return 0 }
+    nonisolated(unsafe) var launchctl: [[String]] = []
+    await second.retireOldController { args in launchctl.append(args); return args.first == "print" ? 113 : 0 }
     #expect(launchctl.first?.first == "bootout")
     #expect(OldController.find(home: home) == nil)
     #expect(fresh.registers == 1)
@@ -63,4 +63,37 @@ private final class CountingService: ServiceManaging, @unchecked Sendable {
     await app.startAgain()
     #expect(service.registers == 2)
     #expect(app.screen != .removed)
+}
+
+@MainActor @Test func removalStaysRemoved() async throws {   // T-149 (review C1)
+    // With a real link: after Stop and Remove, the agent going away must not re-register it, nor coming back to
+    // the app, nor the window opening again; only Start Again does.
+    let home = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-home-\(UUID().uuidString)").path
+    let service = CountingService()
+    let server = StubServer(agent: StubAgent(build: "t"))
+    var refuse = false
+    let refusing = RefusingServer()
+    let link = AgentLink(connect: { refuse ? refusing.connect() : server.connect() }, appBuild: "t",
+                         retryDelay: 0.05, answerTimeout: 0.3, dropGrace: 0.1)
+    let app = AppModel(identity: .dev, appBuild: "t", link: link,
+                       store: ConfigStore(path: try tempConfigPath(), reload: {}),
+                       registrar: AgentRegistrar(service: service, sleep: { _ in }), home: home)
+    await app.launch(arguments: ["DeckOut"], bundlePath: "/Users/x/Applications/DeckOut Dev.app")
+    #expect(await until { link.state == .connected })
+    #expect(service.registers == 1)
+
+    await app.stopAndRemove()
+    #expect(service.unregisters == 1)
+    #expect(app.screen == .removed)
+    // The agent goes (as unregistering stops it) and nothing answers again.
+    refuse = true
+    for connection in server.serverSide { connection.invalidate() }
+    try await Task.sleep(nanoseconds: 800_000_000)
+    await app.becameActive()
+    await app.launch(arguments: ["DeckOut"], bundlePath: "/Users/x/Applications/DeckOut Dev.app")
+    #expect(service.registers == 1, "nothing registered it again")
+    #expect(app.screen == .removed)
+
+    await app.startAgain()
+    #expect(service.registers == 2)
 }

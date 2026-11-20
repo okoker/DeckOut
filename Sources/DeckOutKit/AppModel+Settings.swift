@@ -11,7 +11,8 @@ extension AppModel {
          "/opt/homebrew/bin/m1ddc", "/usr/local/bin/m1ddc"].first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
-    /// Lists the monitors (`m1ddc display list detailed`, read only), off the main thread.
+    /// Lists the monitors (`m1ddc display list detailed`) and checks each answers a brightness read (`display N get
+    /// luminance`, read only, 3 s each at most), off the main thread.
     public func loadMonitors() {
         guard let path = m1ddcPath else {
             monitorsNote = "m1ddc isn't in this build, so monitors can't be listed."
@@ -19,26 +20,45 @@ extension AppModel {
         }
         monitorsNote = "Looking for monitors…"
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: path)
-            process.arguments = ["display", "list", "detailed"]
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            process.standardError = FileHandle.nullDevice
-            var found: [Monitor] = []
-            if (try? process.run()) != nil {
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                process.waitUntilExit()
-                found = MonitorList.parse(String(decoding: data, as: UTF8.self))
+            var found = MonitorList.parse(Self.run(path, ["display", "list", "detailed"])?.output ?? "")
+            for index in found.indices {
+                let reading = Self.run(path, ["display", "\(found[index].number)", "get", "luminance"], timeout: 3)
+                found[index].answers = reading.map { MonitorList.answers(output: $0.output, exitStatus: $0.status) } ?? false
             }
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.monitors = found
                 let frames = MonitorList.screenFrames().filter { id, _ in found.contains { $0.displayID == id } }
                 self.monitorPlaces = MonitorList.places(frames)
-                self.monitorsNote = found.isEmpty ? "No external monitors that answer to brightness control." : nil
+                self.monitorsNote = found.isEmpty ? "No external monitors found." : nil
             }
         }
+    }
+
+    /// Runs m1ddc and returns what it printed and its exit status; nil if it couldn't start or ran past `timeout`.
+    nonisolated static func run(_ path: String, _ arguments: [String], timeout: TimeInterval = 10) -> (output: String, status: Int32)? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: path)
+        process.arguments = arguments
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        let timer = DispatchWorkItem { if process.isRunning { process.terminate() } }
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: timer)
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        timer.cancel()
+        guard process.terminationReason == .exit else { return nil }
+        return (String(decoding: data, as: UTF8.self), process.terminationStatus)
+    }
+
+    /// The monitors as Settings lists them: the ones in use in Switch Monitor's order, then the rest.
+    public var monitorsInOrder: [Monitor] { MonitorList.ordered(monitors, displays: config?.displays) }
+
+    /// "~/.config/vsd" (dev: "~/.config/vsd-dev"), for messages.
+    public var configFolderForPeople: String {
+        identity?.isDev == true ? "~/.config/vsd-dev" : "~/.config/vsd"
     }
 
     /// "LG HDR 4K · Left".

@@ -4,6 +4,7 @@ import Foundation
 /// While it runs next to DeckOut's own, every press fires twice. DeckOut offers to retire it, only on a click:
 /// launchd stops it and its plist moves aside (kept, so it can be put back); its program and config are left alone.
 public enum OldController {
+    public enum RetireError: Error { case stillRunning }
     public static let label = "com.streamdeck.controller"
 
     public static func plistPath(home: String) -> String {
@@ -16,12 +17,16 @@ public enum OldController {
         return FileManager.default.fileExists(atPath: path) ? path : nil
     }
 
-    /// Stops it (`launchctl bootout gui/<uid>/com.streamdeck.controller`; failing because it isn't running is fine)
-    /// and moves its plist to `….plist.retired-by-deckout`, replacing an older retired copy.
+    /// Stops it by its plist (`launchctl bootout gui/<uid> <plist>`, the README's own form), checks launchd no longer
+    /// has it (`launchctl print gui/<uid>/com.streamdeck.controller` fails), then moves the plist to
+    /// `….plist.retired-by-deckout`. Still loaded → `RetireError.stillRunning`, and nothing is moved. Already
+    /// retired (no plist): nothing happens, and the kept copy is left alone.
     public static func retire(home: String, uid: uid_t = getuid(),
                               launchctl: ([String]) -> Int32 = OldController.runLaunchctl) throws {
-        _ = launchctl(["bootout", "gui/\(uid)/\(label)"])
         let path = plistPath(home: home), retired = path + ".retired-by-deckout"
+        guard FileManager.default.fileExists(atPath: path) else { return }
+        _ = launchctl(["bootout", "gui/\(uid)", path])
+        guard launchctl(["print", "gui/\(uid)/\(label)"]) != 0 else { throw RetireError.stillRunning }
         try? FileManager.default.removeItem(atPath: retired)
         try FileManager.default.moveItem(atPath: path, toPath: retired)
     }

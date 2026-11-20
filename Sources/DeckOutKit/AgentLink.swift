@@ -71,6 +71,20 @@ public final class AgentLink: ObservableObject {
         open()
     }
 
+    /// Stops the link for good (the agent was removed): no reconnects, no "not answering" deadline, no status.
+    /// `start()` starts it again.
+    public func stop() {
+        started = false
+        generation += 1                      // ignore the old connection's handlers and any pending retry
+        deadline += 1                        // and any pending deadline
+        awaitingAnswer = false
+        connection?.invalidate()
+        connection = nil
+        status = nil
+        liveStrip = LiveStrip(images: [:])
+        state = .connecting
+    }
+
     /// Asks for the status again (e.g. while waiting for a permission to be granted).
     public func refreshStatus() {
         askStatus(generation)

@@ -154,8 +154,7 @@ public final class ActionDispatcher {
 
         if action == "display_brightness" {
             guard let bc = brightnessControl else {
-                let problem = brightnessBuilding ? "display_brightness: monitors not ready yet"
-                                                 : "display_brightness action but no displays configured"
+                let problem = brightnessBuilding ? "display_brightness: monitors not ready yet" : noMonitorsProblem
                 print("Warning: \(problem)")
                 return problem
             }
@@ -165,8 +164,7 @@ public final class ActionDispatcher {
 
         if action == "display_brightness_cycle" {
             guard let bc = brightnessControl else {
-                let problem = brightnessBuilding ? "display_brightness_cycle: monitors not ready yet"
-                                                 : "display_brightness_cycle action but no displays configured"
+                let problem = brightnessBuilding ? "display_brightness_cycle: monitors not ready yet" : noMonitorsProblem
                 print("Warning: \(problem)")
                 return problem
             }
@@ -176,6 +174,13 @@ public final class ActionDispatcher {
 
         print("Warning: unknown action '\(action)'")
         return "unknown action '\(action)'"
+    }
+
+    /// Why there's no monitor control: none set up, or set up but unreachable (no m1ddc, no monitor answered).
+    private var noMonitorsProblem: String {
+        (config.displays ?? []).isEmpty
+            ? "Monitor brightness: no monitors set up (DeckOut → Settings → Monitors)"
+            : "Monitor brightness: monitors are set up but none could be reached (m1ddc missing, or no monitor answered)"
     }
 
     // MARK: - Key shortcut simulation

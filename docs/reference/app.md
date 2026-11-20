@@ -129,20 +129,28 @@ the job definition it registered: a changed plist needs a new label.
 ## First run and removal
 - **The hand-installed controller** (the README's `com.streamdeck.controller`): when its plist is in
   `~/Library/LaunchAgents`, DeckOut asks before registering its own ("Another deck controller is installed"):
-  **Retire It** boots it out of launchd and moves its plist to `….plist.retired-by-deckout` (kept for rollback; its
-  program and the config stay), then registers DeckOut's; **Not Now** registers DeckOut's anyway and the status line
+  **Retire It** boots it out of launchd by its plist (`launchctl bootout gui/<uid> <plist>`), checks launchd no
+  longer has it (if it does: "still running", nothing moved), and moves its plist to `….plist.retired-by-deckout`
+  (kept for rollback; its program and the config stay), then registers DeckOut's; it runs off the main thread and
+  its buttons wait while it does; a second Retire It leaves the kept copy alone; **Not Now** registers DeckOut's anyway and the status line
   keeps warning that presses may fire twice. Automated debug runs (`--selftest`, `--snapshot`) skip the question.
-- **Removal:** Settings → General → Stop and Remove… (confirmed) unregisters the agent (out of launchd and Login
-  Items) and shows "The deck controller is stopped" with Quit and Start Again; then the person bins the app. The
-  config stays in `~/.config/vsd`.
+- **Removal:** Settings → General → Stop and Remove… (confirmed) stops the link and unregisters the agent (out of
+  launchd and Login Items) and shows "The deck controller is stopped" with Quit and Start Again; then the person bins
+  the app. Nothing registers it again (the not-answering recovery, coming back to the app, the window opening again)
+  until Start Again. The config stays in `~/.config/vsd` (dev: `vsd-dev`). Not verified: what macOS does when the
+  app is binned while still registered (Stop and Remove first).
+- Brightness actions with no monitor control say why: none set up (Settings → Monitors), or set up but unreachable
+  (m1ddc missing, or no monitor answered).
 
 ## Settings (⌘,)
 - **General:** the deck controller's state, version and build; whether the shell's settings were read (Read Again);
   Accessibility (Allow…); Stop and Remove….
-- **Monitors:** the monitors the app's own `m1ddc` lists (`display list detailed`, read only), told apart by where
-  they sit (Left / Right / Middle, Top / Bottom); turning one on adds it to `displays` (named by its place) at the
-  end of Switch Monitor's order; a name field and up / down reorder; monitors in `displays` that aren't connected
-  show with Forget; Look Again.
+- **Monitors:** the monitors the app's own `m1ddc` lists (`display list detailed`), each checked with a read-only
+  brightness read (`get luminance`, 3 s at most; one that doesn't answer says so and can't be turned on); told
+  apart by where they sit (Left / Right / Middle, Top / Bottom); listed in Switch Monitor's order (the ones in use
+  first); turning one on adds it to `displays` (named by its place) at the end of that order; a name field and up /
+  down reorder; monitors in `displays` that aren't connected show with Forget; Look Again; the list refreshes when
+  Settings opens and when screens change. A monitor without a serial ("(null)") isn't listed.
 - **About:** version and build; the DeckOut, Phosphor and m1ddc licences, from the app's Resources.
 - **m1ddc** 1.3.1 (MIT) is built from `Vendor/m1ddc` into `Contents/Helpers/m1ddc`; the agent and the app use it
   before Homebrew's (the agent logs which).

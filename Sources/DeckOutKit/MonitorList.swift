@@ -1,4 +1,5 @@
 import AppKit
+import DeckCore
 import Foundation
 
 /// An external monitor as `m1ddc` lists it.
@@ -7,7 +8,17 @@ public struct Monitor: Equatable, Identifiable, Hashable {
     public let name: String         // product name
     public let serial: String       // AN serial: what `displays` stores
     public let displayID: UInt32    // the screen's CGDirectDisplayID
+    /// Whether it answered a brightness read (nil: not checked yet).
+    public var answers: Bool?
     public var id: String { serial }
+
+    public init(number: Int, name: String, serial: String, displayID: UInt32, answers: Bool? = nil) {
+        self.number = number
+        self.name = name
+        self.serial = serial
+        self.displayID = displayID
+        self.answers = answers
+    }
 }
 
 /// The monitors the brightness keys can set, and where each sits, so two of the same model can be told apart.
@@ -18,7 +29,7 @@ public enum MonitorList {
         var monitors: [Monitor] = []
         var number: Int?, name: String?, serial: String?, displayID: UInt32?
         func flush() {
-            if let number, let serial, !serial.isEmpty, let displayID {
+            if let number, let serial, !serial.isEmpty, serial != "(null)", let displayID {
                 monitors.append(Monitor(number: number, name: name ?? "Monitor \(number)", serial: serial, displayID: displayID))
             }
         }
@@ -61,6 +72,19 @@ public enum MonitorList {
         default: labels = ordered.indices.map { "\(sideBySide ? "From the left" : "From the top"), \($0 + 1)" }
         }
         return Dictionary(uniqueKeysWithValues: zip(ordered.map(\.key), labels))
+    }
+
+    /// The monitors in use first, in `displays` (Switch Monitor's) order, then the rest as listed.
+    public static func ordered(_ monitors: [Monitor], displays: [DisplayConfig]?) -> [Monitor] {
+        let order = (displays ?? []).map(\.serial)
+        let used = order.compactMap { serial in monitors.first { $0.serial == serial } }
+        return used + monitors.filter { !order.contains($0.serial) }
+    }
+
+    /// Whether `m1ddc display N get luminance` got a reading: exit 0 and a number (it prints "DDC communication
+    /// failure: …" otherwise).
+    public static func answers(output: String, exitStatus: Int32) -> Bool {
+        exitStatus == 0 && Int(output.trimmingCharacters(in: .whitespacesAndNewlines)) != nil
     }
 
     /// The screens macOS shows now: display ID → frame.

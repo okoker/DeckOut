@@ -1,4 +1,5 @@
 import CoreGraphics
+import DeckCore
 import Testing
 @testable import DeckOutKit
 
@@ -39,4 +40,20 @@ let detailedFixture = """
     #expect(MonitorList.places([9: CGRect(x: 0, y: 0, width: 100, height: 100)]) == [9: ""])
     // A monitor macOS doesn't show as a screen (mirrored, asleep): no place.
     #expect(MonitorList.places([:]) == [:])
+}
+
+@Test func monitorsShowInSwitchOrder() {   // T-150 (review I1)
+    let monitors = MonitorList.parse(detailedFixture)
+    let displays = [DisplayConfig(name: "Right", serial: "BBB222TEST"), DisplayConfig(name: "Left", serial: "AAA111TEST")]
+    #expect(MonitorList.ordered(monitors, displays: displays).map(\.serial) == ["BBB222TEST", "AAA111TEST"])
+    #expect(MonitorList.ordered(monitors, displays: [DisplayConfig(name: "R", serial: "BBB222TEST")]).map(\.serial)
+            == ["BBB222TEST", "AAA111TEST"])      // the ones in use first, in their order, then the rest
+}
+
+@Test func monitorAnswersBrightness() {   // T-151 (review I2)
+    #expect(MonitorList.answers(output: "57\n", exitStatus: 0))
+    #expect(!MonitorList.answers(output: "DDC communication failure: (ipc/send) invalid destination port\n", exitStatus: 0))
+    #expect(!MonitorList.answers(output: "", exitStatus: 1))
+    // m1ddc prints "(null)" for a missing serial: that monitor can't be named (review M3).
+    #expect(MonitorList.parse("[1] TV (x)\n - Product name: TV\n - AN Serial: (null)\n - Display ID: 3\n") == [])
 }

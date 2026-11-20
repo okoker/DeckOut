@@ -60,19 +60,17 @@ struct IconRow: View {
                 }
                 colourRows(tile)
             }
-            if let tile, source == .library {
+            if source == .library {
                 FieldRow("Symbol") {
-                    Button(tile.symbol ?? "Choose…") { choosingSymbol = true }
+                    Button(currentSymbol?.symbol ?? "Choose…") { choosingSymbol = true }
                         .popover(isPresented: $choosingSymbol, arrowEdge: .leading) {
-                            SymbolPicker(library: model.symbolLibrary, selected: tile.symbol, style: tile.style ?? "bold") { name, style in
-                                var changed = tile
-                                changed.symbol = name
-                                changed.style = style
-                                setTile(changed)
+                            SymbolPicker(library: model.symbolLibrary, selected: currentSymbol?.symbol,
+                                         style: currentSymbol.map { $0.style ?? "bold" } ?? "fill") { name, style in
+                                setTile(Self.symbolTile(tile, name: name, style: style))
                             }
                         }
                 }
-                colourRows(tile)
+                if let currentSymbol { colourRows(currentSymbol) }
             }
             HStack(alignment: .top, spacing: 12) {
                 preview
@@ -98,7 +96,13 @@ struct IconRow: View {
         return false
     }
 
+    /// The control's tile when it's a symbol.
+    private var currentSymbol: IconTile? { tile?.kind == .symbol ? tile : nil }
+
+    /// What the control's icon is made from. While the symbols are open it's Library: nothing is written until one is
+    /// clicked, so closing them without a click leaves the icon as it was (BL-022).
     private var source: Source? {
+        if choosingSymbol { return .library }
         if let tile { return tile.kind == .text ? .text : .library }
         guard let icon else { return nil }
         return isOpenApp && AppModel.followsApp(icon) ? .app : .image
@@ -179,6 +183,16 @@ struct IconRow: View {
         }
     }
 
+    /// The tile a click in the library writes: that symbol and style, keeping the colours of a symbol tile already on
+    /// the control; anything else starts on the library's dark grey.
+    static func symbolTile(_ tile: IconTile?, name: String, style: String) -> IconTile {
+        var changed = tile.flatMap { $0.kind == .symbol ? $0 : nil }
+            ?? IconTile(kind: .symbol, text: nil, symbol: nil, style: nil, background: swatches[9], foreground: nil)
+        changed.symbol = name
+        changed.style = style
+        return changed
+    }
+
     private func pick(_ new: Source) {
         switch new {
         case .app:
@@ -189,8 +203,6 @@ struct IconRow: View {
             setTile(IconTile(kind: .text, text: Self.defaultText(choice, shape: shape), symbol: nil, style: nil,
                              background: Self.swatches[0], foreground: nil))
         case .library:
-            setTile(IconTile(kind: .symbol, text: nil, symbol: "star", style: "fill", background: Self.swatches[9],
-                             foreground: nil))
             choosingSymbol = true
         }
     }
@@ -228,6 +240,8 @@ struct SymbolPicker: View {
                 .labelsHidden()
                 .pickerStyle(.segmented)
                 .fixedSize()
+                // The symbol on the control takes the new style at once (BL-022: it waited for the next click).
+                .onChange(of: style) { _, new in if let selected { pick(selected, new) } }
             }
             if let library {
                 ScrollView {

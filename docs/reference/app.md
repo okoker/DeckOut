@@ -108,7 +108,9 @@ the job definition it registered: a changed plist needs a new label.
   colours, drawn by the app as `icons/tile-<hash>.png` (256 px, sRGB, white or near-black text by the background
   unless chosen; a `tile` that doesn't read is ignored) with the key's `tile` recording how, so it opens
   for editing again; changing the key's action keeps it. The library is Phosphor 2.1.2 (1,530 symbols, Bold and
-  Fill, MIT), searched in a popover; in a build without it, choosing Library changes nothing and says "The symbol
+  Fill, MIT), searched in a popover. Choosing Library only opens it: the key keeps its icon until a symbol is
+  clicked (a new symbol starts in Fill on dark grey; one already on the key keeps its colours), and Bold / Fill
+  restyles the symbol on the key at once. In a build without it, choosing Library changes nothing and says "The symbol
   library isn't in this build." A tile that can't be drawn changes nothing and says why. The preview is the key as the
   deck shows it.
 - **Strip blocks** are laid out like a key: **Tap** (the key's actions) first, then **Shows**: An image (the key's

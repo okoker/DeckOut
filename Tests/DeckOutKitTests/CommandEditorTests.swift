@@ -114,7 +114,7 @@ let longCommand = #"osascript -e 'tell application "iTerm2" to create window wit
                           backing: .buffered, defer: false)
     window.contentView = NSHostingView(rootView: MainWindow(model: model))
     window.orderFront(nil)
-    defer { window.close() }
+    defer { window.orderOut(nil) }
 
     model.commandEdit = CommandEdit(command: "echo old") { model.setAction(.runCommand($0), button: "key_3", on: .n4) }
     RunLoop.main.run(until: Date().addingTimeInterval(0.5))

@@ -49,8 +49,6 @@ Next free ID: BL-034
   slider). `ConfigStore.swift`, `PhotoStage.swift` (plan 4 review)
 - BL-020 [P2] [debt] The self-test checks that a tile's PNG exists and is in the app's config, not that the agent drew
   it (status or log), and each run leaves its tile PNGs in `icons/`. `SelfTest.swift` (plan 5 review)
-- BL-022 [P2] [bug] The symbol picker's Bold / Fill switch changes nothing until a symbol is clicked; choosing
-  Library and closing the popover leaves the starting star on the key (undoable). `IconRow.swift` (plan 5 review)
 - BL-023 [P2] [debt] The icons folder only grows: every colour tap or text edit writes a new `tile-<hash>.png`. Sweep
   files no config or undo step names (with BL-018). `IconFiles.swift` (plan 5 review)
 - BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three

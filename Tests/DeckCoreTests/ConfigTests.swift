@@ -272,3 +272,19 @@ private let presetsConfig = """
         }
     }
 }
+
+@Test func tileRoundTripsAndIsOptional() throws {                   // T-139
+    // How a generated icon was made rides along with the key; the agent only ever draws `icon`.
+    let tile = IconTile(kind: .symbol, text: nil, symbol: "acorn", style: "fill", background: "#0F8A7E", foreground: nil)
+    let config = AppConfig(n4: N4Section(brightness: 75, knobs: [:], swipe: nil, lockPhoto: nil,
+                                         presets: [N4Preset(name: "Default",
+                                                            keys: ["key_1": ButtonConfig(action: "none", icon: "/i.png", tile: tile)],
+                                                            strip: [:])],
+                                         activePreset: "Default"))
+    #expect(try AppConfig.parse(config.encoded()) == config)
+    let text = IconTile(kind: .text, text: "Stand\nup", symbol: nil, style: nil, background: "#C35A00", foreground: "#FFFFFF")
+    #expect(try JSONDecoder().decode(IconTile.self, from: JSONEncoder().encode(text)) == text)
+    // Files without it (every file today) load as before.
+    let old = #"{"decks":{"n4":{"brightness":75,"keys":{"key_1":{"action":"none","icon":"/i.png"}}}}}"#
+    #expect(try AppConfig.parse(Data(old.utf8)).n4?.keys["key_1"]?.tile == nil)
+}

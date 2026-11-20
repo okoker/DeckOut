@@ -188,6 +188,8 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 - N3: 85×85 JPEG, turned 90° + 180°, shifted −9 / +8 px to sit centred on the LCD. No icon = black
 - N4: keys 112×112 JPEG turned 180°, no offset; strip blocks 176×112 turned 180° (`picture` blocks show an icon).
   Slots: top-row keys 11–15, bottom-row keys 6–10, strip blocks 1–4. No icon = black
+- An optional `tile` per key records how the app generated its icon (text or a library symbol on a colour) so it can
+  edit it again; the agent ignores it and draws `icon`
 
 ## Daemon Behaviour
 - Runs as background process (launchd plist for auto-start)

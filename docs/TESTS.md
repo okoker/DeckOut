@@ -111,7 +111,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-104 | `XPCTests/restartRepliesThenExits`, `AgentTests/restartExitsAfterTheReply` | `restart` replies first and exits only afterwards (0.3 s), so the app hears the answer before KeepAlive starts the new binary |
 | T-105 | `XPCTests/liveStripPushedToClients` | The live strip's images reach the app on request and are pushed when a block gets a new one |
 | T-106 | `AgentTests/liveImagesKeyedByBlock` | A live image goes to every block of its type in the live preset; switching preset drops blocks that aren't live there |
-| T-107 | `scripts/check-bundle.sh` (build check, run by `make app`) | An assembled DeckOut.app: Info.plist (bundle id, executable, macOS 15, build), the agent plist (label = Mach service = `--mach-service` argument, `BundleProgram`, KeepAlive), the helper signed as the agent label and the app as its bundle id, a strict signature check, arm64 only, nothing loose in the bundle root |
+| T-107 | `scripts/check-bundle.sh` (build check, run by `make app`) | An assembled DeckOut.app: Info.plist (bundle id, executable, macOS 15, build), the agent plist (label = Mach service = `--mach-service` argument, `BundleProgram`, KeepAlive), the helper signed as the agent label and the app as its bundle id, a strict signature check, arm64 only, the icon library's files in Resources, nothing loose in the bundle root |
 | T-108 | `RegistrarTests/registersWhenNotRegistered` | The app registers its agent when macOS has none, leaves an enabled one alone, and, when it doesn't answer, unregisters and registers it afresh (KI-008: a stale job after a launch constraint violation) |
 | T-109 | `RegistrarTests/notFoundUnregistersThenRetries` | macOS reporting "not found" (after a Login Items reset, or just after install): unregister once, register, retry up to 10 × 1 s; still not found → a failure with a message |
 | T-110 | `RegistrarTests/requiresApprovalIsReported` | Switched off in Login Items → "needs approval", also when `register()` is refused for that reason; any other refusal passes its message on |
@@ -143,6 +143,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-136 | `LockTests/previewDecodesOnce` | While the app's preview is up, the agent decodes the photo once, not per framing sent during a drag |
 | T-137 | `LockPhotoModeTests/choosingCopiesAndChecks`, `hugePhotosAreBounded` | A chosen lock photo is saved in the config folder (`lock-photo-<hash>.jpg`, 0600, at most 3200 px) and starts centred at zoom 1; a file that isn't a picture, or one over the size limit, is refused with a message and the config keeps its photo |
 | T-138 | `LockPhotoModeTests/framingIsClampedAndUndoable`, `theN4FollowsTheWindow` | Moving the photo is clamped at its edge and a whole drag is one undo step; zoom stays 1–10; Reset centres it; Remove takes it off and undo brings it back; the real N4 shows what the window shows after a move, undo and Remove, and is told to drop the photo when the only deck goes |
+| T-139 | `ConfigTests/tileRoundTripsAndIsOptional` | How a generated icon was made (`tile`: text or symbol, colours) round-trips in the config; files without it load as before |
+| T-140 | `LibraryTests/indexHasEveryIcon` | The icon library's index has all 1,530 Phosphor symbols with their characters, and both fonts (Bold, Fill) have the glyphs |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

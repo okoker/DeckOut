@@ -36,6 +36,8 @@ app:
 	sed -e 's/@BUNDLE_ID@/$(BUNDLE_ID)/g' -e 's/@LABEL@/$(LABEL)/g' Packaging/agent.plist.in \
 	    > "$(APP)/Contents/Library/LaunchAgents/$(LABEL).plist"
 	if [ -f Packaging/AppIcon.icns ]; then cp Packaging/AppIcon.icns "$(APP)/Contents/Resources/"; fi
+	cp Packaging/Resources/Phosphor-Bold.ttf Packaging/Resources/Phosphor-Fill.ttf Packaging/Resources/phosphor-icons.json \
+	    Packaging/Resources/Phosphor-LICENSE.txt "$(APP)/Contents/Resources/"
 	codesign --force -s - -i $(LABEL) "$(APP)/Contents/MacOS/DeckOutAgent"
 	codesign --force -s - "$(APP)"
 	scripts/check-bundle.sh "$(APP)"

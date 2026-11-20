@@ -37,6 +37,9 @@ helper_id=$(codesign -dv "$app/Contents/MacOS/DeckOutAgent" 2>&1 | sed -n 's/^Id
 app_id=$(codesign -dv "$app" 2>&1 | sed -n 's/^Identifier=//p')
 [ "$app_id" = "$id" ] || fail "app signed as '$app_id', not $id"
 codesign --verify --strict "$app" || fail "signature doesn't verify"
+for res in Phosphor-Bold.ttf Phosphor-Fill.ttf phosphor-icons.json Phosphor-LICENSE.txt; do
+    [ -f "$app/Contents/Resources/$res" ] || fail "missing resource $res"
+done
 extra=$(ls -A "$app" | grep -vx Contents || true)
 [ -z "$extra" ] || fail "loose files in the bundle root: $extra"
 echo "OK: $app ($id, build $(pb CFBundleVersion "$info"))"

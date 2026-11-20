@@ -376,11 +376,36 @@ public struct ButtonConfig: Codable, Equatable {
     public var action: String
     public var icon: String?
     public var step: Int?               // for stepped actions (volume, monitor brightness): signed, +5 up, -5 down
+    /// How the app made `icon`, so it can edit it again. The agent ignores it and draws `icon`.
+    public var tile: IconTile?
 
-    public init(action: String, icon: String? = nil, step: Int? = nil) {
+    public init(action: String, icon: String? = nil, step: Int? = nil, tile: IconTile? = nil) {
         self.action = action
         self.icon = icon
         self.step = step
+        self.tile = tile
+    }
+}
+
+/// A key icon the app generated: text on a colour, or a symbol from its library on a colour (`#RRGGBB`).
+/// `foreground` nil: white or near-black, whichever reads on the background.
+public struct IconTile: Codable, Equatable, Hashable {
+    public enum Kind: String, Codable, Hashable { case text, symbol }
+
+    public var kind: Kind
+    public var text: String?
+    public var symbol: String?
+    public var style: String?           // "bold" or "fill" (symbols)
+    public var background: String
+    public var foreground: String?
+
+    public init(kind: Kind, text: String?, symbol: String?, style: String?, background: String, foreground: String?) {
+        self.kind = kind
+        self.text = text
+        self.symbol = symbol
+        self.style = style
+        self.background = background
+        self.foreground = foreground
     }
 }
 

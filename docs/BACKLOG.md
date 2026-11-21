@@ -39,12 +39,12 @@ Next free ID: BL-039
   it (status or log). `SelfTest.swift` (plan 5 review)
 - BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three
   live readings (internet, CPU and memory, volume) are written into the agent, so each new one needs code. Owner
-  (20/11/2026): new kinds are not built into the app. They live in a folder people put them into, in a documented
-  standard format; the app picks them up at its next launch and offers them in the strip block's Shows pull-down.
-  Starting idea: each one is a command and how often to run it, shown as the text it prints with an optional label;
-  paused while the Mac is locked, cut off if it hangs. What's in the folder runs unattended, so the folder gets the
-  config's checks (owned by the person, not writable by others). Design with a mockup first; touches the agent,
-  which runs them. `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
+  (20/11/2026): new kinds are not built into the app; they are scripts in a `blocks/` folder, which the agent runs on
+  an interval and draws as short text. Idea, with the looks the owner approved on the N4 (text, `color=`, emoji,
+  `icon=` symbols, a test card on failure) and the open scripting and scheduling questions:
+  `docs/ideas/script_blocks.md`. Initial work: its first slice (a weather script, the agent's runner, a `script` block
+  set by hand). After the phase 7 release, once the scripting and scheduling are worked out (owner, 21/11/2026).
+  `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
 - BL-034 [P1] [bug] Owner's hand-check of the 20/11/2026 fixes in the real app (build 261120.165253 or later); each
   is test-proven but not clicked. BL-031: in Edit in Window…, ⌘Z past the typing leaves the deck change behind it;
   New Preset… and Rename… still open, and ⌘Z in them only undoes typing; the command window stays open through an

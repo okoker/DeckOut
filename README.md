@@ -1,16 +1,29 @@
 # DeckOut
 
 <p align="center">
-  <img src="docs/assets/streamdeck.jpg" alt="TreasLin N3 Stream Deck" width="600">
+  <img src="docs/assets/streamdeck.jpg" alt="TreasLin N3" height="260">
+  &nbsp;&nbsp;
+  <img src="docs/assets/streamdeck-n4.jpg" alt="MiraBox Stream Dock N4" height="260">
 </p>
 
-DeckOut is a Mac app for budget USB stream decks: the TreasLin N3 (and its clones) and the MiraBox Stream Dock N4. You
-set up the keys, knobs and the N4's touch strip in a window, on a picture of your deck; a small background part,
-DeckOut's deck controller, runs the decks from login, with no Dock or menu-bar icon once the window is closed. It
-reconnects when a deck is unplugged and plugged back in, and picks up every change the moment you make it.
+DeckOut is a Mac app for USB stream decks: the **TreasLin N3** (and its clones) and the **MiraBox Stream Dock N4**,
+both at once if you like. You set up the keys, knobs and the N4's touch strip in a window, on a picture of your deck;
+a small background part, DeckOut's deck controller, runs the decks from login, with no Dock or menu-bar icon once the
+window is closed. It reconnects when a deck is unplugged and plugged back in, and picks up every change the moment
+you make it.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/deckout-window-dark.png">
+    <img src="docs/assets/deckout-window-light.png" width="900"
+         alt="DeckOut's window: an N4 with developer apps on its keys, a Deploy key selected and its command in the editor">
+  </picture>
+</p>
 
 A key, button, knob or strip block can:
-- open an app, a web address, a file or a folder; run one of Apple's Shortcuts, a command or a script;
+- **run your own commands and scripts**: anything you'd type in Terminal, or a script file, with your shell's
+  environment; or one of Apple's Shortcuts;
+- open an app, a web address, a file or a folder;
 - send a keyboard shortcut, or play / pause, next and previous;
 - turn the system volume or mute it; turn an external monitor's brightness over DDC/CI;
 - on the N4, step through your presets with a swipe.
@@ -33,8 +46,8 @@ dependencies beyond macOS, and its settings are one JSON file you can also edit 
 
 ## Hardware
 
-**Primary target:** [TreasLin N3](https://www.amazon.com/dp/B0FFMY9DZ8), a budget USB stream deck with 6 LCD keys, 3
-tactile buttons, 1 large rotary encoder and 2 small rotary encoders. All encoders are also push-buttons.
+**TreasLin N3:** [TreasLin N3](https://www.amazon.com/dp/B0FFMY9DZ8), a USB stream deck with 6 LCD keys (72 × 72
+pixels), 3 buttons, 1 large and 2 small knobs. Every knob is also a push-button.
 
 **Known clones / rebrands** that share the same USB VID/PID (`0x5548:0x1001`) and CRT protocol should work out of the
 box:
@@ -47,28 +60,14 @@ box:
 If your device enumerates with VID `0x5548` / PID `0x1001` and speaks the CRT packet protocol, it will almost
 certainly work.
 
-**Also supported:** MiraBox Stream Dock N4 (`0x6602:0x1001`): 10 LCD keys in two rows of five, a touch strip of four
-image blocks, and four push-knobs. Both decks can be plugged in at once, each with its own layout. Connect the N4 to a
-USB-A port: on a USB-C port it may not power up after a replug (`docs/KNOWN_ISSUES.md`, KI-009).
+**MiraBox Stream Dock N4** (`0x6602:0x1001`): 10 LCD keys in two rows of five, a touch strip of four image blocks
+(tap each, or swipe across), and four push-knobs. Connect the N4 to a USB-A port: on a USB-C port it may not power up
+after a replug (`docs/KNOWN_ISSUES.md`, KI-009).
+
+Both decks can be plugged in at once, each with its own layout and presets.
 
 While the Mac is locked, keys, strip taps and swipes do nothing, and knobs keep only their volume, ZR7 and monitor
 brightness actions.
-
-### Physical layout
-
-```
-┌─────────────────────────────────────────────────┐
-│  [LCD 1]  [LCD 2]  [LCD 3]       ╭───────╮     │
-│                                   │  BIG  │     │
-│  [LCD 4]  [LCD 5]  [LCD 6]       │ KNOB  │     │
-│                                   ╰───────╯     │
-│  (btn1)   (btn2)   (btn3)    (sm1)    (sm2)     │
-└─────────────────────────────────────────────────┘
-```
-
-- **LCD keys**: 72x72 pixel displays under each keycap.
-- **Standard buttons**: simple press / release, no display.
-- **Knobs**: infinite rotary encoders with push-click. Each detent fires a single CW or CCW event.
 
 ### Protocol notes
 
@@ -78,7 +77,7 @@ goes dark. LCD images are transferred via a `BAT` header (image length + key ind
 
 ## Requirements
 
-macOS 15 (Sequoia) or later, on an Apple Silicon Mac.
+macOS 15 (Sequoia) or later, on an Apple Silicon Mac. Tested on macOS 15.
 
 ## Install
 
@@ -229,8 +228,15 @@ after the manufacturer's software ("VSD Craft"). Version 2.0 is DeckOut, the app
 
 ## License
 
-MIT License: free to use, modify and distribute with attribution. See [LICENSE](LICENSE) for the full text. The
-bundled m1ddc and the Phosphor icons are MIT too; their licences are in DeckOut → Settings → About.
+DeckOut is MIT licensed (© 2026 Koker): free to use, modify and distribute with attribution. See [LICENSE](LICENSE)
+for the full text. It bundles two MIT-licensed projects:
+
+- [Phosphor Icons](https://phosphoricons.com) 2.1.2 (© 2020–2021 Phosphor Icons): the symbol library for keys and
+  strip blocks. Licence: `Packaging/Resources/Phosphor-LICENSE.txt`.
+- [m1ddc](https://github.com/waydabber/m1ddc) (© 2021 waydabber), with a small patch (`Vendor/m1ddc/README.md`):
+  monitor brightness over DDC/CI. Licence: `Vendor/m1ddc/LICENSE`.
+
+Both licences are also in the app, under Settings → About. App icons shown on the decks belong to their makers.
 
 ## If you build something with this
 

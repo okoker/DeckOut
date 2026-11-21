@@ -1,8 +1,12 @@
 #!/bin/bash
 # Checks an assembled DeckOut bundle (T-107): plists, names, signatures, architecture, nothing loose in the root.
-# Usage: scripts/check-bundle.sh "build/DeckOut Dev.app"
+# With --signed (T-193), also that the release app is ready to ship: Developer ID, one team, hardened runtime, secure
+# timestamp, exactly the Apple Events entitlement. It never prints the certificate's name (the Authority= lines).
+# Usage: scripts/check-bundle.sh [--signed] "build/DeckOut Dev.app"
 set -euo pipefail
-app="${1:?usage: check-bundle.sh <path to DeckOut.app>}"
+signed=0
+if [ "${1:-}" = --signed ]; then signed=1; shift; fi
+app="${1:?usage: check-bundle.sh [--signed] <path to DeckOut.app>}"
 fail() { echo "FAIL ($app): $*" >&2; exit 1; }
 pb() { /usr/libexec/PlistBuddy -c "Print :$1" "$2" 2>/dev/null || true; }
 
@@ -17,6 +21,7 @@ esac
 [ "$(pb CFBundleExecutable "$info")" = "DeckOut" ] || fail "CFBundleExecutable isn't DeckOut"
 [ "$(pb LSMinimumSystemVersion "$info")" = "15.0" ] || fail "LSMinimumSystemVersion isn't 15.0"
 [ -n "$(pb CFBundleVersion "$info")" ] || fail "no CFBundleVersion"
+[ -n "$(pb NSAppleEventsUsageDescription "$info")" ] || fail "no NSAppleEventsUsageDescription"
 
 label="$id.agent"
 plist="$app/Contents/Library/LaunchAgents/$label.plist"
@@ -53,4 +58,29 @@ if [ "$id" = io.github.okoker.deckout ]; then
 fi
 extra=$(ls -A "$app" | grep -vx Contents || true)
 [ -z "$extra" ] || fail "loose files in the bundle root: $extra"
-echo "OK: $app ($id, build $(pb CFBundleVersion "$info"))"
+
+if [ "$signed" = 1 ]; then
+    [ "$id" = io.github.okoker.deckout ] || fail "--signed checks the release app only, not $id"
+    want='{"com.apple.security.automation.apple-events":true}'
+    team=""
+    for code in "$app" "$app/Contents/MacOS/DeckOutAgent" "$m1ddc"; do
+        name=$(basename "$code")
+        sig=$(codesign -dvv "$code" 2>&1 | grep -v '^Authority=')
+        ! grep -q '^Signature=adhoc' <<<"$sig" || fail "not signed with a Developer ID (ad hoc): $name"
+        t=$(sed -n 's/^TeamIdentifier=//p' <<<"$sig")
+        [ -n "$t" ] && [ "$t" != "not set" ] || fail "no TeamIdentifier: $name"
+        [ -z "$team" ] || [ "$t" = "$team" ] || fail "signed by a different team from DeckOut.app: $name"
+        team=$t
+        grep -q '^CodeDirectory .*flags=0x[0-9a-f]*([^)]*runtime' <<<"$sig" || fail "no hardened runtime: $name"
+        grep -q '^Timestamp=' <<<"$sig" || fail "no secure timestamp: $name"
+        ents=$(codesign -d --entitlements - --xml "$code" 2>/dev/null || true)
+        if [ "$code" = "$m1ddc" ]; then
+            [ -z "$ents" ] || fail "m1ddc carries entitlements"
+        else
+            got=$(plutil -convert json -o - - <<<"$ents" 2>/dev/null || true)
+            [ "$got" = "$want" ] || fail "entitlements aren't exactly the Apple Events one: $name"
+        fi
+    done
+    codesign --verify --deep --strict "$app" || fail "signature doesn't verify (deep, strict)"
+fi
+echo "OK: $app ($id, build $(pb CFBundleVersion "$info")$([ "$signed" = 1 ] && echo ", Developer ID signed"))"

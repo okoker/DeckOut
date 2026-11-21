@@ -28,6 +28,8 @@
     <string>public.app-category.utilities</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>A key you set up runs a command or script that controls this app.</string>
     <key>NSHumanReadableCopyright</key>
     <string>© Koker. MIT licence.</string>
 </dict>

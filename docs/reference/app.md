@@ -7,6 +7,10 @@ plan 3 (editing), plan 4 (lock photo), plan 5 (icons), plan 6 (settings, monitor
 - `make app` builds `build/DeckOut Dev.app` (dev variant, debug build); `make app VARIANT=release` builds
   `build/DeckOut.app`. `make install-dev` puts the dev variant in `~/Applications/DeckOut Dev.app` by rename (never a
   copy over a running binary). `scripts/check-bundle.sh` checks a bundle (T-107); `make app` runs it.
+- `make uninstall-dev` removes the dev variant from this Mac, in this order: the installed app's `--unregister` (out of
+  launchd and Login Items), `tccutil reset` of its Accessibility and Automation grants (they need the app still on
+  disk), then deletes the installed app, the build copy, its log folder, saved window state, caches and defaults.
+  `~/.config/vsd-dev` stays. Deleted, not binned: a binned DeckOut Dev still opens and registers its agent again.
 - Layout: `Contents/MacOS/DeckOut` (the app), `Contents/MacOS/DeckOutAgent` (the background part),
   `Contents/Library/LaunchAgents/<label>.plist`, `Contents/Resources/AppIcon.icns` (drawn by `scripts/make-icon.swift`).
 - `AppIdentity` (DeckCore) derives every name from the bundle id; the agent, a helper in `Contents/MacOS`, sees the
@@ -22,7 +26,24 @@ plan 3 (editing), plan 4 (lock photo), plan 5 (icons), plan 6 (settings, monitor
 
 - `CFBundleShortVersionString` from `VERSION`; `CFBundleVersion` is the build time (`yymmdd.HHMMSS`), so every build
   differs and the app can tell an older agent.
-- Signing: ad hoc only (`codesign -s -`), the helper as its label, then the app. No certificate signing yet.
+- Signing: `make app` signs ad hoc (`codesign -s -`): m1ddc, the agent as its label, then the app. Developer ID
+  signing is `make signed` (below).
+
+## Signing and release
+- `make signed VARIANT=release` (the owner's go, each run) refuses unless the variant is release, `SIGN_ID` is set and
+  the tree has no uncommitted changes. It builds the release app, then signs inside out, never `--deep`: m1ddc
+  (`-i io.github.okoker.deckout.m1ddc`), the agent (`-i io.github.okoker.deckout.agent`), the app, each with
+  `codesign --force --timestamp -o runtime` (hardened runtime, secure timestamp). The agent and the app carry
+  `Packaging/DeckOut.entitlements`, which holds only `com.apple.security.automation.apple-events`: keys' commands drive
+  other apps through `osascript`. `NSAppleEventsUsageDescription` is the text macOS shows when it asks. Then
+  `check-bundle.sh --signed` (T-193), and the disk image `build/DeckOut-<VERSION>.dmg` (UDZO, volume "DeckOut"):
+  `DeckOut.app` beside an `Applications` link, the image itself signed with a timestamp.
+- `make notarize` (the owner's go, each run) submits the image with `notarytool --wait` under `NOTARY_PROFILE`, staples
+  and validates the ticket, requires Gatekeeper's `source=Notarized Developer ID`, and prints the SHA-256. A rejected
+  submission has no ticket, so stapling fails and make stops; `xcrun notarytool log <id>` says why.
+- `signing.mk` (gitignored; template `signing.mk.example`) sets `SIGN_ID`, the certificate's SHA-1, and
+  `NOTARY_PROFILE`, the Keychain profile that `notarytool store-credentials` made. The repo never names the
+  certificate: the checks drop `codesign`'s `Authority=` lines and `spctl`'s `origin=` line.
 
 ## Agent plist
 `Label`, `BundleProgram` `Contents/MacOS/DeckOutAgent` (bundle-relative: works from `~/Applications`, checked

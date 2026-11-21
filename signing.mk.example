@@ -1,0 +1,9 @@
+# Copy to signing.mk and fill in. signing.mk is gitignored: never commit it.
+#
+# SIGN_ID: the SHA-1 of your "Developer ID Application" certificate, without spaces. Keychain Access > My
+# Certificates > the certificate > Get Info > Fingerprints > SHA-1. The SHA-1, not the name: two certificates can
+# share a name.
+SIGN_ID :=
+#
+# NOTARY_PROFILE: the name you gave `xcrun notarytool store-credentials <name>`. The password stays in your Keychain.
+NOTARY_PROFILE :=

@@ -8,3 +8,4 @@ config.json
 *.jpg
 !docs/assets/streamdeck.jpg
 build/
+signing.mk

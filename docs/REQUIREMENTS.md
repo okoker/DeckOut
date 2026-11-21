@@ -58,7 +58,7 @@ the executable, else `~/.config/vsd/config.json`. Read at start-up and re-read o
 ### Structure
 Shared settings at the top; one section per deck under `decks`. Each deck holds its presets (the keys, and on the
 N4 the strip) and names the live one in `active_preset`; knobs, brightness, the swipe and the lock photo belong to the
-deck. Full example: `config.example.json`.
+deck.
 ```json
 {
   "displays": [ { "name": "Left", "serial": "AN_SERIAL_FROM_M1DDC" } ],

@@ -107,7 +107,7 @@ private func parse(_ json: String) throws -> AppConfig {
 }
 
 @Test func exampleConfigParses() throws {
-    let data = try Data(contentsOf: repoRoot.appendingPathComponent("config.example.json"))
+    let data = try Data(contentsOf: repoRoot.appendingPathComponent("Tests/DeckCoreTests/Fixtures/config-decks-no-presets.json"))
     let c = try AppConfig.parse(data)
     #expect(c.n3?.buttons.count == 9)
     #expect(c.n3?.knobs.count == 3)
@@ -183,7 +183,7 @@ private let presetsConfig = """
 
 @Test func oldFilesReadAsOneDefaultPreset() throws {                // T-064
     let v1 = try AppConfig.parse(try fixture("Tests/DeckCoreTests/Fixtures/config-v1.0.0.json"))
-    let decks = try AppConfig.parse(try fixture("config.example.json"))
+    let decks = try AppConfig.parse(try fixture("Tests/DeckCoreTests/Fixtures/config-decks-no-presets.json"))
     for config in [v1, decks] {
         let n3 = try #require(config.n3)
         #expect(n3.presets.map(\.name) == ["Default"])
@@ -242,8 +242,8 @@ private let presetsConfig = """
     #expect(n3["active_preset"] as? String == "Default")
     #expect(n3["buttons"] == nil)
 
-    // The v1.0.0 file has no N4: the strip check uses the example config.
-    let example = try AppConfig.parse(try fixture("config.example.json"))
+    // The v1.0.0 file has no N4: the strip check uses the decks file without presets.
+    let example = try AppConfig.parse(try fixture("Tests/DeckCoreTests/Fixtures/config-decks-no-presets.json"))
     let exampleObject = try #require(try JSONSerialization.jsonObject(with: try example.encoded()) as? [String: Any])
     let n4 = try #require((exampleObject["decks"] as? [String: Any])?["n4"] as? [String: Any])
     #expect(n4["keys"] == nil)

@@ -18,7 +18,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-011 | `ConfigTests/unknownBlockTypeThrows` | A misspelt strip block type rejects the file (on reload: previous config kept) instead of silently drawing something else |
 | T-012 | `ConfigTests/decksWinsOverTopLevel` | With `decks` present, a top-level N3 layout is ignored — even when `decks` has no `n3` |
 | T-013 | `ConfigTests/fileWithNeitherFormatThrows` | `{}` or an incomplete v1.0.0 layout is rejected, not loaded as an empty layout that blanks the deck |
-| T-014 | `ConfigTests/exampleConfigParses` | The shipped `config.example.json` is a valid new-format config with both decks |
+| T-014 | `ConfigTests/exampleConfigParses` | `Fixtures/config-decks-no-presets.json`, the `decks` format from before presets, loads with both decks: 9 N3 buttons, 3 knobs, 4 strip blocks, 2 monitors |
 | T-015 | `ActionResolverTests/n3KeyDownResolvesItsAction` | A key press runs the action configured for that key |
 | T-016 | `ActionResolverTests/eachDeckReadsOnlyItsOwnSection` | A control name is looked up only in its own deck's section (no `key_1` on the N3, no `big` on the N4) |
 | T-017 | `ActionResolverTests/knobTurnScalesStepBySign` | A knob turn's step is the configured `step` (default 1) times the turn's direction |

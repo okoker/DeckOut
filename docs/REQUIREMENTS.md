@@ -50,7 +50,8 @@ the executable, else `~/.config/vsd/config.json`. Read at start-up and re-read o
   creating the folder at 0700 if needed. The first save over an existing file copies it to
   `config.json.before-app` once, so a rollback to the v1.0.0 daemon (which can't read presets) has the old file.
 - **Saving by the agent:** only for `next_preset` (see Actions). It reads the file fresh, through the same checks,
-  changes that deck's `active_preset` and nothing else, and saves it the same way. A file that doesn't load is never
+  changes that deck's `active_preset` and nothing else in the config, and saves it the same way (in the written
+  form, as an app save does). A file that doesn't load is never
   saved over; with one preset, or no section for the deck, nothing is written.
 
 ### Structure
@@ -136,7 +137,7 @@ deck. Full example: `config.example.json`.
 | `zr7_mute_toggle` | Toggle ZR7Player mute (interface TBD) |
 | `display_brightness` | Adjust external monitor brightness by ±step per tick (DDC/CI via m1ddc) |
 | `display_brightness_cycle` | Cycle brightness target: All → per-display → All (30 s auto-revert) |
-| `next_preset` | Make the deck's next preset live (menu order, wrapping round), saved as the config's `active_preset` so the app and a restart follow; with one preset, nothing. Meant for the N4's swipe (a new N4 from the app has it); not in the app's menus |
+| `next_preset` | Make the deck's next preset live (in the file's order, wrapping round), saved as the config's `active_preset` so the app and a restart follow; with one preset, nothing. Meant for the N4's swipe (a new N4 from the app has it); not in the app's menus |
 | `none` | No action |
 
 A bad payload (`app:` without `.app`, a relative `open:`/`script:` path, a `url:` that isn't http(s), an empty

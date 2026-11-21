@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-035
+Next free ID: BL-038
 
 ---
 
@@ -57,3 +57,12 @@ Next free ID: BL-035
   once DeckOut is back in front. Toolbar: Icon Only, its buttons level with the window's close / minimise / zoom
   buttons, and no right-click Icon and Text menu. Then delete the backup `~/.config/vsd-dev.bak-2026-11-20` (the
   start-up icon cleanup removed exactly the 31 predicted files). Run lines in `PROGRESS.md`.
+- BL-035 [P2] [bug] After a swipe makes another preset live, text half-typed in an editor field can commit to the same
+  key in the newly live preset: the editor is rebuilt per control, not per preset. ⌘Z undoes it. Rebuild it when the
+  live preset changes too. `EditorPanel.swift` (`.id(model.selection)`) (BL-033 review, 21/11/2026)
+- BL-036 [P2] [feature] A `next_preset` typed by hand onto a key or a knob works on the deck, but the window shows it as
+  "Unknown action". Give it a name in the window (it stays out of the menus). `ActionNames.swift` (BL-033 review,
+  21/11/2026)
+- BL-037 [P2] [debt] Test gaps in the swipe's preset switch: T-190 has no missing-file or symlinked-config case (the
+  agent must write nothing); T-191 doesn't check `next_preset` never reaches the dispatcher (a command run).
+  `AgentTests.swift` (BL-033 review, 21/11/2026)

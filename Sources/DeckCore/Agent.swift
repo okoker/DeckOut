@@ -207,7 +207,7 @@ public final class Agent: AgentControl {
 
     // MARK: - Next preset
 
-    /// Makes `deck`'s next preset live (menu order, wrapping round) and saves it as the file's `active_preset`, so
+    /// Makes `deck`'s next preset live (the file's order, wrapping round) and saves it as the file's `active_preset`, so
     /// the app and a restart follow (BL-033). The file is read fresh, so a hand edit not yet reloaded is built on; a
     /// file that doesn't load is never saved over. One preset, or no section for the deck: nothing is written.
     func switchToNextPreset(_ deck: DeckKind) {

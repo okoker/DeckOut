@@ -67,6 +67,10 @@ if [ "$signed" = 1 ]; then
         name=$(basename "$code")
         sig=$(codesign -dvv "$code" 2>&1 | grep -v '^Authority=')
         ! grep -q '^Signature=adhoc' <<<"$sig" || fail "not signed with a Developer ID (ad hoc): $name"
+        # Apple's marks for a Developer ID Application certificate (intermediate and leaf): an Apple Development or
+        # other team certificate has a team id too, and would fail only at notarisation.
+        codesign --verify --strict -R="anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] exists and certificate leaf[field.1.2.840.113635.100.6.1.13] exists" "$code" 2>/dev/null \
+            || fail "not signed with a Developer ID Application certificate: $name"
         t=$(sed -n 's/^TeamIdentifier=//p' <<<"$sig")
         [ -n "$t" ] && [ "$t" != "not set" ] || fail "no TeamIdentifier: $name"
         [ -z "$team" ] || [ "$t" = "$team" ] || fail "signed by a different team from DeckOut.app: $name"

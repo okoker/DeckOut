@@ -74,6 +74,10 @@ install-dev:
 # tccutil fails with "No such bundle identifier" once the app is gone. Deleted, not binned: a binned app still opens.
 uninstall-dev:
 	@if [ -x "$(DEV_DEST)/Contents/MacOS/DeckOut" ]; then "$(DEV_DEST)/Contents/MacOS/DeckOut" --unregister; fi
+	@# --unregister quits the same way when it fails: deleting the app then would leave its agent registered for good.
+	@if launchctl print gui/$$(id -u)/$(DEV_ID).agent >/dev/null 2>&1; then \
+	    echo "DeckOut Dev's agent is still registered: Stop and Remove in DeckOut Dev, quit it, then run this again" >&2; \
+	    exit 1; fi
 	tccutil reset Accessibility $(DEV_ID) || true
 	tccutil reset AppleEvents $(DEV_ID) || true
 	@for p in "$(DEV_DEST)" "$(HOME)/Applications/.DeckOut Dev.app.new" "build/DeckOut Dev.app" \

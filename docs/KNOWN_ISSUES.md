@@ -7,7 +7,7 @@ Edge cases, uncertain solutions, and accepted limitations we're aware of but not
 
 When ready to address: move to `BACKLOG.md` or `TODO.md`, delete from here.
 
-Next free ID: KI-014
+Next free ID: KI-015
 
 ---
 
@@ -24,6 +24,7 @@ Next free ID: KI-014
 | KI-011 | 20/11/2026 | The app draws the config file on disk, not the one the agent loaded: after a hand edit of the file without a reload, the app shows icons the deck doesn't. Accepted (owner, 20/11/2026): the app is the supported way to change the config; hand edits are at the editor's own risk. The app's own edits save, then reload, so they always match. `AppModel.swift` |
 | KI-012 | 20/11/2026 | Undo groups slider steps, photo moves and zooms by a one-second gap, not by gesture. A pause of over a second mid-drag makes two undo steps (⌘Z twice). Two drags of the same control less than a second apart, with no other change between, are one step: ⌘Z goes back past both, ⇧⌘Z brings both back, and the position between them can't be returned to. Accepted (owner, 20/11/2026): rare and cheap to put right by hand; grouping by gesture would touch the undo history, both sliders, the photo's drag, pinch and scroll zoom. `ConfigStore.swift` (`change`, `coalescing`) |
 | KI-013 | 20/11/2026 | A swipe in the same instant DeckOut saves an edit can lose either one: the agent and the app share no lock. If the agent saves the new preset first, the app's save puts the deck back on the old preset (swipe again). If the app saves between the agent reading the file and saving it, the agent's save drops the edit: it vanishes from the window, "Picked up a change made outside DeckOut" shows, and ⌘Z can't bring it back (make the edit again). In a still narrower window the window keeps the edit while the file and the deck don't have it; the next edit in DeckOut saves it again and puts the deck back on the old preset. Accepted (owner, 21/11/2026): it takes a swipe and a save within milliseconds of each other; a shared lock file would let a stuck app freeze the deck. `Agent.swift` (`switchToNextPreset`), `ConfigStore.swift` (`save`) |
+| KI-014 | 21/11/2026 | A tap that lands in the gap between two N4 strip blocks counts as a swipe: the N4 sends the same report (`0x38`) for it as for most swipes, and nothing in the report tells them apart. With the swipe set to `next_preset`, a mis-aimed tap switches the preset; swiping on brings it back round. A tap on a block sends its own code and is unaffected. Accepted (owner, 21/11/2026): ignoring `0x38` made almost every swipe fail. `DeckModel.swift` (`swipeCodes`) |
 
 ## Accepted Risks
 

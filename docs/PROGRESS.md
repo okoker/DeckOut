@@ -15,7 +15,7 @@
 - This handover only. `.DS_Store` and `_user_private/` stay untracked.
 
 ### Environment state
-- The decks run on DeckOut Dev (`~/Applications`, debug build 261120.111028 of ae9ee09; agent
+- The decks run on DeckOut Dev (`~/Applications`, debug build 261121.012023 of `main`; agent
   `io.github.okoker.deckout.dev.agent`; config `~/.config/vsd-dev/config.json`; log `~/Library/Logs/DeckOut Dev/agent.log`).
   The hand install is retired (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout`); rollback:
   DeckOut Dev → Settings → Stop and Remove, `mv` the plist back, `launchctl bootstrap gui/$(id -u) <plist>`.
@@ -49,7 +49,7 @@
 
 ### What's next
 1. UAT is done (owner, 20/11/2026), but for removal: Stop and Remove of DeckOut Dev, the first step of moving the
-   decks to the signed app in phase 7, is its test. Swiping the strip to change presets is BL-033.
+   decks to the signed app in phase 7, is its test. Swiping the strip to change presets is done (BL-033).
 2. Write the phase 7 plan (`docs/superpowers/plans/`): signing target + identity file, release build, notarise, the
    GitHub release, README rewrite, moving the owner's decks to the signed app, fresh-install test in a VM. Each
    signing, notarising, publishing and install act gets its own go.
@@ -60,6 +60,7 @@ DeckOut Dev (`~/Applications`, a debug build of `main`) drives the TreasLin N3 a
 through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) has passed the
 owner's UAT (removal is tested in phase 7): it runs the deck controller from its bundle, edits every control,
 presets, brightness, the lock photo, generated icons, monitors and its own removal.
+21/11/2026 — BL-033 on `main` (3582782, 5e479ff, then the `0x38` fix): `swift test` 241/241 (new T-189–T-192), watched; T-191 failed with the hand-off moved above the lock check. `make install-dev` (build 261121.000629); the owner's N4 swipe set to `next_preset` by hand (backup `~/.config/vsd-dev/config.json.bak-2026-11-21`); the agent restarted on it without KI-008. Owner's swipes: 18 switched, 26 came as `0x38` and were ignored; timed round: every swipe and gap tap `0x38`. Fix: T-005 failed first (`0x38` decoded to nothing), 241/241 after; build 261121.012023: 9 of 9 swipes switched. Not checked: a swipe on a locked Mac, the app's menu following (owner).
 20/11/2026 — Pushed d215e87..ffc7631 (BL-031, BL-022, BL-015, BL-007, BL-018 + BL-023); `make install-dev` (build 261120.165253) after backing up `~/.config/vsd-dev` to `~/.config/vsd-dev.bak-2026-11-20`; one `--snapshot` run: "removed 31 unused icon files", exactly the 31 a separate grep over the backup predicted (4 named by the config kept, `config.json` unchanged, nothing else touched); KI-008 on the restart, registered again; the agent drew 14 of 14 and 6 of 6 with no warnings; window "Deck controller running", the N3's six icons drawn. Not checked yet: the clicks for BL-031, BL-022, BL-015, BL-007 (owner).
 20/11/2026 — BL-018 + BL-023 on `main`: `swift test` 237/237 (new T-186–T-188), watched; T-186 and T-188 failed first against do-nothing stubs; with the code in, each of six guards taken out in turn failed a test (config check, unreadable file, links, subfolders, undo history, once per run), sources restored byte for byte. Not installed; not checked: the start-up log line and the icons folder after a real launch (owner). Phase 7 must rewrite `vsd-dev` paths (Release gotchas).
 20/11/2026 — BL-007 on `main`: `swift test` 234/234 (new T-185), watched; T-185 failed first (the N3's JPEG of a 2:1 icon filled 72 × 73, the square), and again with the old drawing put back after the fix. Square icons draw as before (a square fitted in a square is the same square). Not installed; not checked: a non-square icon on the real N3 (owner).
@@ -75,7 +76,6 @@ presets, brightness, the lock photo, generated icons, monitors and its own remov
 20/11/2026 — BL-003 on `deckout-7-uat-fixes` (ae9ee09): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
 20/11/2026 — BL-005 on `deckout-7-uat-fixes` (to 38094e3): `swift test` 217/217 (new T-169), watched; `make install-dev` (build 261120.103217), one `--snapshot` run: KI-008 on the restart, the app re-registered 10 s later, window "Deck controller running"; the agent drew 6 of 6 and 14 of 14 on connect; one `--post-reload` with nothing changed: "Drew 0 of 6 slots on n3 in 1 ms", "Drew 0 of 14 slots on n4 in 4 ms", "Reloaded in 7 ms" (433–453 ms before). Not checked: a changed key and an unlock on the decks (owner, at UAT).
 20/11/2026 — Seven backlog fixes on `deckout-7-uat-fixes` (to 1b615ac): `swift test` 210/210 (new T-162–T-168), watched; `make install-dev` (build 261120.035630), then one `--snapshot` run of the real app: it asked the old agent to restart, the new one hit KI-008 and the app's own recovery re-registered it 10 s later; the window said "Deck controller running" (the new agent's build), and the agent drew the N3 and the N4's lock photo (Mac locked). Not checked: live strip pushes (paused while locked), every click (owner, at UAT).
-20/11/2026 — DeckOut plan 7 on `deckout-7-uat-fixes`: `swift test` 198/198 (new T-153–T-161; T-132 changed), watched; `make install-dev` installed it. Not checked: the clicks in the real window (owner, at UAT; the app was theirs and open).
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
@@ -83,6 +83,23 @@ presets, brightness, the lock photo, generated icons, monitors and its own remov
 - UAT of DeckOut (handover above), then signing and release (design phase 7). Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 21/11/2026 — A swipe on the N4's strip makes the next preset live
+- **Reference:** `docs/REQUIREMENTS.md` (Saving by the agent; Actions: `next_preset`), `docs/reference/n4.md`,
+  `docs/reference/device_quirks.md`; plan `docs/superpowers/plans/2026-11-20-deckout-bl-033-swipe-next-preset.md`
+  (gitignored); T-189–T-192 (T-005 changed); BL-033; KI-013, KI-014.
+- **For a person:** with the N4's swipe set to `next_preset`, each swipe makes the next preset live, in the file's
+  order, wrapping round; the app's menu and a restart follow, because the agent saves the new `active_preset`. Never
+  while the Mac is locked. A new N4 made by the app gets the swipe; an existing config gets the line by hand (the app
+  has no swipe setting).
+- **Decision (owner, 20–21/11/2026):** the `swipe` field keeps its place with a new action; the agent, not the
+  daemon, saves the file; no preset name on the deck. KI-013 (a swipe and an app save within milliseconds can lose
+  either one) accepted rather than a shared lock file. Both `0x38` and `0x39` count as a swipe, since on this unit
+  nearly every swipe comes as `0x38`; a tap in the gap between blocks switches too (KI-014). Two `0x38`s as one swipe
+  was turned down: the deck sends one report per swipe.
+- **Checked:** run line above. A fresh reviewer: no critical; its important finding (KI-013 said only the swipe could
+  be lost) reworded; minors are BL-035–BL-037. On the N4, the first build switched on 18 of ~50 swipes; a timed round
+  showed every swipe and every gap tap arriving as `0x38`.
 
 ### 20/11/2026 — Monitor brightness moves from where the monitor really is, never jumping to 5 %
 - **Reference:** `docs/REQUIREMENTS.md` (External Monitor Brightness), `docs/reference/app.md` (Settings: m1ddc),
@@ -132,22 +149,6 @@ presets, brightness, the lock photo, generated icons, monitors and its own remov
 - **Checked:** run line above. One agent per item, each reviewed by CL, then a fresh reviewer over all seven: no
   critical or important issues; its removal-path minor ("Stopping…") fixed test-first. Open: two minors (Try Again
   during a recovery re-registers twice; a late push can mark the link connected after removal), in the ledger.
-
-### 20/11/2026 — Long commands can be read and edited, strip blocks take images like keys, presets can be cancelled
-- **Reference:** `docs/reference/app.md` (Actions; Run Command; Strip blocks; Presets); plan
-  `docs/superpowers/plans/2026-11-20-deckout-7-uat-fixes.md`; T-153–T-161 (T-132 changed); BL-029–BL-032.
-- **For a person:** a command shows whole in the editor (full width, wrapped, up to ten lines), and Edit in Window…
-  opens it wide; nothing typed is turned into curly quotes or "corrected". Multi-line fields, the text image's too,
-  show more than one line at last. A strip block reads like a key: what a tap does, then what it shows: an image (a
-  picture, text or a symbol on a colour, drawn to the strip's wide shape) or a live reading. The preset pull-down
-  never disappears: New Preset… and Rename… ask for the name in a small sheet you can cancel.
-- **Decision (owner, 20/11/2026):** the command gets a full-width field plus a window; strip blocks get the key's image
-  choices and stay blank until one is picked; "An image", not "An icon"; the menu: live preset, Default, New Preset,
-  Rename, Duplicate, Delete, a line, the rest; live readings people add come from a folder, not the app (BL-029).
-  (CL calls, ledger:) strip tiles 352 × 224; the preset sheets hang off the main window.
-- **Checked:** `swift test` 198/198, installed. Building found why the command couldn't be read: multi-line fields
-  drew on one line (the rounded-border style). A fresh reviewer found every field autocorrecting typed words, the
-  command's included: fixed test-first. Its minors are BL-030–BL-032.
 
 ## History
 Older work: `old_progress/README.md`.

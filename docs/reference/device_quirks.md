@@ -99,6 +99,7 @@ Full map and behaviour: `n4.md`. What catches you out:
   absent from the USB tree. A USB-A port (A-to-C cable) powers it every time (KI-009).
 - **Redraw in place:** a `CLE` blinks the whole N4, so after start-up slots are redrawn without one. The N3
   shows a changed icon without a `CLE` too (checked 19/11/2026), so both decks redraw in place.
-- **Swipe:** `0x39`, with no direction. Some swipes arrive as `0x38` (touch outside the blocks); that code is ignored.
+- **Swipe:** `0x39` or `0x38`, with no direction. On the owner's unit most swipes come as `0x38` (21/11/2026: every
+  one of about 10 test swipes, transit film off), and a tap in the gap between two blocks sends `0x38` too; both codes count as a swipe.
 - **Knob press:** one report, no release. Strip taps likewise.
 - **Brightness:** `LIG` uses the full 0–100 range; 0 is dim, not off.

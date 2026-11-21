@@ -37,7 +37,7 @@ public struct DeckModel {
     private let knobPresses: [UInt8: String]        // state 1 press, 0 release
     private let knobTurns: [UInt8: (String, Int)]   // state ignored
     private let stripTaps: [UInt8: String]          // state ignored
-    private let swipeCode: UInt8?
+    private let swipeCodes: Set<UInt8>
 
     /// Decode a raw input report (no report-ID byte): "ACK\0\0OK\0\0", code at byte 9, state at byte 10.
     /// Returns nil for anything this model doesn't define.
@@ -62,7 +62,7 @@ public struct DeckModel {
         }
         if let turn = knobTurns[code] { return .knobTurn(turn.0, turn.1) }
         if let block = stripTaps[code] { return .stripTap(block) }
-        if let swipeCode, code == swipeCode { return .swipe }
+        if swipeCodes.contains(code) { return .swipe }
         return nil
     }
 
@@ -91,7 +91,7 @@ public struct DeckModel {
             0x60: ("small_2", -1), 0x61: ("small_2", +1),
         ],
         stripTaps: [:],
-        swipeCode: nil
+        swipeCodes: []
     )
 
     /// MiraBox Stream Dock N4: 10 LCD keys (2 rows of 5), a touch strip of 4 image blocks, 4 push-knobs.
@@ -117,7 +117,9 @@ public struct DeckModel {
             0x70: ("knob_4", -1), 0x71: ("knob_4", +1),
         ],
         stripTaps: [0x40: "1", 0x41: "2", 0x42: "3", 0x43: "4"],
-        swipeCode: 0x39   // 0x38 (touch outside the blocks) is deliberately not a swipe
+        // A swipe comes as 0x39 or, on the owner's unit most of the time, 0x38 (21/11/2026). A tap between two
+        // blocks also sends 0x38, and nothing in the report tells them apart: accepted, it's one swipe to go back.
+        swipeCodes: [0x38, 0x39]
     )
 
     public static let all: [DeckModel] = [.n3, .n4]

@@ -192,9 +192,10 @@ One file, one section per deck; shared settings stay at the top.
     there.
 
 ### Swipe
-One assignable action (`swipe.action`, default `none`). Only code `0x39` counts as a swipe; `0x38` (touch outside the
-blocks) is logged and ignored — counting it would also fire on taps between blocks. Builder's call; revisit if
-swipes feel unreliable.
+One assignable action (`swipe.action`, default `none`). Both `0x39` and `0x38` count as a swipe (owner, 21/11/2026),
+not `0x39` alone: on the owner's unit every test swipe (about 10) came as `0x38`, so the swipe almost never worked. A tap in
+the gap between two blocks also sends `0x38` and so counts as a swipe, accepted (KI-014). Two `0x38`s in a row as one
+swipe was turned down: the deck sends one report per swipe, so every switch would take two swipes.
 
 ### Reload signal and responsiveness
 - Today: `SIGHUP`. Added: a distributed notification with a fixed name (e.g.

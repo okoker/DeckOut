@@ -69,7 +69,8 @@ import Testing
     #expect(m.decode(ackReport(0x42, 0)) == .stripTap("3"))
     #expect(m.decode(ackReport(0x43, 0)) == .stripTap("4"))
     #expect(m.decode(ackReport(0x39, 0)) == .swipe)
-    #expect(m.decode(ackReport(0x38, 0)) == nil)   // touch outside the blocks: ignored
+    // Most swipes on the owner's unit come as 0x38, which a tap between two blocks also sends (21/11/2026).
+    #expect(m.decode(ackReport(0x38, 0)) == .swipe)
 
     // N3-only codes mean nothing on the N4.
     for code: UInt8 in [0x25, 0x30, 0x31, 0x34, 0x60, 0x61] {

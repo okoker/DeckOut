@@ -22,8 +22,8 @@ Event codes overlap between the decks with different meanings, so each deck's in
 ### MiraBox Stream Dock N4
 Maps verified on the unit (18/11/2026); details in `docs/design/n4_support.md`.
 - **10 LCD keys**, 2 rows of 5: top row 0x01–0x05, bottom row 0x06–0x0A (press + release)
-- **Touch strip** of 4 image blocks: tap 0x40–0x43 (one frame, no release); swipe 0x39 (no direction);
-  0x38 (touch outside the blocks) is ignored
+- **Touch strip** of 4 image blocks: tap 0x40–0x43 (one frame, no release); swipe 0x39 or 0x38 (no direction;
+  most swipes come as 0x38, which a tap between two blocks also sends, so that tap counts as a swipe)
 - **4 push-knobs**, left → right: rotate clockwise / anticlockwise, press (no release)
   - Knob 1: 0xA1 / 0xA0, press 0x37 · Knob 2: 0x51 / 0x50, press 0x35
   - Knob 3: 0x91 / 0x90, press 0x33 · Knob 4: 0x71 / 0x70, press 0x36

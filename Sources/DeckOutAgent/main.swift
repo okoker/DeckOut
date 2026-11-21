@@ -104,7 +104,7 @@ sigintSource.resume()
 sigtermSource.resume()
 sighupSource.resume()
 
-// Reload notification (posted by --post-reload, later by the config app). `.deliverImmediately`:
+// Reload notification (posted by --post-reload; the app asks over XPC instead). `.deliverImmediately`:
 // the daemon is never the active app, and AppKit would otherwise hold the notification back.
 final class ReloadObserver: NSObject {
     @objc func reload(_ note: Notification) { requestReload(reason: "notification") }

@@ -67,14 +67,10 @@ Next free ID: BL-040
   agent must write nothing); T-191 doesn't check `next_preset` never reaches the dispatcher (a command run).
   `AgentTests.swift` (BL-033 review, 21/11/2026)
 - BL-038 [P2] [feature] README: a "Recipes" section of sanitized key examples, each with the action to pick and the
-  trap found setting it up (owner, 21/11/2026). A VMware Fusion VM: Open File or Folder on its `.vmwarevm` (it powers
-  on; `vmrun` can outlast the 30 s command limit). ssh in an iTerm2 window with a given profile (`osascript` `create
-  window with profile … command`; the `zsh -lc "…; exec zsh"` form stays open after logout). A link in a given Chrome
-  profile: `open -na "Google Chrome" --args --profile-directory=… <url>` (the folder name from `chrome://version`;
-  without `-n` the args are dropped; never Chrome's own binary, the limit would close Chrome). That link on a given
-  Desktop: ⌃N through System Events, then `open -gna … --new-window`, `open -a`; it needs "Switch to Desktop N" on in
-  Keyboard Shortcuts (numbers run across monitors) and Accessibility for DeckOut itself (macOS checks the app the agent
-  lives in, not DeckOutAgent; a dev build needs the entry removed and added again). What can't be done: a Proton VPN
+  trap found setting it up (owner, 21/11/2026). The README already has one: Chrome in a given profile on a given
+  Desktop. Still to add: a VMware Fusion VM: Open File or Folder on its `.vmwarevm` (it powers on; `vmrun` can outlast
+  the 30 s command limit). ssh in an iTerm2 window with a given profile (`osascript` `create window with profile …
+  command`; the `zsh -lc "…; exec zsh"` form stays open after logout). What can't be done: a Proton VPN
   country connection (the Mac app takes only `protonvpn://refresh`, has no Shortcuts or AppleScript; the CLI is Linux
   only), with the Auto Connect workaround. Straight quotes only. No host, user, profile, VM or URL names from the
   owner's config. `README.md`

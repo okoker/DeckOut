@@ -78,17 +78,10 @@ Chrome's saved tab groups cannot be opened from command line, AppleScript, or ex
 ## Device Power Cycle
 If the device gets into a bad state (commands accepted but no events returned), unplug for 5-10 seconds to reset firmware. A quick replug may not be enough.
 
-## Replacing the Installed Binary
-Don't `cp` a new build over the installed binary in place. macOS caches code-signature data per file, so Apple's guidance is to replace a signed executable rather than modify it. Observed 02/11/2026: right after an in-place `cp`, commands reading the file were SIGKILLed. Copy to a temporary name in the same folder, then rename over the old file:
+## Replacing the Installed App
+Don't `cp` a new build over an installed one in place. macOS caches code-signature data per file, so Apple's guidance is to replace a signed executable rather than modify it. Observed 02/11/2026: right after an in-place `cp`, commands reading the file were SIGKILLed. Copy to a temporary name in the same folder, then rename over the old one: `make install-dev` does this for DeckOut Dev (`~/Applications/.DeckOut Dev.app.new`, then `mv`).
 
-```bash
-DIR=~/Library/Application\ Support/StreamDeckController
-cp .build/release/DeckOutAgent "$DIR/StreamDeckController.new"
-mv -f "$DIR/StreamDeckController.new" "$DIR/StreamDeckController"
-launchctl kickstart -k gui/$(id -u)/com.streamdeck.controller
-```
-
-The first launch after a replacement can still be killed once (KI-008); launchd relaunches ~10 s later and it runs. Judge success by `launchctl print gui/$(id -u)/com.streamdeck.controller` (pid, runs) after ~15 s, not by the first crash report in `~/Library/Logs/DiagnosticReports/`.
+The first start of a new ad hoc build can still be refused (KI-008, with the workaround for DeckOut Dev). Judge success by `launchctl print gui/$(id -u)/io.github.okoker.deckout.dev.agent` (DeckOut: `io.github.okoker.deckout.agent`; look at `pid` and `runs`) after ~15 s, not by the first crash report in `~/Library/Logs/DiagnosticReports/`.
 
 ## Config Key Mapping
 Decoded inputs (`DeckInput` in `DeckModel.swift`) carry the JSON config key directly (`lcd_1`, `btn_1`, `small_1`), so they are looked up in the config as-is. Each deck model decodes with its own event map: the N3 and the N4 reuse codes with different meanings (e.g. `0x50` is the N3 big knob, the N4 knob 2).

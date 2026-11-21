@@ -3,7 +3,7 @@ import Foundation
 /// Drives every connected deck: start-up, layout, keepalive, and inputs → actions.
 /// Lives for the whole process; everything runs on the main thread.
 public final class Daemon {
-    /// Posted (e.g. by `StreamDeckController --post-reload`, later by the config app) to re-read the config.
+    /// Posted by `DeckOutAgent --post-reload` to re-read the config. The app asks over XPC instead (`AgentXPC.reload`).
     public static let reloadNotification = "com.streamdeck.controller.reload"
 
     private var config: AppConfig

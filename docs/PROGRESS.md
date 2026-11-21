@@ -7,6 +7,11 @@
   `.superpowers/sdd/2026-11-21-deckout-phase-7-release/progress.md`): signing targets and T-193 (1eef572, 17afc28,
   ad0cc56), README for 2.0.0 (b264653), BL-039 (6f0ba6b). v2.0.0 published 21/11/2026 from ad0cc56, the rc.1 image
   byte for byte; the rc.1 page deleted, its tag kept. The owner's decks moved to the signed app (entry below).
+- After the release: README rewritten for DeckOut as it is today (1f1fea4: both decks alike, the app's window, a
+  Chrome-on-a-Desktop script, two monitors on one knob, Why DeckOut with the vendors' measured download sizes; no
+  hand-editing of the config). 1.0's unused `Info.plist` and launch file removed from the repo root (3ea8848);
+  `config.example.json` moved to `Tests/DeckCoreTests/Fixtures/config-decks-no-presets.json` (92795b6). GitHub About
+  text and topics updated. Live docs that still described 1.0 brought up to date.
 
 ### Uncommitted state
 - Only `.DS_Store` and `_user_private/`. Local and gitignored: `signing.mk` (the certificate's SHA-1, the notary

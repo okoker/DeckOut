@@ -14,3 +14,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 - 10 — DeckOut plan 5, icons (20/11/2026): keys show text or a symbol on a colour, made in the app → `10_deckout_plan5_icons.md`
 - 11 — DeckOut plan 6, Settings (20/11/2026): monitors named and ordered, m1ddc inside the app, retiring the hand install → `11_deckout_plan6_settings.md`
 - 12 — DeckOut plan 7, UAT fixes (20/11/2026): long commands readable and editable, strip blocks take images, presets cancellable → `12_deckout_plan7_uat_fixes.md`
+- 13 — DeckOut backlog fixes 1 (20/11/2026): strip images follow the tap's app, Stop and Remove can't be undone behind your back → `13_deckout_backlog_fixes_1.md`

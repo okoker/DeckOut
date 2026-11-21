@@ -1,5 +1,8 @@
 # Config App + Second Deck
 
+**Promoted → `docs/design/config_app.md`; the second deck → `docs/design/n4_support.md`.** Both built: the app is
+DeckOut 2.0.0 (21/11/2026), the N4 is supported.
+
 Idea, noted 02/11/2026. Trigger: the arrival of a second, more capable stream deck.
 
 ## What

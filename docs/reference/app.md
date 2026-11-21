@@ -235,6 +235,9 @@ the job definition it registered: a changed plist needs a new label.
   reading outside 0–100 or a failed one, but can't tell a bad `0` from a real one.
 
 ## Debug builds
+- DeckOut Dev is on this Mac only during a dev session. With the signed DeckOut running the decks, a session
+  starts with Stop and Remove in DeckOut, then `make install-dev`, and ends with `make uninstall-dev`, then DeckOut is
+  opened again: two agents would fire every press twice.
 - `--unregister`: take the agent out of launchd and Login Items, then quit (test sessions).
 - `--snapshot <png> [--dark] [--deck n3|n4] [--select <control>] [--photo] [--show-old-controller] [--after <s>]`:
   draw the real window to a PNG and quit (`--photo`: in photo mode, without previewing on the N4).

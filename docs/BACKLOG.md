@@ -84,4 +84,6 @@ Next free ID: BL-040
   entry, no `Constraint` lines in the log. Not testable at 2.0.0: two release builds of the same code give a
   byte-identical agent (21/11/2026). If it fails: `AgentLink` re-registers every 15 s while the agent doesn't answer
   (`init(…, recoveryInterval: TimeInterval = 15)`; a test from T-112's mute listener expecting repeated hooks until it
-  answers). `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)
+  answers). The Developer ID certificate expires 01/02/2027 (original Sub-CA): a release after that is signed with a
+  new G2 certificate, so its update also crosses the switch: compare `codesign -dr -` of the old and new build, and
+  check Accessibility and Login Items survive. `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)

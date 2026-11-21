@@ -1,49 +1,28 @@
 # Progress
 
-## Session Handover — 20/11/2026: BL-003 done, everything on `main`; next: finish UAT and release (phase 7)
+## Session Handover — 21/11/2026: DeckOut 2.0.0 released (signed, notarised); the decks run on it
 
 ### What was done
-- ae9ee09 BL-003: DeckOut's m1ddc is patched (reads wait 50 ms, are checked, asked again; `Vendor/m1ddc/README.md`);
-  the agent reads each monitor on the first turn and never moves one from a guess; the HUD fits and centres its
-  text. The owner turned the knob on the decks: it works.
-- 95eecc1: `deckout-7-uat-fixes` (plans 2–7, backlog fixes, BL-003) fast-forwarded into `main` and pushed; every
-  `deckout-*` branch deleted (owner). Work happens on `main` now.
-- Upstream: waydabber/m1ddc#81 (from the fork okoker/m1ddc) offers the same patch; updated 21/11/2026 (a9ed017)
-  with `--read-wait` and the "unsupported VCP code" message the maintainer asked for. Waiting on his merge; if it
-  merges, vendor upstream again and drop ours.
+- Phase 7 (plan `docs/superpowers/plans/2026-11-21-deckout-phase-7-release.md`, gitignored; ledger
+  `.superpowers/sdd/2026-11-21-deckout-phase-7-release/progress.md`): signing targets and T-193 (1eef572, 17afc28,
+  ad0cc56), README for 2.0.0 (b264653), BL-039 (6f0ba6b). v2.0.0 published 21/11/2026 from ad0cc56, the rc.1 image
+  byte for byte; the rc.1 page deleted, its tag kept. The owner's decks moved to the signed app (entry below).
 
 ### Uncommitted state
-- This handover only. `.DS_Store` and `_user_private/` stay untracked.
+- Only `.DS_Store` and `_user_private/`. Local and gitignored: `signing.mk` (the certificate's SHA-1, the notary
+  profile name) and `docs/reference/releasing.md` (the private release how-to).
 
 ### Environment state
-- The decks run on DeckOut Dev (`~/Applications`, debug build 261121.012023 of `main`; agent
-  `io.github.okoker.deckout.dev.agent`; config `~/.config/vsd-dev/config.json`; log `~/Library/Logs/DeckOut Dev/agent.log`).
-  The hand install is retired (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout`); rollback:
-  DeckOut Dev → Settings → Stop and Remove, `mv` the plist back, `launchctl bootstrap gui/$(id -u) <plist>`.
-- After `make install-dev`, opening the app restarts the agent on the new build. KI-008 can refuse it: if the window
-  stays on "not running", quit DeckOut Dev and open it again (Try Again right away doesn't help).
-- After every install, Accessibility (keyboard shortcuts, media keys, commands that send keystrokes) needs the
-  "DeckOut Dev" entry removed and the app added again: the old entry stays on but no longer matches the new build.
-
-### Release gotchas (phase 7)
-- The signed DeckOut is a different app from DeckOut Dev: its own bundle id, agent and config folder (`~/.config/vsd`,
-  not `vsd-dev`). The UAT edits live in `vsd-dev/config.json`, and its generated icons point into
-  `~/.config/vsd-dev/icons/`: carry config and icons over (owner's go), and Stop and Remove DeckOut Dev first (two
-  agents fire every press twice). The signed agent needs Accessibility granted again.
-- **Must not be skipped (owner, 20/11/2026):** the move copies the icons and lock photos into `~/.config/vsd/` and
-  rewrites every path in the carried config to point there; none may still point into `~/.config/vsd-dev/`. Each
-  app removes unused icon files from its own folder at start-up (BL-018 / BL-023), judging "used" by its own config
-  only: run DeckOut Dev again after an edit there, and it deletes icons the signed app's config still points at, and
-  those keys go black. Check: `grep -c vsd-dev ~/.config/vsd/config.json` is 0.
-- `make signed VARIANT=release` and `make notarize` exist (`docs/reference/app.md`, Signing and release); the
-  identity goes in the gitignored `signing.mk`, which the owner fills in. Before the first signed build the owner
-  checks who issued the certificate (only builds after 01/02/2027 need a G2 one). Every `codesign` / `notarytool` run
-  needs the owner's go; never pick the identity.
-- Untested: KI-008 under a Developer ID signature (phase 7 Task 6). The fresh install is tested on the owner's second
-  Mac on macOS 26, not in a VM; macOS 27 (launchd refusing quarantined plists) is left untested (owner, 21/11/2026).
-- Docs at release: README rewrite (it still describes the hand install; its permissions section is wrong: shortcuts,
-  media keys and keystroke-sending commands need Accessibility for the app, not Input Monitoring), the design's "✅ BUILT" marker, a pointer
-  from the ideas note. VERSION says 2.0.0.
+- The decks run on DeckOut 2.0.0 in `/Applications` (agent `io.github.okoker.deckout.agent`, config
+  `~/.config/vsd/config.json`, log `~/Library/Logs/DeckOut/agent.log`); Accessibility and Automation are granted to
+  DeckOut.
+- DeckOut Dev is removed (`make uninstall-dev`). A dev session: Stop and Remove in DeckOut, `make install-dev`, test,
+  `make uninstall-dev`, open DeckOut again. Seed `~/.config/vsd-dev` from `~/.config/vsd` if it's gone.
+- Rollback copies, to delete from 28/11/2026 at the owner's go: the retired 1.0 install
+  (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` and its program),
+  `~/.config/vsd.bak-2026-11-21` (the 1.0 config folder) and `~/.config/vsd-dev` (DeckOut Dev's config).
+- Signing: the Developer ID certificate is from the original Sub-CA and expires 01/02/2027; a release after that
+  needs a G2 certificate (BL-039). Notarising uses the team's `penkeep-notary` profile.
 
 ### Still open, recorded only here
 - Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M6 `--show-lock-photo`
@@ -54,20 +33,18 @@
   up to 15 warnings.
 
 ### What's next
-1. UAT is done (owner, 20/11/2026), but for removal: Stop and Remove of DeckOut Dev, the first step of moving the
-   decks to the signed app in phase 7, is its test. Swiping the strip to change presets is done (BL-033).
-2. Write the phase 7 plan (`docs/superpowers/plans/`): signing target + identity file, release build, notarise, the
-   GitHub release, README rewrite, moving the owner's decks to the signed app, fresh-install test in a VM, and an
-   update test of the signed build (KI-008: install build 1, then build 2, open the app once: the agent must start
-   the first time; if not, build the 15 s recovery). Each
-   signing, notarising, publishing and install act gets its own go.
-3. Then BL-029 (live strip blocks people add), designed first.
+1. Fresh install on the owner's second Mac (macOS 26), phase 7 plan Task 8: from the release page, then removal both
+   ways (binning without Stop and Remove, then a logout). Then the README's tested versions and removal advice, and
+   `reference/app.md`'s "binned while registered" line.
+2. From 28/11/2026: delete the rollback copies (owner's go).
+3. macOS 27: the owner's call whether to install on the second Mac before telling friends (KI-016).
+4. Then BL-029 (script blocks), once its scripting and scheduling are worked out.
 
 ## Current Status
-DeckOut Dev (`~/Applications`, a debug build of `main`) drives the TreasLin N3 and the MiraBox N4
-through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) has passed the
-owner's UAT (removal is tested in phase 7): it runs the deck controller from its bundle, edits every control,
-presets, brightness, the lock photo, generated icons, monitors and its own removal.
+DeckOut 2.0.0 (Developer ID signed, notarised, released 21/11/2026) drives the TreasLin N3 and the MiraBox N4 from
+`/Applications` through its own agent; DeckOut Dev is removed and the 1.0 hand install retired. Tested on macOS 15
+on this Mac; the owner's second Mac (macOS 26) is next.
+21/11/2026 — Phase 7 release on `main`: `make signed VARIANT=release` at ad0cc56 (build 261121.185529), T-193 passing on the real Developer ID build; `make notarize` Accepted in under a minute (HTTP 403 before, until the company team's new agreement was accepted), stapled, `source=Notarized Developer ID`; v2.0.0-rc.1, then v2.0.0 published (sha256 fba1b450…, downloaded back and matched). Owner session moving the decks: Stop and Remove of DeckOut Dev, `make uninstall-dev`, config + 10 icons into `~/.config/vsd` (0 `vsd-dev` mentions, all 20 image paths present), a browser download opened inside the disk image asked to be moved, installed it ran first time (launchd runs = 1, no Constraint lines), 14/14 and 6/6 screens drawn, one Login Items entry, Accessibility via Allow…, the iTerm2 / Chrome-profile / Desktop `osascript` keys asked once per app and then worked, lock photo and swipe fine; an ad hoc XPC client got no reply. Not run: macOS 26 and 27, the bin-while-registered removal.
 21/11/2026 — Phase 7, two review minors on `main`: `make -n signed` showed the last disk image deleted only after signing, and a padded `SIGN_ID` reaching `codesign` with its spaces; both checks now pass (image deleted before the build, `SIGN_ID` and `NOTARY_PROFILE` trimmed), and a blank `SIGN_ID` is refused as unset (run only with uncommitted changes, so it stopped before `codesign`); the other refusals unchanged. Nothing built or signed.
 21/11/2026 — Phase 7 Task 1 on `main` (signing targets, nothing signed with a certificate): `make app VARIANT=release` failed first at the new Apple Events usage-text check, passes after; T-193 `check-bundle.sh --signed` on the ad hoc release build fails with "not signed with a Developer ID (ad hoc)" while the plain check passes; its parsing read against a scratch ad hoc copy signed with the runtime and the entitlements (the runtime pattern fixed to take `(adhoc,runtime)`); refusals run for real (dev variant, no `SIGN_ID`, uncommitted tree, no `NOTARY_PROFILE`); `make -n signed` signs inside out; a probe disk image built the same way (3.2 MB) mounted with DeckOut.app beside an Applications link, the app inside passing T-107; `make app` (dev) OK; `swift test` 241/241, watched. `make uninstall-dev` only dry-run (`make -n`): DeckOut Dev runs the decks until Task 5. Review fixes: in a scratch harness (fake home, stand-in `launchctl`/`tccutil`), `uninstall-dev` deleted the app while the agent stayed registered, and now refuses and keeps it; with a stand-in `codesign`, T-193 passed a signature lacking the Developer ID marks, and now fails it (the requirement parses in real `codesign`); `swift test` 241/241 again. Two release builds of the same code give the same agent CDHash.
 21/11/2026 — BL-033 on `main` (3582782, 5e479ff, then the `0x38` fix): `swift test` 241/241 (new T-189–T-192), watched; T-191 failed with the hand-off moved above the lock check. `make install-dev` (build 261121.000629); the owner's N4 swipe set to `next_preset` by hand (backup `~/.config/vsd-dev/config.json.bak-2026-11-21`); the agent restarted on it without KI-008. Owner's swipes: 18 switched, 26 came as `0x38` and were ignored; timed round: every swipe and gap tap `0x38`. Fix: T-005 failed first (`0x38` decoded to nothing), 241/241 after; build 261121.012023: 9 of 9 swipes switched. Owner, later: a locked Mac ignores swipes (four "ignored while locked" in the log); swiping steps through the presets. Not checked: the app's preset menu following a swipe.
@@ -85,15 +62,29 @@ presets, brightness, the lock photo, generated icons, monitors and its own remov
 20/11/2026 — UAT fixes on `main` (toolbar, About licences): `swift test` 222/222 (new T-174), watched; T-174 failed first (a licence line measured 506 pt for 464); `make install-dev` (build 261120.132255), one `--snapshot` run: "toolbar menu off, display mode 2, window 540 pt high" (540 before too), the toolbar items' middles on the window buttons' row (25.5 pt; 19.5–21 under Icon and Text), KI-008 on the restart, registered again, drew 14 of 14 and 6 of 6. Owner: licences read well; not checked: the owner's look at the Icon Only toolbar.
 20/11/2026 — BL-003 on `deckout-7-uat-fixes` (ae9ee09): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
 20/11/2026 — BL-005 on `deckout-7-uat-fixes` (to 38094e3): `swift test` 217/217 (new T-169), watched; `make install-dev` (build 261120.103217), one `--snapshot` run: KI-008 on the restart, the app re-registered 10 s later, window "Deck controller running"; the agent drew 6 of 6 and 14 of 14 on connect; one `--post-reload` with nothing changed: "Drew 0 of 6 slots on n3 in 1 ms", "Drew 0 of 14 slots on n4 in 4 ms", "Reloaded in 7 ms" (433–453 ms before). Not checked: a changed key and an unlock on the decks (owner, at UAT).
-20/11/2026 — Seven backlog fixes on `deckout-7-uat-fixes` (to 1b615ac): `swift test` 210/210 (new T-162–T-168), watched; `make install-dev` (build 261120.035630), then one `--snapshot` run of the real app: it asked the old agent to restart, the new one hit KI-008 and the app's own recovery re-registered it 10 s later; the window said "Deck controller running" (the new agent's build), and the agent drew the N3 and the N4's lock photo (Mac locked). Not checked: live strip pushes (paused while locked), every click (owner, at UAT).
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- Phase 7, signing and release (plan `docs/superpowers/plans/2026-11-21-deckout-phase-7-release.md`, not in git): Task 1
-  (signing targets) done; next the README (Task 2), then the owner's signing setup. Backlog: `docs/BACKLOG.md`.
+- Phase 7 close-out: the second-Mac install (macOS 26), then the README's tested versions. Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 21/11/2026 — DeckOut 2.0.0 is out: one signed, notarised download, and the owner's decks run on it
+- **Reference:** `docs/reference/app.md` (Signing and release; Debug builds), `README.md`; plan
+  `docs/superpowers/plans/2026-11-21-deckout-phase-7-release.md`; T-193; BL-039; KI-015–KI-017.
+- **For a person:** a friend downloads `DeckOut-2.0.0.dmg` from GitHub Releases, drags DeckOut to Applications and
+  opens it with only macOS's usual "downloaded from the internet" question. The README explains installing,
+  permissions (Accessibility, not Input Monitoring as 1.0 said), coming from 1.0, updating and removing. Keys that
+  drive other apps through `osascript` still work under the signed build: macOS asks once per app.
+- **Decision (owner, 21/11/2026):** a disk image, not a zip; candidates as public pre-releases; test on macOS 15 and
+  26, then release ("dont overcomplicate a pet project"), publishing before the 26 install; DeckOut Dev removed
+  everywhere, back only for a dev session; the signed update test waits for the first release that changes the
+  agent (BL-039: builds of the same code give an identical agent); rollback copies kept a week.
+- **Checked:** run line above. A fresh opus review of the signing targets: two important fixes made test-first
+  (`uninstall-dev` with the agent still registered; T-193 passing any team's signature), two minors fixed at the
+  owner's word, the rest in the ledger. Seen on the decks: after Stop and Remove the N3 keeps its last pictures
+  (KI-015); the downloaded agent plist carries the quarantine flag (KI-016, macOS 27).
 
 ### 21/11/2026 — A swipe on the N4's strip makes the next preset live
 - **Reference:** `docs/REQUIREMENTS.md` (Saving by the agent; Actions: `next_preset`), `docs/reference/n4.md`,
@@ -143,23 +134,6 @@ presets, brightness, the lock photo, generated icons, monitors and its own remov
 - **Checked:** run line above. One implementer, read by CL, then a fresh reviewer: no critical or important issues;
   its minor (a failed final packet left slots marked as shown) fixed. Parked: a huge file set as an icon is read in
   full on every reload.
-
-### 20/11/2026 — Seven backlog fixes: strip images follow the tap's app, Stop and Remove can't be undone behind your back, tidier editors
-- **Reference:** `docs/reference/app.md` (Launch; Editing; First run and removal), `docs/REQUIREMENTS.md` (XPC);
-  plan `docs/superpowers/plans/2026-11-20-deckout-backlog-fixes-1.md`; T-162–T-168 (T-143, T-153, T-156, T-157
-  sharpened); BL-006, BL-009, BL-010, BL-013, BL-021, BL-030, BL-032.
-- **For a person:** a strip block showing an app's own icon follows its tap to another app, as a key does. An emptied
-  Host field pings the default host instead of staying red. Clear sits at the panel's bottom; Save in Edit in
-  Window… stands out; a block's text image starts "Block". Stop and Remove says "Stopping…" until macOS has the agent
-  out, and a recovery already under way can no longer register it again afterwards. A build without the symbol
-  library says so. Behind the scenes: the agent tells only a signature-checked app about changes, and builds the
-  ~40 KB live-strip update only when the app is open, once per redraw.
-- **Decision (owner, 20/11/2026):** BL-030: only an image that already is an app's own icon follows; a blank block,
-  a live reading, or your own picture / text / symbol stays. "Use your judgement" on BL-032: (CL calls) "Block", the
-  prominent Save, T-153's no-op half deleted, T-156's hashes replaced by layout checks.
-- **Checked:** run line above. One agent per item, each reviewed by CL, then a fresh reviewer over all seven: no
-  critical or important issues; its removal-path minor ("Stopping…") fixed test-first. Open: two minors (Try Again
-  during a recovery re-registers twice; a late push can mark the link connected after removal), in the ledger.
 
 ## History
 Older work: `old_progress/README.md`.

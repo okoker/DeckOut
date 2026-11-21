@@ -1,5 +1,8 @@
 # Config App — Design
 
+**✅ BUILT and released as DeckOut 2.0.0, 21/11/2026 → `docs/reference/app.md`** (how it works now). This design
+stays as the record of why.
+
 Draft 19/11/2026. Decisions by the owner on 19/11/2026 unless marked **(CL call)**: those are Claude's calls,
 stated to the owner and not objected to, or made in this write-up. Idea note: `docs/ideas/config_app_and_new_deck.md`.
 Mockups: `docs/assets/config_app_main_window.html`, `docs/assets/config_app_lock_photo.html`.

@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-039
+Next free ID: BL-040
 
 ---
 
@@ -78,3 +78,10 @@ Next free ID: BL-039
   country connection (the Mac app takes only `protonvpn://refresh`, has no Shortcuts or AppleScript; the CLI is Linux
   only), with the Auto Connect workaround. Straight quotes only. No host, user, profile, VM or URL names from the
   owner's config. `README.md`
+- BL-039 [P1] [bug] Before publishing the first update that changes the agent (2.0.1 or later), test the update of
+  the signed app (KI-008): download its candidate, quit DeckOut (its agent keeps running), drag the new one over it,
+  open it once. Expected: the agent runs on the new build within 15 s, Accessibility is kept, Login Items has one
+  entry, no `Constraint` lines in the log. Not testable at 2.0.0: two release builds of the same code give a
+  byte-identical agent (21/11/2026). If it fails: `AgentLink` re-registers every 15 s while the agent doesn't answer
+  (`init(…, recoveryInterval: TimeInterval = 15)`; a test from T-112's mute listener expecting repeated hooks until it
+  answers). `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)

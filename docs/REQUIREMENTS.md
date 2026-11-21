@@ -4,9 +4,10 @@
 Lightweight macOS daemon (Swift) that drives budget stream decks over USB HID: the TreasLin N3 (VID 0x5548,
 PID 0x1001) and the MiraBox Stream Dock N4 (VID 0x6602, PID 0x1001). One daemon drives every supported deck that is
 plugged in, each with its own layout; both may be connected at once. Reads button/knob events, maps them to
-configurable actions. Set up with the DeckOut app (`docs/reference/app.md`; on `main` since 20/11/2026, in the owner's UAT, not released),
-or by hand in the JSON file. macOS 15 or later, Apple Silicon. The program is `DeckOutAgent` (built by `swift build`); a hand install from the
-README keeps it under its old name, `StreamDeckController`.
+configurable actions. Set up with the DeckOut app (`docs/reference/app.md`; UAT passed 20/11/2026; release 2.0.0,
+Developer ID signed and notarised, in progress: design phase 7), or by hand in the JSON file. macOS 15 or later, Apple
+Silicon. The program is `DeckOutAgent` (built by `swift build`), inside the app; the 1.0 hand install kept it under its
+old name, `StreamDeckController`.
 
 ## Devices
 Event codes overlap between the decks with different meanings, so each deck's input is decoded with its own map.

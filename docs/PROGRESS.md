@@ -19,7 +19,8 @@
   `io.github.okoker.deckout.dev.agent`; config `~/.config/vsd-dev/config.json`; log `~/Library/Logs/DeckOut Dev/agent.log`).
   The hand install is retired (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout`); rollback:
   DeckOut Dev → Settings → Stop and Remove, `mv` the plist back, `launchctl bootstrap gui/$(id -u) <plist>`.
-- `make install-dev` restarts the agent on the new build; KI-008 darkens the decks ~10 s until the app re-registers.
+- After `make install-dev`, opening the app restarts the agent on the new build. KI-008 can refuse it: if the window
+  stays on "not running", quit DeckOut Dev and open it again (Try Again right away doesn't help).
 
 ### Release gotchas (phase 7)
 - The signed DeckOut is a different app from DeckOut Dev: its own bundle id, agent and config folder (`~/.config/vsd`,
@@ -51,7 +52,9 @@
 1. UAT is done (owner, 20/11/2026), but for removal: Stop and Remove of DeckOut Dev, the first step of moving the
    decks to the signed app in phase 7, is its test. Swiping the strip to change presets is done (BL-033).
 2. Write the phase 7 plan (`docs/superpowers/plans/`): signing target + identity file, release build, notarise, the
-   GitHub release, README rewrite, moving the owner's decks to the signed app, fresh-install test in a VM. Each
+   GitHub release, README rewrite, moving the owner's decks to the signed app, fresh-install test in a VM, and an
+   update test of the signed build (KI-008: install build 1, then build 2, open the app once: the agent must start
+   the first time; if not, build the 15 s recovery). Each
    signing, notarising, publishing and install act gets its own go.
 3. Then BL-029 (live strip blocks people add), designed first.
 

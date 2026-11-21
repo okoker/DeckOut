@@ -21,6 +21,8 @@
   DeckOut Dev → Settings → Stop and Remove, `mv` the plist back, `launchctl bootstrap gui/$(id -u) <plist>`.
 - After `make install-dev`, opening the app restarts the agent on the new build. KI-008 can refuse it: if the window
   stays on "not running", quit DeckOut Dev and open it again (Try Again right away doesn't help).
+- After every install, Accessibility (keyboard shortcuts, media keys, commands that send keystrokes) needs the
+  "DeckOut Dev" entry removed and the app added again: the old entry stays on but no longer matches the new build.
 
 ### Release gotchas (phase 7)
 - The signed DeckOut is a different app from DeckOut Dev: its own bundle id, agent and config folder (`~/.config/vsd`,
@@ -37,7 +39,8 @@
   01/02/2027 need a G2 one). Every `codesign` / `notarytool` run needs the owner's go; never pick the identity.
 - Untested: KI-008 under a Developer ID signature; launchd taking the agent plist from a quarantined download on
   macOS 27 (design: Testing). Fresh-install tests need a macOS VM tool: ask before installing one.
-- Docs at release: README rewrite (it still describes the hand install), the design's "✅ BUILT" marker, a pointer
+- Docs at release: README rewrite (it still describes the hand install; its permissions section is wrong: shortcuts,
+  media keys and keystroke-sending commands need Accessibility for the app, not Input Monitoring), the design's "✅ BUILT" marker, a pointer
   from the ideas note. VERSION says 2.0.0.
 
 ### Still open, recorded only here
@@ -63,7 +66,7 @@ DeckOut Dev (`~/Applications`, a debug build of `main`) drives the TreasLin N3 a
 through its own agent; the hand install is retired. The app (design phases 2–6, plus the UAT fixes) has passed the
 owner's UAT (removal is tested in phase 7): it runs the deck controller from its bundle, edits every control,
 presets, brightness, the lock photo, generated icons, monitors and its own removal.
-21/11/2026 — BL-033 on `main` (3582782, 5e479ff, then the `0x38` fix): `swift test` 241/241 (new T-189–T-192), watched; T-191 failed with the hand-off moved above the lock check. `make install-dev` (build 261121.000629); the owner's N4 swipe set to `next_preset` by hand (backup `~/.config/vsd-dev/config.json.bak-2026-11-21`); the agent restarted on it without KI-008. Owner's swipes: 18 switched, 26 came as `0x38` and were ignored; timed round: every swipe and gap tap `0x38`. Fix: T-005 failed first (`0x38` decoded to nothing), 241/241 after; build 261121.012023: 9 of 9 swipes switched. Not checked: a swipe on a locked Mac, the app's menu following (owner).
+21/11/2026 — BL-033 on `main` (3582782, 5e479ff, then the `0x38` fix): `swift test` 241/241 (new T-189–T-192), watched; T-191 failed with the hand-off moved above the lock check. `make install-dev` (build 261121.000629); the owner's N4 swipe set to `next_preset` by hand (backup `~/.config/vsd-dev/config.json.bak-2026-11-21`); the agent restarted on it without KI-008. Owner's swipes: 18 switched, 26 came as `0x38` and were ignored; timed round: every swipe and gap tap `0x38`. Fix: T-005 failed first (`0x38` decoded to nothing), 241/241 after; build 261121.012023: 9 of 9 swipes switched. Owner, later: a locked Mac ignores swipes (four "ignored while locked" in the log); swiping steps through the presets. Not checked: the app's preset menu following a swipe.
 20/11/2026 — Pushed d215e87..ffc7631 (BL-031, BL-022, BL-015, BL-007, BL-018 + BL-023); `make install-dev` (build 261120.165253) after backing up `~/.config/vsd-dev` to `~/.config/vsd-dev.bak-2026-11-20`; one `--snapshot` run: "removed 31 unused icon files", exactly the 31 a separate grep over the backup predicted (4 named by the config kept, `config.json` unchanged, nothing else touched); KI-008 on the restart, registered again; the agent drew 14 of 14 and 6 of 6 with no warnings; window "Deck controller running", the N3's six icons drawn. Not checked yet: the clicks for BL-031, BL-022, BL-015, BL-007 (owner).
 20/11/2026 — BL-018 + BL-023 on `main`: `swift test` 237/237 (new T-186–T-188), watched; T-186 and T-188 failed first against do-nothing stubs; with the code in, each of six guards taken out in turn failed a test (config check, unreadable file, links, subfolders, undo history, once per run), sources restored byte for byte. Not installed; not checked: the start-up log line and the icons folder after a real launch (owner). Phase 7 must rewrite `vsd-dev` paths (Release gotchas).
 20/11/2026 — BL-007 on `main`: `swift test` 234/234 (new T-185), watched; T-185 failed first (the N3's JPEG of a 2:1 icon filled 72 × 73, the square), and again with the old drawing put back after the fix. Square icons draw as before (a square fitted in a square is the same square). Not installed; not checked: a non-square icon on the real N3 (owner).

@@ -44,7 +44,8 @@ the job definition it registered: a changed plist needs a new label.
    reconnects the status line says "Reconnecting to the deck controller…"; after 3 s without an answer the last status
    is dropped, so the window stops drawing decks from it. No answer within 10 s of starting or of the drop (one
    deadline for the link, so an agent that refuses every connection at once counts too) → "not answering": the app
-   unregisters and registers the agent afresh once (KI-008), then starts its link over. Another build → `restart`
+   unregisters and registers the agent afresh once, then starts its link over. After a new ad hoc build this can
+   land before launchd's own retry and be refused again, and Try Again can't win (KI-008: quit and reopen). Another build → `restart`
    once per launch; still another build → the status line says so. When the app becomes active while the link is
    down, it looks at the registration again (switched off in Login Items → "Allow DeckOut in Login Items").
 4. The config is re-read from disk on every status push (they follow reloads and decks coming and going).
@@ -147,7 +148,10 @@ the job definition it registered: a changed plist needs a new label.
   is blank and live; Rename renames the preset the sheet was opened for. Picking one makes it live on the deck.
 - **Accessibility:** a keyboard shortcut or media key on a control, with the agent not allowed, shows a note with
   Allow…: the agent asks macOS to list it, the Accessibility pane opens, and the app checks again every 2 s for a
-  minute (one watch: another click starts the minute again).
+  minute (one watch: another click starts the minute again). macOS checks the app the agent lives in (DeckOut,
+  DeckOut Dev), not DeckOutAgent, so that's the entry to switch on; a command's keystrokes (`osascript` → System
+  Events) are checked the same way (21/11/2026). An ad hoc build's entry stays on after a rebuild but no longer
+  matches: remove it and add the app again.
 
 ## Lock photo mode (N4)
 - **Lock Photo…** in the toolbar (N4 on screen) switches the window into photo mode; Done (or switching deck,

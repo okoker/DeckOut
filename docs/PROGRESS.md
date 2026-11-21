@@ -8,8 +8,9 @@
   text. The owner turned the knob on the decks: it works.
 - 95eecc1: `deckout-7-uat-fixes` (plans 2–7, backlog fixes, BL-003) fast-forwarded into `main` and pushed; every
   `deckout-*` branch deleted (owner). Work happens on `main` now.
-- Upstream: waydabber/m1ddc#81 (from the fork okoker/m1ddc) offers the same patch. If it merges, vendor upstream
-  again and drop ours.
+- Upstream: waydabber/m1ddc#81 (from the fork okoker/m1ddc) offers the same patch; updated 21/11/2026 (a9ed017)
+  with `--read-wait` and the "unsupported VCP code" message the maintainer asked for. Waiting on his merge; if it
+  merges, vendor upstream again and drop ours.
 
 ### Uncommitted state
 - This handover only. `.DS_Store` and `_user_private/` stay untracked.

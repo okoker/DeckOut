@@ -32,7 +32,8 @@ plan 3 (editing), plan 4 (lock photo), plan 5 (icons), plan 6 (settings, monitor
 
 ## Signing and release
 - `make signed VARIANT=release` (the owner's go, each run) refuses unless the variant is release, `SIGN_ID` is set and
-  no tracked file has uncommitted changes. It builds the release app, then signs inside out, never `--deep`: m1ddc
+  no tracked file has uncommitted changes. It first deletes the last disk image (so after a failed run `make notarize` finds
+  nothing to submit), then builds the release app, then signs inside out, never `--deep`: m1ddc
   (`-i io.github.okoker.deckout.m1ddc`), the agent (`-i io.github.okoker.deckout.agent`), the app, each with
   `codesign --force --timestamp -o runtime` (hardened runtime, secure timestamp). T-193 then requires Apple's marks for
   a Developer ID Application certificate, not just a team id. The agent and the app carry
@@ -44,7 +45,8 @@ plan 3 (editing), plan 4 (lock photo), plan 5 (icons), plan 6 (settings, monitor
   and validates the ticket, requires Gatekeeper's `source=Notarized Developer ID`, and prints the SHA-256. A rejected
   submission has no ticket, so stapling fails and make stops; `xcrun notarytool log <id>` says why.
 - `signing.mk` (gitignored; template `signing.mk.example`) sets `SIGN_ID`, the certificate's SHA-1, and
-  `NOTARY_PROFILE`, the Keychain profile that `notarytool store-credentials` made. The repo never names the
+  `NOTARY_PROFILE`, the Keychain profile that `notarytool store-credentials` made. Both are trimmed, so a trailing
+  space or a space before a `# comment` does no harm. The repo never names the
   certificate: the checks drop `codesign`'s `Authority=` lines and `spctl`'s `origin=` line.
 
 ## Agent plist

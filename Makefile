@@ -33,7 +33,10 @@ ENTITLEMENTS := Packaging/DeckOut.entitlements
 
 # SIGN_ID (the certificate's SHA-1) and NOTARY_PROFILE. Gitignored; see signing.mk.example.
 -include signing.mk
-SIGN = codesign --force --timestamp -o runtime -s "$(SIGN_ID)"
+# Trimmed: make keeps a trailing space (or the one before a "# comment") in signing.mk, and codesign would then fail.
+SIGN_HASH = $(strip $(SIGN_ID))
+NOTARY = $(strip $(NOTARY_PROFILE))
+SIGN = codesign --force --timestamp -o runtime -s "$(SIGN_HASH)"
 
 .PHONY: app install-dev uninstall-dev signed notarize test
 
@@ -91,27 +94,28 @@ uninstall-dev:
 # Developer ID signing, inside out (m1ddc, the agent, the app), never --deep; then the disk image, signed too.
 signed:
 	@[ "$(VARIANT)" = release ] || { echo "make signed is for VARIANT=release only" >&2; exit 1; }
-	@[ -n "$(SIGN_ID)" ] || { echo "SIGN_ID isn't set: copy signing.mk.example to signing.mk and fill it in" >&2; exit 1; }
+	@[ -n "$(SIGN_HASH)" ] || { echo "SIGN_ID isn't set: copy signing.mk.example to signing.mk and fill it in" >&2; exit 1; }
 	@[ -z "$$(git status --porcelain --untracked-files=no)" ] || { echo "commit first: a signed build is made only from a committed tree" >&2; exit 1; }
+	@# The last candidate's image goes first: after a failed run, make notarize must find nothing to submit.
+	rm -rf build/dmg "$(DMG)"
 	$(MAKE) app VARIANT=release
 	$(SIGN) -i $(BUNDLE_ID).m1ddc "$(APP)/Contents/Helpers/m1ddc"
 	$(SIGN) -i $(LABEL) --entitlements $(ENTITLEMENTS) "$(APP)/Contents/MacOS/DeckOutAgent"
 	$(SIGN) --entitlements $(ENTITLEMENTS) "$(APP)"
 	scripts/check-bundle.sh --signed "$(APP)"
-	rm -rf build/dmg "$(DMG)"
 	mkdir -p build/dmg
 	ditto "$(APP)" "build/dmg/$(APP_NAME).app"
 	ln -s /Applications build/dmg/Applications
 	hdiutil create -volname DeckOut -srcfolder build/dmg -format UDZO -ov "$(DMG)"
-	codesign --force --timestamp -s "$(SIGN_ID)" "$(DMG)"
+	codesign --force --timestamp -s "$(SIGN_HASH)" "$(DMG)"
 	@echo "Signed $(DMG) from commit $$(git rev-parse --short HEAD)"
 
 # A rejected submission has no ticket, so staple fails and make stops: read why with xcrun notarytool log <id>.
 # spctl's origin= line (the certificate's name) is dropped from the output.
 notarize:
-	@[ -n "$(NOTARY_PROFILE)" ] || { echo "NOTARY_PROFILE isn't set: see signing.mk.example" >&2; exit 1; }
+	@[ -n "$(NOTARY)" ] || { echo "NOTARY_PROFILE isn't set: see signing.mk.example" >&2; exit 1; }
 	@[ -f "$(DMG)" ] || { echo "no $(DMG): run make signed VARIANT=release first" >&2; exit 1; }
-	xcrun notarytool submit "$(DMG)" --keychain-profile "$(NOTARY_PROFILE)" --wait
+	xcrun notarytool submit "$(DMG)" --keychain-profile "$(NOTARY)" --wait
 	xcrun stapler staple "$(DMG)"
 	xcrun stapler validate "$(DMG)"
 	@out=$$(spctl -a -t open --context context:primary-signature -v "$(DMG)" 2>&1 | grep -v '^origin='); echo "$$out"; \

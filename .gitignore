@@ -9,3 +9,4 @@ config.json
 !docs/assets/streamdeck.jpg
 build/
 signing.mk
+docs/reference/releasing.md

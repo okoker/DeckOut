@@ -46,8 +46,8 @@ dependencies beyond macOS, and its settings are one JSON file you can also edit 
 
 ## Hardware
 
-**TreasLin N3:** [TreasLin N3](https://www.amazon.com/dp/B0FFMY9DZ8), a USB stream deck with 6 LCD keys (72 × 72
-pixels), 3 buttons, 1 large and 2 small knobs. Every knob is also a push-button.
+**TreasLin N3:** a USB stream deck with 6 LCD keys (72 × 72 pixels), 3 buttons, 1 large and 2 small knobs. Every
+knob is also a push-button.
 
 **Known clones / rebrands** that share the same USB VID/PID (`0x5548:0x1001`) and CRT protocol should work out of the
 box:
@@ -65,6 +65,13 @@ certainly work.
 after a replug (`docs/KNOWN_ISSUES.md`, KI-009).
 
 Both decks can be plugged in at once, each with its own layout and presets.
+
+**Other makers.** VSDinside (whose VSD Craft software these decks come with), MiraBox, SOOMFON and AJAZZ sell decks
+that look and work much alike; some are the same hardware under another name. They differ in the details that
+matter here, though: USB IDs, key counts, screen sizes and the codes each button sends. DeckOut recognises a deck by
+its USB IDs and knows two layouts, so a model not listed above isn't supported yet, even if it looks the same. To
+check yours: System Information → USB → the deck's Vendor ID and Product ID. `0x5548` / `0x1001` or `0x6602` /
+`0x1001` should work; for anything else, open an issue with the IDs and a photo.
 
 While the Mac is locked, keys, strip taps and swipes do nothing, and knobs keep only their volume, ZR7 and monitor
 brightness actions.

@@ -80,9 +80,10 @@ Next free ID: BL-041
   entry, no `Constraint` lines in the log. Not testable at 2.0.0: two release builds of the same code give a
   byte-identical agent (21/11/2026). If it fails: `AgentLink` re-registers every 15 s while the agent doesn't answer
   (`init(…, recoveryInterval: TimeInterval = 15)`; a test from T-112's mute listener expecting repeated hooks until it
-  answers). The Developer ID certificate expires 01/02/2027 (original Sub-CA): a release after that is signed with a
-  new G2 certificate, so its update also crosses the switch: compare `codesign -dr -` of the old and new build, and
-  check Accessibility and Login Items survive. `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)
+  answers). The Developer ID certificate expires 01/02/2027 (original Sub-CA). Its G2 replacement, and every G2
+  certificate after it, lasts one year (Apple, "Replace Developer ID certificates"), so the first release after each
+  yearly renewal also crosses a certificate switch: compare `codesign -dr -` of the old and new build, and check
+  Accessibility and Login Items survive. `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)
 - BL-040 [P2] [debt] Use upstream m1ddc 1.3.3 (released 21/11/2026) unpatched, in place of 1.3.1 with DeckOut's
   patch. 1.3.3 carries that patch's read fix (waydabber/m1ddc#81, merged 21/11/2026), plus `--read-wait <ms>`
   (default 50), "Unsupported VCP code" at once with exit 1 for a result `01`, and up to 8 monitors (1.3.2). Vendor

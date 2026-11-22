@@ -161,8 +161,7 @@ delete that folder too to remove everything, and DeckOut's entry under Privacy &
 - **The daemon** (`DeckOutAgent`, inside the app) is a LaunchAgent the app registers with macOS (`SMAppService`).
   It claims each deck's vendor interface by USB IDs through IOKit's `IOHIDManager`, speaks the decks' "CRT" packet
   protocol (1025-byte HID reports; commands start `CRT\0\0`, events `ACK`; a `CONNECT` keepalive every 5 seconds or
-  the deck goes dark) and sends key images as JPEGs in chunks (the N4's turned 180°: its panel is mounted upside
-  down). Keyboard shortcuts and media keys go through `CGEvent`, the volume through CoreAudio, monitor brightness
+  the deck goes dark) and sends key images as JPEGs in chunks, turned to suit each deck's panel. Keyboard shortcuts and media keys go through `CGEvent`, the volume through CoreAudio, monitor brightness
   through m1ddc. It reconnects when a deck is unplugged and plugged back in.
 - **The app** (SwiftUI) and the daemon talk over XPC, each checking the other's code signature. The app saves your
   setup to `~/.config/vsd/config.json`, and the daemon redraws only the screens that changed.

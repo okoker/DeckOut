@@ -27,7 +27,7 @@
   (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` and its program),
   `~/.config/vsd.bak-2026-11-21` (the 1.0 config folder) and `~/.config/vsd-dev` (DeckOut Dev's config).
 - Signing: the Developer ID certificate is from the original Sub-CA and expires 01/02/2027; a release after that
-  needs a G2 certificate (BL-039). Notarising uses the team's `penkeep-notary` profile.
+  needs a G2 certificate (BL-039). Notarising uses the team's notary profile, named in `signing.mk`.
 
 ### Still open, recorded only here
 - Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M6 `--show-lock-photo`

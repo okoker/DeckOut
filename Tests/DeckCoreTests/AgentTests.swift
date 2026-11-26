@@ -269,3 +269,34 @@ private func next(_ agent: Agent, _ deck: DeckKind) async {
         #expect(asked == (locked ? [] : [.n4, .n4]), "locked: \(locked)")
     }
 }
+
+@Test func liveStripCarriesThePicks() async throws {                 // T-207
+    // The app draws the block above a list knob from the pick the deck shows: the agent tells it with the live strip,
+    // and pushes a change when a turn moves a pick.
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-picks-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    let path = folder.appendingPathComponent("config.json").path
+    let sites = ["url:https://en.wikipedia.org", "url:https://github.com", "url:https://www.bbc.co.uk"]
+    try ConfigFile.save(AppConfig(n4: N4Section(
+        brightness: 50, swipe: nil, lockPhoto: nil,
+        presets: [N4Preset(name: "Work", keys: [:], strip: [:],
+                           knobs: ["knob_1": KnobConfig(list: sites.map { ButtonConfig(action: $0) }),
+                                   "knob_2": KnobConfig(list: [])])],
+        activePreset: "Work")), to: path)
+    nonisolated(unsafe) let agent = Agent(configPath: path, environment: ShellEnvironment(fixed: ["PATH": "/usr/bin:/bin"]),
+                                          lockMonitor: LockMonitor(isLockedNow: { false }))
+    nonisolated(unsafe) var pushes = 0
+    agent.onLiveStripChange = { pushes += 1 }
+    let before = await onMain { done in done(agent.liveStrip()) }
+    #expect(before.picks == ["knob_1": 0])                            // an empty list has no pick
+    let after = await onMain { done in
+        agent.daemon.handle(.n4, .knobTurn("knob_1", 1))
+        agent.picksChanged()                                          // what start() wires the daemon's hook to
+        done(agent.liveStrip())
+    }
+    #expect(after.picks == ["knob_1": 1])
+    #expect(pushes == 1)
+    // An older agent's reply has no picks: it still reads.
+    let old = try JSONDecoder().decode(LiveStrip.self, from: Data(#"{ "images": {} }"#.utf8))
+    #expect(old.picks == [:])
+}

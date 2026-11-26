@@ -82,6 +82,17 @@ public final class Daemon {
     /// Where each list knob is in its list, in memory only (docs/design/knob_lists.md).
     private(set) var picks = KnobPicks()
 
+    /// Each list knob's pick on the N4's live preset (knob → item index); an empty list has none.
+    func livePicks() -> [String: Int] {
+        guard let n4 = config.n4 else { return [:] }
+        var shown: [String: Int] = [:]
+        for (knob, settings) in n4.knobs {
+            guard let list = settings.list else { continue }
+            shown[knob] = picks.pick(.n4, preset: n4.active.name, knob: knob, count: list.count)
+        }
+        return shown
+    }
+
     /// The decks plugged in now.
     var connectedKinds: [DeckKind] { decks.connections.map { $0.model.kind } }
 
@@ -125,6 +136,9 @@ public final class Daemon {
             showCurrent(connection)
         }
         updateLiveSources()
+        // A swipe or an edit may bring other lists, or move a pick a shorter list no longer reaches: the app hears
+        // the live preset's picks again.
+        if config.n4?.knobs.values.contains(where: { $0.list != nil }) == true { onPicksChanged?() }
         print("Reloaded in \(Int(Date().timeIntervalSince(started) * 1000)) ms")
     }
 

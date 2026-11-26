@@ -108,3 +108,22 @@ private func listConfig(_ list: [ButtonConfig], strip: [String: StripBlockConfig
         #expect(changed == (locked ? 0 : 2), "locked: \(locked)")
     }
 }
+
+@Test func aReloadRepeatsThePicks() async {                         // T-217
+    // A swipe or an app edit reloads: the app hears the new live preset's picks, so the block above a list knob in
+    // the window follows the deck. A preset without lists has nothing to tell.
+    nonisolated(unsafe) let daemon = Daemon(config: .empty, environment: ShellEnvironment(fixed: [:]),
+                                            lockMonitor: LockMonitor(isLockedNow: { false }))
+    nonisolated(unsafe) var changed = 0
+    daemon.onPicksChanged = { changed += 1 }
+    let plain = AppConfig(n4: N4Section(brightness: 50, swipe: nil, lockPhoto: nil,
+                                        presets: [N4Preset(name: "Work", keys: [:], strip: [:], knobs: ["knob_4": volumeKnob])],
+                                        activePreset: "Work"))
+    let counts: [Int] = await onMain { done in
+        daemon.reload(listConfig([wikipedia, github]))
+        let afterList = changed
+        daemon.reload(plain)
+        done([afterList, changed])
+    }
+    #expect(counts == [1, 1])
+}

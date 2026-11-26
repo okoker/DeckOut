@@ -30,9 +30,22 @@ public struct AgentStatus: Codable, Equatable {
 /// turned 180°). The app turns them upright for its drawing.
 public struct LiveStrip: Codable, Equatable {
     public var images: [String: Data]
+    /// Each list knob's pick on the N4's live preset (knob → item index), so the app draws the block above it as
+    /// the deck shows it. An empty list has none.
+    public var picks: [String: Int]
 
-    public init(images: [String: Data]) {
+    public init(images: [String: Data], picks: [String: Int] = [:]) {
         self.images = images
+        self.picks = picks
+    }
+
+    private enum CodingKeys: String, CodingKey { case images, picks }
+
+    /// A reply from an agent of an older build has no picks.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        images = try c.decode([String: Data].self, forKey: .images)
+        picks = try c.decodeIfPresent([String: Int].self, forKey: .picks) ?? [:]
     }
 }
 
@@ -73,7 +86,7 @@ public protocol AgentControl: AnyObject {
 public final class Agent: AgentControl {
     public let configPath: String
     private let environment: ShellEnvironment
-    private let daemon: Daemon
+    let daemon: Daemon                  // internal for tests
     private var config: AppConfig
     private var configProblem: String?
     private var environmentRefreshPending = false
@@ -95,11 +108,19 @@ public final class Agent: AgentControl {
 
     /// Reads the config. Without a usable one the decks stay blank and the problem is reported: under launchd's
     /// KeepAlive, exiting would restart it into the same failure forever. A reload that loads replaces it.
-    public init(configPath: String, environment: ShellEnvironment = .init(),
-                version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev",
-                build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev",
-                exit: @escaping () -> Void = { Darwin.exit(0) },
-                log: @escaping (String) -> Void = { print($0) }) {
+    public convenience init(configPath: String, environment: ShellEnvironment = .init(),
+                            version: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev",
+                            build: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "dev",
+                            exit: @escaping () -> Void = { Darwin.exit(0) },
+                            log: @escaping (String) -> Void = { print($0) }) {
+        self.init(configPath: configPath, environment: environment, version: version, build: build, exit: exit,
+                  log: log, lockMonitor: LockMonitor())
+    }
+
+    /// The same, with the lock state to use: tests pass one with a fixed answer.
+    init(configPath: String, environment: ShellEnvironment = .init(), version: String = "dev", build: String = "dev",
+         exit: @escaping () -> Void = { Darwin.exit(0) }, log: @escaping (String) -> Void = { print($0) },
+         lockMonitor: LockMonitor) {
         self.configPath = configPath
         self.log = log
         self.exitProcess = exit
@@ -115,7 +136,7 @@ public final class Agent: AgentControl {
         }
         config = startup.config
         configProblem = startup.problem
-        daemon = Daemon(config: startup.config, environment: environment)
+        daemon = Daemon(config: startup.config, environment: environment, lockMonitor: lockMonitor)
     }
 
     /// Reads the shell environment and opens the decks. `showLockPhoto`: keep the N4's lock photo up
@@ -124,6 +145,7 @@ public final class Agent: AgentControl {
         daemon.onDecksChanged = { [weak self] in self?.onStatusChange?() }
         daemon.onLiveImages = { [weak self] images in self?.receiveLiveImages(images) }
         daemon.onNextPreset = { [weak self] deck in self?.switchToNextPreset(deck) }
+        daemon.onPicksChanged = { [weak self] in self?.picksChanged() }
         refreshEnvironment { _ in }
         daemon.start()
         if showLockPhoto { daemon.showLockPhoto(config.n4?.lockPhoto) }
@@ -195,7 +217,12 @@ public final class Agent: AgentControl {
         for (block, settings) in config.n4?.strip ?? [:] {
             if let image = liveImages[settings.type] { images[block] = image }
         }
-        return LiveStrip(images: images)
+        return LiveStrip(images: images, picks: daemon.livePicks())
+    }
+
+    /// A turn moved a list knob's pick: the app hears it as a live strip change.
+    func picksChanged() {
+        onLiveStripChange?()
     }
 
     /// One redraw's new live block images, one per type (from the Daemon, on the main thread): the app hears one

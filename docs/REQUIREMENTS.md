@@ -257,10 +257,11 @@ install). Without either, all other features work — brightness actions log a w
   status, stdout, stderr or the error), `showLockPhoto` (a framing, or nil for the layout; the preview ends by itself
   when the connection that set it goes, e.g. the app quits or crashes in photo mode), `refreshEnvironment`,
   `restart` (replies, then exits 0.3 s later; launchd's KeepAlive starts the binary now in the bundle) and
-  `liveStrip` (the images the N4's live strip blocks show, keyed by block, as drawn) and `requestAccessibility` (asks
+  `liveStrip` (the images the N4's live strip blocks show, keyed by block, as drawn, and each list knob's
+  pick on the live preset, keyed by knob) and `requestAccessibility` (asks
   macOS to list the agent under Accessibility; `status` reports whether it's allowed); the app hears `statusChanged`
   on deck connect / remove, reloads and environment reads, and `liveStripChanged` once per redraw that gives live
-  blocks new images, once it has asked for `status` on that connection (asking signs it up, so a peer XPC refuses
+  blocks new images, after a turn moves a list knob's pick, and after a reload when the live preset has list knobs, once it has asked for `status` on that connection (asking signs it up, so a peer XPC refuses
   hears nothing; with no app signed up, neither is built).
   Payloads are JSON of DeckCore's types; a request that doesn't decode gets the error "bad request".
   Only DeckOut's own app may connect, checked by

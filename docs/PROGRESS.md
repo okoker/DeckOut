@@ -1,8 +1,11 @@
 # Progress
 
-## Session Handover — 21/11/2026: DeckOut 2.0.0 released (signed, notarised); the decks run on it
+## Session Handover — 26/11/2026: DeckOut 2.1.0 released; settings in `~/.deckout`; the decks run on it
 
 ### What was done
+- 26/11/2026: the settings folder and 1.0's names (f06bc9e), released as 2.1.0 from da7f66b (no candidate: the owner
+  asked to build and replace everywhere; the signing targets are 2.0.0's); this Mac updated and its setup moved
+  (entry below).
 - Phase 7 (plan `docs/superpowers/plans/2026-11-21-deckout-phase-7-release.md`, gitignored; ledger
   `.superpowers/sdd/2026-11-21-deckout-phase-7-release/progress.md`): signing targets and T-193 (1eef572, 17afc28,
   ad0cc56), README for 2.0.0 (b264653), BL-039 (6f0ba6b). v2.0.0 published 21/11/2026 from ad0cc56, the rc.1 image
@@ -18,14 +21,13 @@
   profile name) and `docs/reference/releasing.md` (the private release how-to).
 
 ### Environment state
-- The decks run on DeckOut 2.0.0 in `/Applications` (agent `io.github.okoker.deckout.agent`, config
-  `~/.config/vsd/config.json`, log `~/Library/Logs/DeckOut/agent.log`); Accessibility and Automation are granted to
-  DeckOut.
+- The decks run on DeckOut 2.1.0 in `/Applications` (agent `io.github.okoker.deckout.agent`, config
+  `~/.deckout/config.json`, log `~/Library/Logs/DeckOut/agent.log`); Accessibility and Automation are granted to
+  DeckOut. `~/.config/vsd` is gone (moved to `~/.deckout`); `~/.deckout/config.json.before-move` is the config as
+  2.0.0 left it (old paths), and `build/DeckOut-2.0.0.dmg` is 2.0.0, for going back.
 - DeckOut Dev is removed (`make uninstall-dev`). A dev session: Stop and Remove in DeckOut, `make install-dev`, test,
-  `make uninstall-dev`, open DeckOut again. A build from `main` uses `~/.deckout-dev`: seed it from `~/.config/vsd`,
+  `make uninstall-dev`, open DeckOut again. A build from `main` uses `~/.deckout-dev`: seed it from `~/.deckout`,
   rewriting the image paths inside `config.json`.
-- `main` reads `~/.deckout` since 26/11/2026; this Mac's setup stays in `~/.config/vsd` until a build from `main`
-  replaces 2.0.0, then moves once, by hand (TODO).
 - Rollback copies, to delete from 28/11/2026 at the owner's go: the retired 1.0 install
   (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` and its program),
   `~/.config/vsd.bak-2026-11-21` (the 1.0 config folder) and `~/.config/vsd-dev` (DeckOut Dev's config).
@@ -50,9 +52,10 @@
 4. Then BL-029 (script blocks), once its scripting and scheduling are worked out.
 
 ## Current Status
-DeckOut 2.0.0 (Developer ID signed, notarised, released 21/11/2026) drives the TreasLin N3 and the MiraBox N4 from
-`/Applications` through its own agent; DeckOut Dev is removed and the 1.0 hand install retired. Tested on macOS 15
-on this Mac; the owner's second Mac (macOS 26) is next.
+DeckOut 2.1.0 (Developer ID signed, notarised, released 26/11/2026; 2.0.0 on 21/11/2026) drives the TreasLin N3 and
+the MiraBox N4 from `/Applications` through its own agent, with its settings in `~/.deckout`; DeckOut Dev is removed
+and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's second Mac (macOS 26) is next.
+26/11/2026 — Release 2.1.0 from da7f66b: `swift test` 242/242, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.124509), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 cc4c07ac…; v2.1.0 published (no candidate), downloaded back: same sha256, accepted with the quarantine flag set. This Mac: dry run first (13 paths under `/.config/vsd/`, 22 image paths, none missing), then `~/.config/vsd` → `~/.deckout`, paths rewritten (0 `vsd` left, all 22 present, 0600), `/Applications/DeckOut.app` replaced from the image while the 2.0.0 agent ran (same designated requirement), app opened: the agent restarted on 2.1.0 about a second later (launchd runs 1 → 2, last exit 0, the same pid 2 minutes on), read `~/.deckout` and drew 6 of 6 and 14 of 14 with the lock photo from the new folder; BTM showed the item "enabled, allowed". AMFI's "Constraint not matched" logged at the same second is unrelated (15 times in 3 hours, before and after). Not checked: Accessibility kept (a keyboard-shortcut key, owner).
 26/11/2026 — Settings folder `~/.deckout`, per-DeckOut reload name, 1.0 names, on `main`: `swift test` 242/242 (new T-194), watched; T-194, T-095, T-097 and T-073 failed first against stubs keeping the old names; no `~/.deckout` or `~/.deckout-dev` appeared during the run; `make app` (build 261126.070211) passed T-107, its `DeckOutAgent --post-reload` posted `io.github.okoker.deckout.dev.agent.reload` (the bare `.build` binary: `io.github.okoker.deckout.reload`), and `strings` finds no `streamdeck` or `config/vsd` in the agent; the "stopped" screen's snapshot reads "~/.deckout". Not run: DeckOut Dev installed (the decks stayed on 2.0.0).
 21/11/2026 — Phase 7 release on `main`: `make signed VARIANT=release` at ad0cc56 (build 261121.185529), T-193 passing on the real Developer ID build; `make notarize` Accepted in under a minute (HTTP 403 before, until the company team's new agreement was accepted), stapled, `source=Notarized Developer ID`; v2.0.0-rc.1, then v2.0.0 published (sha256 fba1b450…, downloaded back and matched). Owner session moving the decks: Stop and Remove of DeckOut Dev, `make uninstall-dev`, config + 10 icons into `~/.config/vsd` (0 `vsd-dev` mentions, all 20 image paths present), a browser download opened inside the disk image asked to be moved, installed it ran first time (launchd runs = 1, no Constraint lines), 14/14 and 6/6 screens drawn, one Login Items entry, Accessibility via Allow…, the iTerm2 / Chrome-profile / Desktop `osascript` keys asked once per app and then worked, lock photo and swipe fine; an ad hoc XPC client got no reply. Not run: macOS 26 and 27, the bin-while-registered removal.
 21/11/2026 — Phase 7, two review minors on `main`: `make -n signed` showed the last disk image deleted only after signing, and a padded `SIGN_ID` reaching `codesign` with its spaces; both checks now pass (image deleted before the build, `SIGN_ID` and `NOTARY_PROFILE` trimmed), and a blank `SIGN_ID` is refused as unset (run only with uncommitted changes, so it stopped before `codesign`); the other refusals unchanged. Nothing built or signed.
@@ -79,20 +82,23 @@ on this Mac; the owner's second Mac (macOS 26) is next.
 
 ## Completed
 
-### 26/11/2026 — DeckOut keeps its settings in `~/.deckout`; 1.0's names are gone where nothing needs them
+### 26/11/2026 — DeckOut 2.1.0 keeps its settings in `~/.deckout`; 1.0's names are gone where nothing needs them
 - **Reference:** `docs/reference/app.md` (variants table; First run and removal), `docs/REQUIREMENTS.md`
-  (Configuration; reload), README (Updating, Removing, Coming from 1.0, History); T-194 (T-073, T-095, T-097 changed).
-- **For a person:** DeckOut built from here reads and writes `~/.deckout` (DeckOut Dev: `~/.deckout-dev`), named
+  (Configuration; reload), README (Updating, Removing, Coming from 1.0, History); T-194 (T-073, T-095, T-097 changed);
+  release v2.1.0; BL-039 narrowed to the certificate switch, KI-008 (signed update).
+- **For a person:** DeckOut 2.1.0 reads and writes `~/.deckout` (DeckOut Dev: `~/.deckout-dev`), named
   after the app, and Settings and the "stopped" screen say so. It doesn't read `~/.config/vsd`: a Mac coming from 1.0
-  or 2.0.0 starts with an empty setup. `DeckOutAgent --post-reload` reloads only its own DeckOut (DeckOut Dev's used
+  or 2.0.0 starts with an empty setup. Updating from 2.0.0 by replacing the app and opening it once restarts the
+  agent on the new build at once. `DeckOutAgent --post-reload` reloads only its own DeckOut (DeckOut Dev's used
   to reload DeckOut too). Crash reports name `deckout.*` queues; the README's photos are `deck-n3.jpg` / `deck-n4.jpg`.
 - **Decision (owner, 26/11/2026):** `~/.deckout`, not `~/.config/deckout`; no migration, nothing for other installs:
   the owner's setup is moved once, by hand, when this build replaces 2.0.0. `com.streamdeck.controller` stays (how
   DeckOut finds 1.0) and so do the history mentions; where an old name stays, a comment says the app was renamed.
   (CL calls:) the folder name lives only in `AppIdentity` (the app's messages and the hand-install fallback derive
   from it); a hand install's reload name is `io.github.okoker.deckout.reload`.
-- **Checked:** run line above. Not checked: DeckOut running from the new folder on a Mac (waits for the build that
-  replaces 2.0.0).
+- **Decision (owner, 26/11/2026, release):** "build and replace everywhere": this Mac and GitHub Releases, signed
+  and notarised at the owner's word; 2.1.0, as the settings location changes.
+- **Checked:** the two 26/11 run lines above: the build, then the release and this Mac's update.
 
 ### 21/11/2026 — DeckOut 2.0.0 is out: one signed, notarised download, and the owner's decks run on it
 - **Reference:** `docs/reference/app.md` (Signing and release; Debug builds), `README.md`; plan

@@ -74,16 +74,15 @@ Next free ID: BL-041
   country connection (the Mac app takes only `protonvpn://refresh`, has no Shortcuts or AppleScript; the CLI is Linux
   only), with the Auto Connect workaround. Straight quotes only. No host, user, profile, VM or URL names from the
   owner's config. `README.md`
-- BL-039 [P1] [bug] Before publishing the first update that changes the agent (2.0.1 or later), test the update of
-  the signed app (KI-008): download its candidate, quit DeckOut (its agent keeps running), drag the new one over it,
-  open it once. Expected: the agent runs on the new build within 15 s, Accessibility is kept, Login Items has one
-  entry, no `Constraint` lines in the log. Not testable at 2.0.0: two release builds of the same code give a
-  byte-identical agent (21/11/2026). If it fails: `AgentLink` re-registers every 15 s while the agent doesn't answer
-  (`init(…, recoveryInterval: TimeInterval = 15)`; a test from T-112's mute listener expecting repeated hooks until it
-  answers). The Developer ID certificate expires 01/02/2027 (original Sub-CA). Its G2 replacement, and every G2
-  certificate after it, lasts one year (Apple, "Replace Developer ID certificates"), so the first release after each
-  yearly renewal also crosses a certificate switch: compare `codesign -dr -` of the old and new build, and check
-  Accessibility and Login Items survive. `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)
+- BL-039 [P1] [bug] The first release signed with a new Developer ID certificate is an update across a certificate
+  switch: test it as 2.1.0's update was tested (26/11/2026, KI-008: the app replaced while its agent ran, then opened
+  once; the new agent ran at the first try). Expected: the agent runs on the new build within 15 s, launchd's `runs`
+  goes up by one (macOS logs unrelated `Constraint not matched` lines too, so the count is the test), Accessibility is
+  kept, Login Items has one entry; compare `codesign -dr -` of the old and new agent. The certificate expires
+  01/02/2027 (original Sub-CA); its G2 replacement, and every G2 certificate after it, lasts one year (Apple, "Replace
+  Developer ID certificates"), so this comes back after each yearly renewal. If it fails: `AgentLink` re-registers
+  every 15 s while the agent doesn't answer (`init(…, recoveryInterval: TimeInterval = 15)`; a test from T-112's mute
+  listener expecting repeated hooks until it answers). `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)
 - BL-040 [P2] [debt] Use upstream m1ddc 1.3.3 (released 21/11/2026) unpatched, in place of 1.3.1 with DeckOut's
   patch. 1.3.3 carries that patch's read fix (waydabber/m1ddc#81, merged 21/11/2026), plus `--read-wait <ms>`
   (default 50), "Unsupported VCP code" at once with exit 1 for a result `01`, and up to 8 monitors (1.3.2). Vendor

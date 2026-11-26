@@ -104,7 +104,7 @@ everything you work on.
 |---|---|---|
 | VSD Craft 3.10 (VSDinside) | 822 MB | about 980 MB, 3,800+ files (measured for 1.0) |
 | Stream Dock 3.10 (MiraBox) | 630 MB | not measured |
-| **DeckOut 2.0.0** | **3.2 MB** | **7 MB, 13 files** |
+| **DeckOut 2.1.0** | **3.2 MB** | **7 MB, 13 files** |
 
 DeckOut is open source (MIT), signed with a Developer ID and notarised by Apple. It asks for no administrator
 password and installs no driver. Its daemon answers only the DeckOut app, checked by code signature. The only thing

@@ -211,7 +211,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-204 | `KnobListTests/listInputsResolve` | On the N4's live preset, a list knob's turn moves the pick, and its press or a tap of the block above it runs the pick's action; other knobs, blocks and keys take the usual path; an empty list or a `none` pick does nothing; nothing on the N3 |
 | T-205 | `KnobListTests/listBlockShowsThePick` | The block above a list knob shows the pick's icon (the first item before any turn), black for an item without one or an empty list, and the list wins over the block's own setting |
 | T-206 | `KnobListTests/lockedListDoesNothing` | While the Mac is locked a list knob's turn, press and its block's tap do nothing (pick unchanged, nothing run, no change pushed); unlocked, turns move the pick and push a change each, and a press or tap runs the pick through the same tail as a key (`next_preset` to the agent) |
-| T-207 | `AgentTests/liveStripCarriesThePicks` | The agent's live strip carries each list knob's pick on the N4's live preset (none for an empty list), and a turn's change reaches the app as one push; an older agent's reply, without picks, still reads |
+| T-207 | `AgentTests/liveStripCarriesThePicks` | The agent's live strip carries each list knob's pick on the N4's live preset (none for an empty list), before and after a turn, and the agent's pick-change handler pushes one live strip change (its wiring to the daemon in `start()` is not exercised); an older agent's reply, without picks, still reads |
 | T-208 | `KnobListEditingTests/makeListClearsTheBlockAboveInOneUndo` | Making a knob a list empties it and clears the strip block above it in the live preset, as one undo step named "Make List" |
 | T-209 | `KnobListEditingTests/listEditsAreOneUndoEach` | Adding (after the item given, else at the end), setting an action, moving and removing list items each make one undo step; the knob's caption reads "List of N" |
 | T-210 | `KnobListEditingTests/listItemAppIconFollowsTheApp` | An Open App item without a chosen image gets its app's icon (a PNG in `icons/`); an image the person chose stays when the app changes |
@@ -222,6 +222,8 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-215 | `AppModelTests/listBlockShowsThePickInTheWindow` | The window draws the block above a list knob as the deck's pick (the agent's), the first item before the agent says or when the pick is past the list's end, over the block's own setting |
 | T-216 | `EditorSnapshotTests/knobListInTheWindowDraws` | The window with a knob list selected and with the block above it selected draws, light and dark (PNGs for a look against the approved mock, T-195) |
 | T-217 | `KnobListTests/aReloadRepeatsThePicks` | A reload whose live preset has list knobs tells the app the picks again (a swipe or an edit may change them); one without lists tells nothing |
+| T-218 | `KnobListTests/aShrunkListStartsAgain` | A reload whose list no longer reaches the pick puts it on the first item for good: a list that grows again doesn't jump the deck back to the old place |
+| T-219 | `KnobListEditingTests/listItemEditorIsRebuiltAfterARemove` | The selected list item's editor is built afresh after a remove even when the selection keeps its number, so text half-typed for the removed item can't land on the one that moved up |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

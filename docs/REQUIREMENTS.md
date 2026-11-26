@@ -284,7 +284,7 @@ install). Without either, all other features work — brightness actions log a w
 ## Lock Behaviour (all decks unless stated)
 - Lock state comes from the distributed notifications `com.apple.screenIsLocked` / `com.apple.screenIsUnlocked`
   (instant), re-checked against the session's `CGSSessionScreenIsLocked` on every 5 s tick and before acting on a
-  key, strip tap or swipe — the lock notification can fire when a screen saver merely starts
+  key, strip tap, swipe or list knob — the lock notification can fire when a screen saver merely starts
 - **While locked:** keys, strip taps and swipes do nothing, and neither do a list knob's turn and press. Other knobs
   run only the built-in actions (`system_volume`,
   `system_mute_toggle`, `zr7_volume`, `zr7_mute_toggle`, `display_brightness`, `display_brightness_cycle`);

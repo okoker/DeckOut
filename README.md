@@ -4,14 +4,16 @@
 |:---:|:---:|
 | <img src="docs/assets/deck-n3.jpg" alt="TreasLin N3" width="380"> | <img src="docs/assets/deck-n4.jpg" alt="MiraBox Stream Dock N4" width="380"> |
 
-**DeckOut runs USB stream decks from your Mac: the Elgato, TreasLin, the MiraBox Stream Dock, and their clones.**
+**DeckOut runs USB stream decks from your Mac: the TreasLin N3, the MiraBox Stream Dock N4, and the same decks sold
+under different names and brands.**
 
 It comes in two parts. A small background daemon drives the decks: macOS starts it at login, and it keeps running
 when the window is closed, with no Dock or menu-bar icon. A native Mac app is where you set them up: click a key,
 knob or strip block on a picture of your deck and pick what it does. Changes reach the deck the moment you make them.
 
-**Why bother ? **
-All these decks come with their own applications which you can download but they are mostly the definition of bloatware the smallest of which is over 700MB compressed! Some of the clones beside being mediocre apps also have security wise suspect issues.  Deckout, installed, is less then 10MB in size and much easier on your cpu.
+**Why bother?** These decks come with their makers' apps, and they are big: the smallest Mac download is 630 MB, for
+what amounts to "press button, do thing". I didn't want that much bloat on my Mac, and the one I ran used more CPU
+than I'd accept from something that runs all day. DeckOut is 7 MB installed. [More below](#why-deckout).
 
 <p align="center">
   <picture>

@@ -4,7 +4,7 @@
 |:---:|:---:|
 | <img src="docs/assets/deck-n3.jpg" alt="TreasLin N3" width="380"> | <img src="docs/assets/deck-n4.jpg" alt="MiraBox Stream Dock N4" width="380"> |
 
-**DeckOut runs USB stream decks from your Mac: the TreasLin N3, the MiraBox Stream Dock N4, and their clones.**
+**DeckOut runs USB stream decks from your Mac: the Elgato, TreasLin, the MiraBox Stream Dock, and their clones.**
 
 It comes in two parts. A small background daemon drives the decks: macOS starts it at login, and it keeps running
 when the window is closed, with no Dock or menu-bar icon. A native Mac app is where you set them up: click a key,

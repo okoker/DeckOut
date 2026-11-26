@@ -10,6 +10,9 @@ It comes in two parts. A small background daemon drives the decks: macOS starts 
 when the window is closed, with no Dock or menu-bar icon. A native Mac app is where you set them up: click a key,
 knob or strip block on a picture of your deck and pick what it does. Changes reach the deck the moment you make them.
 
+**Why bother?**
+All these decks come with their own applications which you can download but they are mostly the definition of bloatware the smallest of which is over 700MB compressed! Some of the clones beside being mediocre apps also have security wise suspect issues.  Deckout, installed, is less then 10MB in size and much easier on your cpu.
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/deckout-window-dark.png">

@@ -111,6 +111,7 @@ struct KnobListEditor: View {
         ActionFields(model: model, slot: .key, choice: choice) { setAction(index, $0) }
         IconRow(model: model, shape: .stripBlock, choice: choice, icon: item.icon, tile: item.tile,
                 setIcon: { setIcon(index, $0) }, setTile: { setTile(index, $0) })
+        if choice.needsAccessibility { AccessibilityBanner(model: model) }
         TestRow(choice: choice) { await model.test(choice) }
     }
 }

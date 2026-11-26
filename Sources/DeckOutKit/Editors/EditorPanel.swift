@@ -14,7 +14,7 @@ struct EditorPanel: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.background.secondary)
-        .id(model.selection)   // a fresh editor (and Test result) per control
+        .id(model.editorIdentity)   // a fresh editor (and Test result) per control and live preset (BL-035)
     }
 
     /// At least the panel's height, so the editor's Clear sits at the bottom; scrolls when it's taller than the window

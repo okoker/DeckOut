@@ -89,7 +89,8 @@ the job definition it registered: a changed plist needs a new label.
   code; both decks and their previews keep a non-square icon's shape, on black), and the live blocks from the
   images the agent draws. Knobs carry a caption of what turning them does (a list: "List of 5"). A click
   selects a control (red ring); a click on the stage clears it.
-- **Editor** (right-hand panel, for the selected control): see Editing.
+- **Editor** (right-hand panel, for the selected control): see Editing. It is built afresh for each control and
+  each live preset (`AppModel.editorIdentity`): after a swipe, text half-typed for one preset never lands in the next.
 - **Toolbar, with a deck on screen:** the preset pull-down and the deck's brightness slider (0–100).
 - **Status line:** "Deck controller running" (green), starting (amber), or the problem: switched off, not running,
   another build, the config's load problem, a shell environment that fell back.
@@ -111,7 +112,7 @@ the job definition it registered: a changed plist needs a new label.
 - **Actions** (`ActionChoice`): keys, N3 buttons, knob presses and strip taps offer Nothing; Open App, Open Website,
   Open File or Folder; Keyboard Shortcut, Run a Shortcut; Play / Pause, Next Track, Previous Track; Volume Up / Down,
   Mute; Monitor Brightness Up / Down, Switch Monitor; Run Script, Run Command. Knob turns offer Nothing, Volume and
-  Monitor Brightness, with a step per click. ZR7 and unknown strings show as "set by hand" until replaced. Fields
+  Monitor Brightness, with a step per click, and on the N4 Pick from a list (below). ZR7 and unknown strings show as "set by hand" until replaced. Fields
   apply when finished (Return, leaving the field, a file chosen); the agent's own reason a string wouldn't run shows
   under the fields. Multi-line fields (a command, a text icon) wrap and grow; Option-Return starts a new line. Each
   editor ends with its Clear (Key, Button, Knob or Block, in red) at the bottom of the panel; the panel scrolls when
@@ -157,6 +158,17 @@ the job definition it registered: a changed plist needs a new label.
   its tap to another app, as a key does, in the same undo step (your image, text or symbol stays). Setting a tap
   never puts an image on a block (a new block stays blank until its image is picked, a live reading stays); a live
   reading drops the image.
+- **Knob lists (N4)** (`KnobListEditor`): Turn → Pick from a list (after the menu) makes the knob a list, empty, and
+  clears the strip block above it in the same undo step; picking any other Turn action replaces the list. The Press
+  row gives way to a note (the knob's press, or a tap of the block above, opens the pick) and the list: a row per item
+  with its picture as the block shows it and a name (the site's host, the app's or file's name, else the action), the
+  item the deck shows marked "On the deck" (the agent's pick, apart from the row being edited); + adds an item after
+  the selected one, − removes it, ↑ / ↓ move it, each one undo step. The selected item has a key's action menu and
+  fields, an icon like a strip block's ([App | Image | Text | Library], drawn at 352 × 224) and Test. An Open App
+  item shows its app's icon until another is chosen; any other item stays black on the deck until an icon is
+  chosen. In the drawing, the block above shows the deck's pick (the first item until the agent says) and the knob's
+  caption the list's size. The block above, selected, says "Shows knob N's list" with Edit Knob N in place of its
+  settings.
 - **Files that are gone:** keys, presses, taps and knob list items whose app, file, folder, script, icon or picture is
   missing (a list knob names its first such item: "Item 2: the app isn't there any more") get a
   red mark on the drawing and the reason in the editor; a script that isn't executable gets Make Executable (adds

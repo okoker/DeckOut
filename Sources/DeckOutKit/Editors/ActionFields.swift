@@ -3,26 +3,39 @@ import DeckCore
 import SwiftUI
 
 /// The Action pop-up: the menu for this kind of control, grouped. A control set by hand to something off the menu
-/// (ZR7, an unknown string) shows it at the top, and picking anything else replaces it.
+/// (ZR7, an unknown string) shows it at the top, and picking anything else replaces it. `extra` is one more item,
+/// after the menu, that isn't an action (a knob's "Pick from a list"), and whether it is the current one.
 struct ActionPicker: View {
     let slot: ControlSlot
     let choice: ActionChoice
+    var extra: (title: String, isOn: Bool, pick: () -> Void)? = nil
     let pick: (ActionChoice) -> Void
 
+    private enum Item: Hashable { case kind(ActionChoice.Kind), extra }
+
     var body: some View {
-        let current = choice.kind(in: slot)
+        let kind = choice.kind(in: slot)
+        let current: Item = extra?.isOn == true ? .extra : .kind(kind)
         let groups = ActionChoice.menu(for: slot)
-        let onMenu = groups.joined().contains(current)
-        Picker("", selection: Binding(get: { current }, set: { kind in
-            if kind != current { pick(ActionChoice.make(kind)) }
+        let onMenu = extra?.isOn == true || groups.joined().contains(kind)
+        Picker("", selection: Binding(get: { current }, set: { item in
+            guard item != current else { return }
+            switch item {
+            case .kind(let picked): pick(ActionChoice.make(picked))
+            case .extra: extra?.pick()
+            }
         })) {
             if !onMenu {
-                Text("\(current.title) (set by hand)").tag(current)
+                Text("\(kind.title) (set by hand)").tag(Item.kind(kind))
                 Divider()
             }
             ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
                 if index > 0 { Divider() }
-                ForEach(group, id: \.self) { kind in Text(kind.title).tag(kind) }
+                ForEach(group, id: \.self) { kind in Text(kind.title).tag(Item.kind(kind)) }
+            }
+            if let extra {
+                Divider()
+                Text(extra.title).tag(Item.extra)
             }
         }
         .labelsHidden()

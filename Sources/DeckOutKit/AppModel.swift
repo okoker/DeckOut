@@ -405,9 +405,15 @@ public final class AppModel: ObservableObject {
             for (block, settings) in config.n4?.strip ?? [:] where settings.type == .picture {
                 icons[block] = settings.icon
             }
+            for (knob, settings) in config.n4?.knobs ?? [:] {
+                for (index, item) in (settings.list ?? []).enumerated() { icons[Self.listImageKey(knob, index)] = item.icon }
+            }
         }
         return icons
     }
+
+    /// Where a list item's picture is kept among the static images: `knob_1/2`.
+    private static func listImageKey(_ knob: String, _ index: Int) -> String { "\(knob)/\(index)" }
 
     /// Remakes the key images only when an icon (or the deck) changed: a brightness drag or an action change
     /// doesn't decode every icon again.
@@ -433,15 +439,37 @@ public final class AppModel: ObservableObject {
             for (block, settings) in config.n4?.strip ?? [:] where settings.type == .picture {
                 if let icon = settings.icon, let image = DeckPreview.stripPicture(path: icon) { images[block] = image }
             }
+            for (knob, settings) in config.n4?.knobs ?? [:] {
+                for (index, item) in (settings.list ?? []).enumerated() {
+                    if let icon = item.icon, let image = DeckPreview.stripPicture(path: icon) {
+                        images[Self.listImageKey(knob, index)] = image
+                    }
+                }
+            }
         }
         staticImages = images
     }
 
-    /// What the drawing shows: keys and pictures, with the live blocks on top.
+    /// What the drawing shows: keys and pictures, with the live blocks on top, and above each list knob its pick as
+    /// the deck shows it (the agent's `livePicks`; the first item until it says, or when the list no longer reaches
+    /// that far), whatever the block's own setting.
     public var images: [String: CGImage] {
         guard shown == .n4 else { return staticImages }
         let liveBlocks = Set((config?.n4?.strip ?? [:]).filter { [.internet, .load, .volume].contains($0.value.type) }.keys)
-        return staticImages.merging(liveImages.filter { liveBlocks.contains($0.key) }) { _, live in live }
+        var shownImages = staticImages.merging(liveImages.filter { liveBlocks.contains($0.key) }) { _, live in live }
+        for (knob, settings) in config?.n4?.knobs ?? [:] {
+            guard let list = settings.list else { continue }
+            let block = Self.blockAbove(knob)
+            let pick = livePicks[knob].flatMap { list.indices.contains($0) ? $0 : nil } ?? 0
+            shownImages[block] = staticImages[Self.listImageKey(knob, pick)]
+        }
+        return shownImages.filter { !$0.key.contains("/") }
+    }
+
+    /// What the editor panel is built for: the selected control on the shown deck's live preset. A swipe that makes
+    /// another preset live rebuilds it, so text half-typed for one preset never lands in the next (BL-035).
+    public var editorIdentity: String {
+        "\(selection ?? "")|\(shown.flatMap { config?.livePreset($0) } ?? "")"
     }
 
     /// Knob captions for the drawing.

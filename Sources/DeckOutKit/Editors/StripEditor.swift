@@ -10,6 +10,30 @@ struct StripEditor: View {
     let control: FaceControl
 
     var body: some View {
+        let knob = "knob_" + control.id
+        if model.config?.knob(.n4, knob)?.list != nil {
+            listNote(knob)
+        } else {
+            settings
+        }
+    }
+
+    /// The knob below holds a list: this block shows its pick, so it has no settings of its own.
+    private func listNote(_ knob: String) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Shows knob \(control.id)'s list")
+                .font(.system(size: 12.5, weight: .semibold))
+            Text("Turning knob \(control.id) picks what this block shows; pressing the knob or tapping the block opens it.")
+                .font(.system(size: 11.5))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Edit Knob \(control.id)") { model.selection = knob }
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private var settings: some View {
         let block = model.stripBlock(control.id)
         let type = block?.type ?? .empty
         let tap = ActionChoice(action: block?.action ?? "none", step: block?.step)

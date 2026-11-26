@@ -218,6 +218,9 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-211 | `PresetTests/newPresetCopiesBuiltInKnobsOnly` | New Preset (N4 and N3) copies only the live preset's knobs' built-in halves, the rest `none`, and no list; keys stay blank; Duplicate copies every knob, lists included |
 | T-212 | `KnobListEditingTests/listKnobSurvivesAppSave` | An unrelated edit in the app saves a list knob unchanged: items, icons and tiles (the whole config is saved on every edit) |
 | T-213 | `KnobListEditingTests/missingListIconMarksTheKnob` | A list item whose icon or app is gone marks its knob, naming the first such item ("Item 2: the app isn't there any more") |
+| T-214 | `AppModelTests/editorIdentityFollowsThePreset` | The editor panel's identity changes when another preset becomes live with the same control selected, so it is rebuilt and half-typed text can't land in the next preset (BL-035) |
+| T-215 | `AppModelTests/listBlockShowsThePickInTheWindow` | The window draws the block above a list knob as the deck's pick (the agent's), the first item before the agent says or when the pick is past the list's end, over the block's own setting |
+| T-216 | `EditorSnapshotTests/knobListInTheWindowDraws` | The window with a knob list selected and with the block above it selected draws, light and dark (PNGs for a look against the approved mock, T-195) |
 | T-217 | `KnobListTests/aReloadRepeatsThePicks` | A reload whose live preset has list knobs tells the app the picks again (a swipe or an edit may change them); one without lists tells nothing |
 
 ## On the device

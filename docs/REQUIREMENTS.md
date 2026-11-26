@@ -311,7 +311,8 @@ How it works: `docs/reference/app.md`. Contracts:
 - Talks to the agent only over XPC, each side checking the other's code signature; restarts an agent of another
   build once per launch
 - The app's "running" indicator comes from the agent's `status`, never from `SMAppService.status`
-- Every control of both decks is set from the app: keys, N3 buttons, knobs (turn + press) and strip blocks (what
+- Every control of both decks is set from the app: keys, N3 buttons, knobs (turn + press, or on the N4 a
+  list) and strip blocks (what
   they show + tap); presets (switch, new, duplicate, rename, delete) and brightness from the toolbar. Knob turns offer
   only stepped actions. The app asks for Accessibility when a shortcut or media key is set up; the agent never asks
   on its own

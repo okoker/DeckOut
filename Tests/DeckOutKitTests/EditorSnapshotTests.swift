@@ -233,3 +233,24 @@ private func lowestRedInPanel(_ png: Data, window: CGSize) throws -> CGFloat? {
         try full.write(to: snapshotFolder.appendingPathComponent("knob-list-mock-panel-\(dark ? "dark" : "light").png"))
     }
 }
+
+// The knob list editor wired in: the window with knob 1 holding five items, and with the block above it selected.
+@MainActor @Test func knobListInTheWindowDraws() throws {   // T-216 (design check)
+    let icons = try stripTiles(["Wikipedia", "GitHub", "BBC", "Apple", "DuckDuckGo"])
+    let sites = ["https://en.wikipedia.org", "https://github.com", "https://www.bbc.co.uk", "https://www.apple.com",
+                 "https://duckduckgo.com"]
+    var config = AppConfig.empty
+    config.setKnob(.n4, "knob_1", KnobConfig(list: zip(sites, icons).map { ButtonConfig(action: "url:" + $0, icon: $1) }))
+    config.setKnob(.n4, "knob_4", KnobConfig(rotate: KnobAction(action: "system_volume", step: 2),
+                                             press: KnobAction(action: "system_mute_toggle")))
+    for (name, selection) in [("knob", "knob_1"), ("block", "1")] {
+        let model = try previewModel(config, deck: .n4, selection: selection)
+        model.livePicks = ["knob_1": 1]
+        for dark in [false, true] {
+            let png = try Snapshot.windowPNG(DeckStage(model: model, face: DeckFace.of(.n4)), size: MainWindow.size, dark: dark)
+            #expect(png.count > 1000)
+            try png.write(to: snapshotFolder.appendingPathComponent("knob-list-\(name)-\(dark ? "dark" : "light").png"))
+        }
+    }
+}
+

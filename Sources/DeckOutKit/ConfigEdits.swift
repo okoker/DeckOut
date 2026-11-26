@@ -52,13 +52,14 @@ extension AppConfig {
 
     /// What a new N4 preset starts with, whatever the live preset holds, and an N4's first preset (owner,
     /// 26/11/2026): knob 2 monitor brightness (press: switch monitor), knob 4 volume (press: mute), block 1 latency
-    /// (no tap), block 2 CPU / memory (tap: Activity Monitor); knobs 1 and 3, blocks 3–4 and the keys empty. Nothing
-    /// personal (no ZR7, no scripts): a person's own setup lives in their file.
+    /// (no tap), block 2 CPU / memory (tap: Activity Monitor), block 4 volume (no tap); knobs 1 and 3, block 3 and the
+    /// keys empty. Nothing personal (no ZR7, no scripts): a person's own setup lives in their file.
     static func baselineN4(_ name: String) -> N4Preset {
         N4Preset(name: name, keys: [:],
                  strip: ["1": StripBlockConfig(type: .internet),
                          "2": StripBlockConfig(type: .load,
-                                               action: "app:/System/Applications/Utilities/Activity Monitor.app")],
+                                               action: "app:/System/Applications/Utilities/Activity Monitor.app"),
+                         "4": StripBlockConfig(type: .volume)],
                  knobs: ["knob_2": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
                                               press: KnobAction(action: "display_brightness_cycle")),
                          "knob_4": KnobConfig(rotate: KnobAction(action: "system_volume", step: 5),

@@ -315,7 +315,7 @@ How it works: `docs/reference/app.md`. Contracts:
   list) and strip blocks (what
   they show + tap); presets (switch, new, duplicate, rename, delete) and brightness from the toolbar. A new N4 preset,
   and an N4's first, starts from a fixed baseline with nothing personal in it (knob 2 monitor brightness, knob 4
-  volume, block 1 latency, block 2 CPU / memory); an existing file is never changed. Knob turns offer
+  volume, block 1 latency, block 2 CPU / memory, block 4 volume); an existing file is never changed. Knob turns offer
   only stepped actions. The app asks for Accessibility when a shortcut or media key is set up; the agent never asks
   on its own
 - The N4's lock photo is chosen, moved and zoomed in the window's photo mode, previewed on the real N4 while editing;

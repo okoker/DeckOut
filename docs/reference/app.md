@@ -186,7 +186,8 @@ the job definition it registered: a changed plist needs a new label.
   nothing; Create / Rename (Return) is greyed out, with the reason, while the name is empty or taken. A new preset
   is live. On the N4 it is the same baseline whatever the live preset holds (`AppConfig.baselineN4`, owner,
   26/11/2026): knob 2 monitor brightness (press: switch monitor), knob 4 volume step 5 (press: mute), block 1
-  latency (no tap), block 2 CPU / memory (tap: Activity Monitor); knobs 1 and 3, blocks 3–4 and the keys empty.
+  latency (no tap), block 2 CPU / memory (tap: Activity Monitor), block 4 volume (no tap); knobs 1 and 3, block 3
+  and the keys empty (2.2.0 left block 4 empty).
   Nothing personal ships in it (no ZR7, no scripts): a person's own settings stay in their file. On the N3 it is
   blank but for the live preset's knobs' built-in halves (volume, mute, monitor brightness, switch monitor; a knob
   with another action comes over as nothing). Duplicate copies everything, lists included. Rename renames the preset the sheet was opened for. Picking one makes it live on the

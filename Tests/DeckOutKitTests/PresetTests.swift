@@ -181,11 +181,12 @@ private let baselineKnobs = [
 private let baselineStrip = [
     "1": StripBlockConfig(type: .internet),
     "2": StripBlockConfig(type: .load, action: "app:/System/Applications/Utilities/Activity Monitor.app"),
+    "4": StripBlockConfig(type: .volume),
 ]
 
 @Test func newPresetStartsFromTheBaseline() {   // T-211
     // A new N4 preset is the same layout whatever the live preset holds: knob 1's volume, the list, ZR7, the script,
-    // the volume block and the keys are not carried over. The N3 still copies the big knob's built-in halves;
+    // block 3's reading and the keys are not carried over. The N3 still copies the big knob's built-in halves;
     // Duplicate copies everything, lists included (owner, 26/11/2026).
     let workKnobs = [
         "knob_1": KnobConfig(rotate: KnobAction(action: "system_volume", step: 2),
@@ -197,7 +198,7 @@ private let baselineStrip = [
     ]
     let workStrip = [
         "1": StripBlockConfig(type: .internet, action: "shell:/Users/someone/network.sh"),
-        "4": StripBlockConfig(type: .volume),
+        "3": StripBlockConfig(type: .volume),
     ]
     var config = AppConfig(
         n3: N3Section(brightness: 75, presets: [N3Preset(name: "A", buttons: [:], knobs: [
@@ -230,9 +231,9 @@ private let baselineStrip = [
     #expect(fresh.n4?.presets == [N4Preset(name: "Default", keys: [:], strip: baselineStrip, knobs: baselineKnobs)])
 
     var firstEdit = AppConfig.empty
-    firstEdit.setStripBlock("4", StripBlockConfig(type: .volume))
+    firstEdit.setStripBlock("3", StripBlockConfig(type: .load))
     var expectedStrip = baselineStrip
-    expectedStrip["4"] = StripBlockConfig(type: .volume)
+    expectedStrip["3"] = StripBlockConfig(type: .load)
     #expect(firstEdit.n4?.presets.first?.strip == expectedStrip)
     #expect(firstEdit.n4?.presets.first?.knobs == baselineKnobs)
 

@@ -61,8 +61,8 @@ ruled out: it would learn the list of sites.
 ## Decided by the owner (26/11/2026)
 - Knobs are per preset, on both decks. An existing file's knobs go into every preset.
 - **New Preset** on the N4 starts from a fixed baseline (owner, after the deck check): knob 2 monitor brightness /
-  switch monitor, knob 4 volume / mute, block 1 latency (no tap), block 2 CPU / memory (tap: Activity Monitor), the
-  rest empty; an N4's first preset starts the same way, and an existing file is never changed. Not a copy of the live
+  switch monitor, knob 4 volume / mute, block 1 latency (no tap), block 2 CPU / memory (tap: Activity Monitor), block 4
+  volume (owner, after the 2.2.0 release), the rest empty; an N4's first preset starts the same way, and an existing file is never changed. Not a copy of the live
   preset's built-in knob halves, which would carry a knob set for one preset into every new one (like the sample's
   knob 1 on volume, read as interference); and nothing personal (ZR7, a script), which lives in the person's file. The N3
   keeps the built-ins copy (`LockPolicy.builtIns`). **Duplicate** copies everything, lists included (as now).

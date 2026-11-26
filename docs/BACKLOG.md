@@ -29,14 +29,6 @@ Next free ID: BL-044
 - BL-037 [P2] [debt] Test gaps in the swipe's preset switch: T-190 has no missing-file or symlinked-config case (the
   agent must write nothing); T-191 doesn't check `next_preset` never reaches the dispatcher (a command run).
   `AgentTests.swift` (BL-033 review, 21/11/2026)
-- BL-038 [P2] [feature] README: a "Recipes" section of sanitized key examples, each with the action to pick and the
-  trap found setting it up (owner, 21/11/2026). The README already has one: Chrome in a given profile on a given
-  Desktop. Still to add: a VMware Fusion VM: Open File or Folder on its `.vmwarevm` (it powers on; `vmrun` can outlast
-  the 30 s command limit). ssh in an iTerm2 window with a given profile (`osascript` `create window with profile …
-  command`; the `zsh -lc "…; exec zsh"` form stays open after logout). What can't be done: a Proton VPN
-  country connection (the Mac app takes only `protonvpn://refresh`, has no Shortcuts or AppleScript; the CLI is Linux
-  only), with the Auto Connect workaround. Straight quotes only. No host, user, profile, VM or URL names from the
-  owner's config. `README.md`
 - BL-040 [P2] [debt] Use upstream m1ddc 1.3.3 (released 21/11/2026) unpatched, in place of 1.3.1 with DeckOut's
   patch. 1.3.3 carries that patch's read fix (waydabber/m1ddc#81, merged 21/11/2026), plus `--read-wait <ms>`
   (default 50), "Unsupported VCP code" at once with exit 1 for a result `01`, and up to 8 monitors (1.3.2). Vendor

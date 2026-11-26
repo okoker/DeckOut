@@ -70,6 +70,44 @@ Once, before the first press:
 - Control-3 is a keystroke, so DeckOut needs Accessibility (see [Permissions](#permissions)). On the first press,
   macOS also asks to let DeckOut control System Events: allow it. (`open` needs no permission.)
 
+### Example: a VMware Fusion virtual machine on one key
+
+Set a key to **Open File or Folder** and choose the VM's `.vmwarevm` file (Fusion keeps new VMs in the Virtual
+Machines folder in your home folder). A press opens Fusion and starts the VM, or wakes it if it was suspended: a few
+seconds, even with Fusion not running. No command or script needed.
+
+### Example: ssh to a server, in its own iTerm2 profile
+
+One key can open a new iTerm2 window in a given profile, say one called "Servers" with its own colours, and ssh in
+there. Set a key to **Run Command**:
+
+```zsh
+osascript -e 'tell application "iTerm2" to create window with profile "Servers" command "/bin/zsh -lc \"ssh admin@server.example.com; exec zsh\""'
+```
+
+- The profile name is the one iTerm2 → Settings → Profiles shows.
+- `exec zsh` keeps the window open when ssh ends, so you can read why it failed or carry on locally after logging
+  out. Without it, the window closes the moment ssh ends.
+- On the first press, macOS asks to let DeckOut control iTerm2: allow it.
+- Type the quotes straight. Curly quotes, pasted from a web page or a note, break the command and the key does
+  nothing.
+
+### One knob, many sites and apps (N4)
+
+Ten keys run out fast. On the N4 a knob can hold a list instead: turning it steps through the list, the strip block
+above it shows the current pick's icon, and pressing the knob (or tapping that block) opens it. Say knob 1 holds
+your everyday sites and apps: mail, the calendar, GitHub, Slack, a notes app.
+
+Click the knob in the app, set **Turn** to **Pick from a list**, then build the list:
+- **+** adds an item after the selected one, **↑ / ↓** move it, **−** removes it. An item can be anything a key can
+  do, with its own icon and **Test**.
+- An **Open App** item shows its app's icon by itself. Any other item, a website say, stays black on the deck until
+  you give it an icon: a picture, text, or a symbol from the library.
+- The list takes over the strip block above the knob in that preset only. Each preset has its own knobs, so in
+  another preset the same knob can still turn the volume.
+- Turning wraps round from the last item to the first. A swipe away and back finds the pick where you left it; after
+  a restart the list starts again at its first item.
+
 ### Two monitors, one knob
 
 DeckOut sets external monitors' brightness over DDC/CI, with a patched copy of

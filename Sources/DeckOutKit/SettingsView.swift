@@ -163,7 +163,7 @@ struct AboutSettings: View {
                     }
                 }
                 ForEach([("DeckOut", "DeckOut-LICENSE.txt"), ("Phosphor Icons 2.1.2", "Phosphor-LICENSE.txt"),
-                         ("m1ddc 1.3.1 (patched)", "m1ddc-LICENSE.txt")], id: \.0) { name, file in
+                         ("m1ddc 1.3.3", "m1ddc-LICENSE.txt")], id: \.0) { name, file in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(name).font(.headline)
                         Text(licence(file)).font(.system(size: Self.licenceFontSize, design: .monospaced))

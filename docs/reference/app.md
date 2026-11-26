@@ -254,12 +254,12 @@ the job definition it registered: a changed plist needs a new label.
   Settings opens and when screens change. A monitor without a serial ("(null)") isn't listed.
 - **About:** version and build; the DeckOut, Phosphor and m1ddc licences, from the app's Resources, in 9.5 pt
   fixed-width type, so their 78-character lines fit the tab without breaking (T-174).
-- **m1ddc** 1.3.1 (MIT), patched (About says so), is built from `Vendor/m1ddc` into `Contents/Helpers/m1ddc`; the
-  agent and the app use it before Homebrew's (the agent logs which; both by the same search,
-  `BrightnessControl.findM1DDC`). The patch makes a read wait 50 ms, decode only a
-  valid reply, and ask again up to 4 times; a read that gets none exits 1 instead of printing `0`
-  (`Vendor/m1ddc/README.md`). Homebrew's stock m1ddc can still print a bad `0`; the agent never moves a monitor from a
-  reading outside 0–100 or a failed one, but can't tell a bad `0` from a real one.
+- **m1ddc** 1.3.3 (MIT), unchanged (About says "m1ddc 1.3.3"), is built from `Vendor/m1ddc` into
+  `Contents/Helpers/m1ddc`; the agent and the app use it before Homebrew's (the agent logs which; both by the same
+  search, `BrightnessControl.findM1DDC`). Since 1.3.3 a read waits 50 ms, decodes only a valid reply, and asks again
+  up to 4 times; a read that gets none exits 1 instead of printing `0` (`Vendor/m1ddc/README.md`). A Homebrew m1ddc
+  older than 1.3.3 can still print a bad `0`; the agent never moves a monitor from a reading outside 0–100 or a
+  failed one, but can't tell a bad `0` from a real one.
 
 ## Debug builds
 - DeckOut Dev is on this Mac only during a dev session. With the signed DeckOut running the decks, a session

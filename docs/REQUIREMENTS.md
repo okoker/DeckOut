@@ -197,19 +197,19 @@ The industry-standard workaround is **DDC/CI** (Display Data Channel / Command I
 ### Known DDC/CI quirks
 
 - LG monitors do **not** show their native OSD bar for DDC/CI brightness changes (only for physical button presses) — hence the custom HUD
-- Stock `m1ddc get luminance` (1.3.1 and 1.3.2) reads the reply 10 ms after asking and decodes it unchecked: on the
-  LG HDR 4K pair about half of back-to-back reads came back empty, shifted or as an echo of the request, printed as
-  `0` (or 41984) with exit 0. DeckOut's patched m1ddc waits 50 ms, checks the reply and asks again (up to 4 times)
-- `m1ddc get input-alt` (LG's alternate address) never gets a real reply on that LG; the patched m1ddc says so
+- `m1ddc get luminance` before 1.3.3 reads the reply 10 ms after asking and decodes it unchecked: on the LG HDR 4K
+  pair about half of back-to-back reads came back empty, shifted or as an echo of the request, printed as `0` (or
+  41984) with exit 0. 1.3.3 (DeckOut's fix, upstream) waits 50 ms, checks the reply and asks again (up to 4 times)
+- `m1ddc get input-alt` (LG's alternate address) never gets a real reply on that LG; 1.3.3 says so (exit 1)
 - `m1ddc chg luminance` (relative change) is unreliable on some LG panels — the daemon uses absolute `set luminance` instead
 - Display numbers from `m1ddc` can change across reboots — the daemon matches by serial number, not display number
 
 ### Dependency
 
-`m1ddc` (MIT, version 1.3.1, patched: reads wait 50 ms, are checked and asked again; `Vendor/m1ddc/README.md`)
-ships inside DeckOut, built from the vendored source (`Vendor/m1ddc`) into
-`DeckOut.app/Contents/Helpers/m1ddc`; the agent uses that copy, else Homebrew's (`brew install m1ddc`, for a hand
-install). Without either, all other features work — brightness actions log a warning.
+`m1ddc` (MIT, version 1.3.3, unchanged; `Vendor/m1ddc/README.md`) ships inside DeckOut, built from the vendored
+source (`Vendor/m1ddc`) into `DeckOut.app/Contents/Helpers/m1ddc`; the agent uses that copy, else Homebrew's (`brew
+install m1ddc`, for a hand install; 1.3.3 or later reads reliably). Without either, all other features work —
+brightness actions log a warning.
 
 ## LCD Icons
 - Optional `icon` field per LCD key in config; sent to the deck as JPEG via CRT BAT (header with length and wire

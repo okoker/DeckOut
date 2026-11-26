@@ -110,7 +110,7 @@ Click the knob in the app, set **Turn** to **Pick from a list**, then build the 
 
 ### Two monitors, one knob
 
-DeckOut sets external monitors' brightness over DDC/CI, with a patched copy of
+DeckOut sets external monitors' brightness over DDC/CI, with a copy of
 [m1ddc](https://github.com/waydabber/m1ddc) inside the app. Settings → Monitors lists the monitors it can reach,
 named by where they sit (Left, Right, …); switch on the ones the knob should turn. Turning the knob changes them all
 together. Press it (**Switch Monitor**) to turn just one, press again for the next, and again for all, in the order
@@ -248,8 +248,8 @@ for the full text. It bundles two MIT-licensed projects:
 
 - [Phosphor Icons](https://phosphoricons.com) 2.1.2 (© 2020–2021 Phosphor Icons): the symbol library for keys and
   strip blocks. Licence: `Packaging/Resources/Phosphor-LICENSE.txt`.
-- [m1ddc](https://github.com/waydabber/m1ddc) (© 2021 waydabber), with a small patch (`Vendor/m1ddc/README.md`):
-  monitor brightness over DDC/CI. Licence: `Vendor/m1ddc/LICENSE`.
+- [m1ddc](https://github.com/waydabber/m1ddc) 1.3.3 (© 2021 waydabber): monitor brightness over DDC/CI. Licence:
+  `Vendor/m1ddc/LICENSE`.
 
 Both licences are also in the app, under Settings → About. App icons shown on the decks belong to their makers.
 

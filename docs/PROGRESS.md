@@ -37,6 +37,7 @@ DeckOut 2.2.0 (Developer ID signed, notarised, released 26/11/2026; 2.1.0 earlie
 drives the TreasLin N3 and the MiraBox N4 from `/Applications` through its own agent, with its settings in
 `~/.deckout`; DeckOut Dev is removed and the 1.0 hand install retired. Tested on macOS 15
 on this Mac; the owner's second Mac (macOS 26) is next.
+26/11/2026 — m1ddc 1.3.3 (BL-040) on `main` (not released): `make app` (build 261126.231411) built it with `-Werror`, T-107 OK; `swift test` 268/268, watched; LG pair at 85 %, back-to-back brightness reads: 1.3.3 599 of 600 right, none wrong, 1 failed with "Could not find a suitable external display." (exit 1; that lookup is 1.3.1's code, unchanged), the installed patched 1.3.1 400 of 400 right; `get input-alt` "no valid reply" (exit 1). Not checked: the About tab on screen.
 26/11/2026 — N4 baseline gains block 4 volume, on `main` (not built, not released): `swift test` 268/268, watched; T-211 and T-220 failed first (block 4 empty), T-220's first edit moved to block 3 (block 4 is now the baseline's).
 26/11/2026 — 2.2.0 on this Mac (owner, from the download): Finder's Replace refused while the 2.1.0 agent ran ("DeckOut.app is in use"; a kill would be undone by `KeepAlive`); Stop and Remove, Replace, open, Start Again: the agent came up at 20:40:25 from `/Applications` (runs 1) and drew 14 of 14 and 6 of 6; the first save (a swipe) kept `config.json.before-2.2` (10,130 bytes, the 18:46 file), and the new file equals it with the deck-level knobs moved into every preset (checked by a script); swipes switch Default ↔ Server. On the way, Spotlight opened DeckOut Dev and its sample read as "configs gone"; DeckOut Dev then removed. Not checked: New Preset in the real app; Accessibility after the re-register.
 26/11/2026 — Release 2.2.0 from 7052845 (`knob-lists` fast-forwarded into `main`): `swift test` 268/268, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.203128), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 88bc431a…; v2.2.0 published (no candidate), downloaded back with `gh`: same sha256, accepted with a quarantine flag set by hand. Not run: the install on this Mac (owner), the update across builds (BL-039), New Preset in the real app.
@@ -47,7 +48,6 @@ on this Mac; the owner's second Mac (macOS 26) is next.
 21/11/2026 — Phase 7 release on `main`: `make signed VARIANT=release` at ad0cc56 (build 261121.185529), T-193 passing on the real Developer ID build; `make notarize` Accepted in under a minute (HTTP 403 before, until the company team's new agreement was accepted), stapled, `source=Notarized Developer ID`; v2.0.0-rc.1, then v2.0.0 published (sha256 fba1b450…, downloaded back and matched). Owner session moving the decks: Stop and Remove of DeckOut Dev, `make uninstall-dev`, config + 10 icons into `~/.config/vsd` (0 `vsd-dev` mentions, all 20 image paths present), a browser download opened inside the disk image asked to be moved, installed it ran first time (launchd runs = 1, no Constraint lines), 14/14 and 6/6 screens drawn, one Login Items entry, Accessibility via Allow…, the iTerm2 / Chrome-profile / Desktop `osascript` keys asked once per app and then worked, lock photo and swipe fine; an ad hoc XPC client got no reply. Not run: macOS 26 and 27, the bin-while-registered removal.
 21/11/2026 — Phase 7, two review minors on `main`: `make -n signed` showed the last disk image deleted only after signing, and a padded `SIGN_ID` reaching `codesign` with its spaces; both checks now pass (image deleted before the build, `SIGN_ID` and `NOTARY_PROFILE` trimmed), and a blank `SIGN_ID` is refused as unset (run only with uncommitted changes, so it stopped before `codesign`); the other refusals unchanged. Nothing built or signed.
 21/11/2026 — Phase 7 Task 1 on `main` (signing targets, nothing signed with a certificate): `make app VARIANT=release` failed first at the new Apple Events usage-text check, passes after; T-193 `check-bundle.sh --signed` on the ad hoc release build fails with "not signed with a Developer ID (ad hoc)" while the plain check passes; its parsing read against a scratch ad hoc copy signed with the runtime and the entitlements (the runtime pattern fixed to take `(adhoc,runtime)`); refusals run for real (dev variant, no `SIGN_ID`, uncommitted tree, no `NOTARY_PROFILE`); `make -n signed` signs inside out; a probe disk image built the same way (3.2 MB) mounted with DeckOut.app beside an Applications link, the app inside passing T-107; `make app` (dev) OK; `swift test` 241/241, watched. `make uninstall-dev` only dry-run (`make -n`): DeckOut Dev runs the decks until Task 5. Review fixes: in a scratch harness (fake home, stand-in `launchctl`/`tccutil`), `uninstall-dev` deleted the app while the agent stayed registered, and now refuses and keeps it; with a stand-in `codesign`, T-193 passed a signature lacking the Developer ID marks, and now fails it (the requirement parses in real `codesign`); `swift test` 241/241 again. Two release builds of the same code give the same agent CDHash.
-21/11/2026 — BL-033 on `main` (3582782, 5e479ff, then the `0x38` fix): `swift test` 241/241 (new T-189–T-192), watched; T-191 failed with the hand-off moved above the lock check. `make install-dev` (build 261121.000629); the owner's N4 swipe set to `next_preset` by hand (backup `~/.config/vsd-dev/config.json.bak-2026-11-21`); the agent restarted on it without KI-008. Owner's swipes: 18 switched, 26 came as `0x38` and were ignored; timed round: every swipe and gap tap `0x38`. Fix: T-005 failed first (`0x38` decoded to nothing), 241/241 after; build 261121.012023: 9 of 9 swipes switched. Owner, later: a locked Mac ignores swipes (four "ignored while locked" in the log); swiping steps through the presets. Not checked: the app's preset menu following a swipe.
 20/11/2026 — Pushed d215e87..ffc7631 (BL-031, BL-022, BL-015, BL-007, BL-018 + BL-023); `make install-dev` (build 261120.165253) after backing up `~/.config/vsd-dev` to `~/.config/vsd-dev.bak-2026-11-20`; one `--snapshot` run: "removed 31 unused icon files", exactly the 31 a separate grep over the backup predicted (4 named by the config kept, `config.json` unchanged, nothing else touched); KI-008 on the restart, registered again; the agent drew 14 of 14 and 6 of 6 with no warnings; window "Deck controller running", the N3's six icons drawn. Not checked yet: the clicks for BL-031, BL-022, BL-015, BL-007 (owner).
 20/11/2026 — BL-018 + BL-023 on `main`: `swift test` 237/237 (new T-186–T-188), watched; T-186 and T-188 failed first against do-nothing stubs; with the code in, each of six guards taken out in turn failed a test (config check, unreadable file, links, subfolders, undo history, once per run), sources restored byte for byte. Not installed; not checked: the start-up log line and the icons folder after a real launch (owner). Phase 7 must rewrite `vsd-dev` paths (Release gotchas).
 20/11/2026 — BL-007 on `main`: `swift test` 234/234 (new T-185), watched; T-185 failed first (the N3's JPEG of a 2:1 icon filled 72 × 73, the square), and again with the old drawing put back after the fix. Square icons draw as before (a square fitted in a square is the same square). Not installed; not checked: a non-square icon on the real N3 (owner).
@@ -67,6 +67,23 @@ on this Mac; the owner's second Mac (macOS 26) is next.
 - Phase 7 close-out: the second-Mac install (macOS 26), then the README's tested versions. Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 26/11/2026 — DeckOut carries m1ddc 1.3.3 as released; its read fix is upstream now, so no patch of our own
+- **Reference:** `Vendor/m1ddc/README.md`, `docs/REQUIREMENTS.md` (Known DDC/CI quirks; Dependency),
+  `docs/reference/app.md` (Settings: m1ddc), README (License); waydabber/m1ddc#81 (DeckOut's fix, in 1.3.3), #83;
+  BL-040.
+- **For a person:** monitors behave as before: the 50 ms wait, the reply check and the retries DeckOut patched into
+  1.3.1 are in m1ddc itself since 1.3.3. Settings → About says "m1ddc 1.3.3", not "(patched)"; the README and
+  `SECURITY.md` no longer mention a patch. A hand install's Homebrew m1ddc (1.3.3 since 21/11/2026) reads as
+  reliably as the app's own. Not released: it ships with the next release.
+- **Decision (owner, 26/11/2026):** 1.3.3 now, rather than waiting for #83 (an LG 27UP85NP-W, whose every read 1.3.3
+  rejects; open upstream) or carrying #83 as our own patch: the patched 1.3.1 rejects that monitor the same way, and
+  no DeckOut user is known to have one, so no backlog line. Committed and pushed, no release.
+- **Checked:** run line above. The tag's tarball matches Homebrew's sha256; the vendored files match the tag byte for
+  byte. Scan: the new `avservice.m` (`display list all`, `serial=`; DeckOut uses neither) reads the IORegistry and
+  EDIDs; output to stdout only, no network, processes or files. DeckOut's three commands run through code 1.3.3 left
+  as it was, apart from the read check. One difference from the patch: "unsupported VCP code" exits 1 at once
+  (0.15 s, was 0.58 s); DeckOut reads only brightness.
 
 ### 26/11/2026 — DeckOut 2.2.0: an N4 knob can pick from a list of sites or apps; every preset has its own knobs
 - **Reference:** `docs/design/knob_lists.md`, `docs/REQUIREMENTS.md` (Structure; Knobs; Saving; Daemon Behaviour;
@@ -126,23 +143,6 @@ on this Mac; the owner's second Mac (macOS 26) is next.
   (`uninstall-dev` with the agent still registered; T-193 passing any team's signature), two minors fixed at the
   owner's word, the rest in the ledger. Seen on the decks: after Stop and Remove the N3 keeps its last pictures
   (KI-015); the downloaded agent plist carries the quarantine flag (KI-016, macOS 27).
-
-### 21/11/2026 — A swipe on the N4's strip makes the next preset live
-- **Reference:** `docs/REQUIREMENTS.md` (Saving by the agent; Actions: `next_preset`), `docs/reference/n4.md`,
-  `docs/reference/device_quirks.md`; plan `docs/superpowers/plans/2026-11-20-deckout-bl-033-swipe-next-preset.md`
-  (gitignored); T-189–T-192 (T-005 changed); BL-033; KI-013, KI-014.
-- **For a person:** with the N4's swipe set to `next_preset`, each swipe makes the next preset live, in the file's
-  order, wrapping round; the app's menu and a restart follow, because the agent saves the new `active_preset`. Never
-  while the Mac is locked. A new N4 made by the app gets the swipe; an existing config gets the line by hand (the app
-  has no swipe setting).
-- **Decision (owner, 20–21/11/2026):** the `swipe` field keeps its place with a new action; the agent, not the
-  daemon, saves the file; no preset name on the deck. KI-013 (a swipe and an app save within milliseconds can lose
-  either one) accepted rather than a shared lock file. Both `0x38` and `0x39` count as a swipe, since on this unit
-  nearly every swipe comes as `0x38`; a tap in the gap between blocks switches too (KI-014). Two `0x38`s as one swipe
-  was turned down: the deck sends one report per swipe.
-- **Checked:** run line above. A fresh reviewer: no critical; its important finding (KI-013 said only the swipe could
-  be lost) reworded; minors are BL-035–BL-037. On the N4, the first build switched on 18 of ~50 swipes; a timed round
-  showed every swipe and every gap tap arriving as `0x38`.
 
 ## History
 Older work: `old_progress/README.md`.

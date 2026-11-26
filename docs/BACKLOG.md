@@ -23,16 +23,6 @@ Next free ID: BL-044
   `docs/ideas/script_blocks.md`. Initial work: its first slice (a weather script, the agent's runner, a `script` block
   set by hand). After the phase 7 release, once the scripting and scheduling are worked out (owner, 21/11/2026).
   `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
-- BL-040 [P2] [debt] Use upstream m1ddc 1.3.3 (released 21/11/2026) unpatched, in place of 1.3.1 with DeckOut's
-  patch. 1.3.3 carries that patch's read fix (waydabber/m1ddc#81, merged 21/11/2026), plus `--read-wait <ms>`
-  (default 50), "Unsupported VCP code" at once with exit 1 for a result `01`, and up to 8 monitors (1.3.2). Vendor
-  the v1.3.3 tag's `sources/`, `headers/` and `LICENSE`, checked against Homebrew's sha256, and scan it again as
-  before (stdout only, no network, no processes); `make app` must still build it with `-Werror`. Check on the LG pair
-  that 200 back-to-back reads at 100 % give no wrong value, and that a monitor answering exit 1 is left alone (T-171).
-  Then drop every mention of the patch: `Vendor/m1ddc/README.md`, About's "m1ddc 1.3.1 (patched)"
-  (`SettingsView.swift`), the README's License line, `SECURITY.md`, `REQUIREMENTS.md` (m1ddc lines), `reference/app.md`
-  (m1ddc; "Homebrew's stock m1ddc can still print a bad `0`" holds only before 1.3.3). Ships with the next release.
-  (owner, 22/11/2026)
 - BL-041 [P2] [feature] A website's own icon, fetched by DeckOut. Today a key or knob-list item that opens a website
   shows only an icon chosen by hand (picture, text or library symbol). The app would fetch the site's icon when the
   address is set: the page's declared icons (prefer a large one such as `apple-touch-icon`), else `/favicon.ico`,

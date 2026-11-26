@@ -20,4 +20,4 @@ Your report will be visible only to the maintainers. You can include reproductio
 
 ## Scope
 
-Reports about DeckOut are in scope: the app, its background daemon and the connection between them (USB HID handling, config parsing, action dispatch, the code-signature checks on that connection, privilege boundaries, etc.). Issues in the bundled third-party code (m1ddc, Phosphor Icons) should be reported upstream; DeckOut's own patch to m1ddc is in scope.
+Reports about DeckOut are in scope: the app, its background daemon and the connection between them (USB HID handling, config parsing, action dispatch, the code-signature checks on that connection, privilege boundaries, etc.). Issues in the bundled third-party code (m1ddc, Phosphor Icons) should be reported upstream.

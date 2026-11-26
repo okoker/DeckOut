@@ -17,3 +17,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 - 13 — DeckOut backlog fixes 1 (20/11/2026): strip images follow the tap's app, Stop and Remove can't be undone behind your back → `13_deckout_backlog_fixes_1.md`
 - 14 — DeckOut BL-005, redraw changes (20/11/2026): a reload redraws only the screens that changed, in milliseconds → `14_deckout_bl005_redraw_changes.md`
 - 15 — DeckOut BL-003, monitor brightness (20/11/2026): brightness moves from where the monitor really is, never jumping to 5 % → `15_deckout_bl003_monitor_brightness.md`
+- 16 — DeckOut BL-033, swipe to the next preset (21/11/2026): a swipe on the N4's strip makes the next preset live → `16_deckout_bl033_swipe_next_preset.md`

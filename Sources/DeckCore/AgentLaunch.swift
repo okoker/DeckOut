@@ -14,6 +14,14 @@ public enum AgentLaunch {
         return identity!.configPath(home: home)
     }
 
+    /// The distributed notification `DeckOutAgent --post-reload` sends and the agent listens for (the app asks
+    /// over XPC instead, `AgentXPC.reload`): one per DeckOut, its agent label + `.reload`, so a reload for DeckOut
+    /// Dev never reloads DeckOut; a hand install has its own. 1.0, as StreamDeckController, used
+    /// `com.streamdeck.controller.reload`.
+    public static func reloadNotification(identity: AppIdentity?) -> String {
+        (identity?.agentLabel ?? AppIdentity.release.bundleID) + ".reload"
+    }
+
     /// Moves the log to `<path>.1` (replacing an older one) when it is over `limit` bytes, so one run's log
     /// never grows without end across restarts. Called once, at start.
     public static func rollLog(at path: String, limit: Int = 5_000_000) {

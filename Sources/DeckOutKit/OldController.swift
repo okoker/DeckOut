@@ -5,6 +5,8 @@ import Foundation
 /// launchd stops it and its plist moves aside (kept, so it can be put back); its program and config are left alone.
 public enum OldController {
     public enum RetireError: Error { case stillRunning }
+    /// 1.0's launchd label, from when the app was StreamDeckController (renamed DeckOut in 2.0). Keep it: it is how
+    /// DeckOut finds a 1.0 install.
     public static let label = "com.streamdeck.controller"
 
     public static func plistPath(home: String) -> String {

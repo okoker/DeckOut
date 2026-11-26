@@ -36,7 +36,7 @@ public enum ConfigFile {
 
     /// Where to look, in order, when `--config` isn't given.
     public static func candidates(home: String, execDir: String) -> [String] {
-        [home + "/.config/vsd/config.json", execDir + "/config.json"]
+        [AppIdentity.release.configPath(home: home), execDir + "/config.json"]
     }
 
     /// `--config <path>`, else the first candidate that exists, else the first candidate (where the app will

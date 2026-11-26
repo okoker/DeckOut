@@ -253,7 +253,7 @@ one types a serial.
 - **Deck drawing:** real proportions. N4 screens from the measured layout (keys 112 px at 172 px pitch, rows 176
   apart, strip blocks 176×112 at 208 pitch, 352 below the top row; `docs/reference/n4.md`); its knobs and body edge
   drawn by eye. The N3's notes hold its image size and offsets, not where its screens, buttons and knobs sit, so its
-  drawing is laid out from `docs/assets/streamdeck.jpg`, straightened in software. Near enough is fine: nothing is
+  drawing is laid out from `docs/assets/deck-n3.jpg`, straightened in software. Near enough is fine: nothing is
   cut to the N3 drawing. **(CL call)** It shows exactly what the deck shows, rendered with DeckCore's own
   code (make `ImageLoader`, `StripRenderer`, `LockPhoto.canvas` / `n4Rects` public rather than copying numbers).
   Live strip readings update in the drawing.

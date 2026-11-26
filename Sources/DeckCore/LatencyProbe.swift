@@ -59,7 +59,7 @@ final class LatencyProbe {
     let host: String
     let timeout: TimeInterval
 
-    private let queue = DispatchQueue(label: "streamdeck.latency", qos: .utility)
+    private let queue = DispatchQueue(label: "deckout.latency", qos: .utility)
     private let identifier = UInt16.random(in: 1...UInt16.max)
     // Used on `queue` only:
     private var socketFD: Int32 = -1

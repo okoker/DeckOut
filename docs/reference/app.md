@@ -10,7 +10,7 @@ plan 3 (editing), plan 4 (lock photo), plan 5 (icons), plan 6 (settings, monitor
 - `make uninstall-dev` removes the dev variant from this Mac, in this order: the installed app's `--unregister` (out of
   launchd and Login Items), `tccutil reset` of its Accessibility and Automation grants (they need the app still on
   disk), then deletes the installed app, the build copy, its log folder, saved window state, caches and defaults.
-  `~/.config/vsd-dev` stays. If the agent is still registered after `--unregister` (which quits the same way when it
+  `~/.deckout-dev` stays. If the agent is still registered after `--unregister` (which quits the same way when it
   fails), it stops before deleting anything: no app would be left to unregister it. Deleted, not binned: a binned DeckOut Dev still opens and registers its agent again.
 - Layout: `Contents/MacOS/DeckOut` (the app), `Contents/MacOS/DeckOutAgent` (the background part),
   `Contents/Library/LaunchAgents/<label>.plist`, `Contents/Resources/AppIcon.icns` (drawn by `scripts/make-icon.swift`).
@@ -22,7 +22,7 @@ plan 3 (editing), plan 4 (lock photo), plan 5 (icons), plan 6 (settings, monitor
 | Bundle id | `io.github.okoker.deckout` | `io.github.okoker.deckout.dev` |
 | Name | DeckOut | DeckOut Dev |
 | Agent label = Mach service = agent signing identifier | `io.github.okoker.deckout.agent` | `io.github.okoker.deckout.dev.agent` |
-| Config | `~/.config/vsd/config.json` | `~/.config/vsd-dev/config.json` |
+| Config | `~/.deckout/config.json` | `~/.deckout-dev/config.json` |
 | Agent log | `~/Library/Logs/DeckOut/agent.log` | `~/Library/Logs/DeckOut Dev/agent.log` |
 
 - `CFBundleShortVersionString` from `VERSION`; `CFBundleVersion` is the build time (`yymmdd.HHMMSS`), so every build
@@ -197,7 +197,8 @@ the job definition it registered: a changed plist needs a new label.
   file at that path is replaced or rewritten (told by its file number, size and modified time, not by reading it).
 
 ## First run and removal
-- **The hand-installed controller** (the README's `com.streamdeck.controller`): when its plist is in
+- **The hand-installed controller** (the README's `com.streamdeck.controller`: 1.0, from when the app was
+  StreamDeckController, before it was renamed DeckOut): when its plist is in
   `~/Library/LaunchAgents`, DeckOut asks before registering its own ("Another deck controller is installed"):
   **Retire It** boots it out of launchd by its plist (`launchctl bootout gui/<uid> <plist>`), checks launchd no
   longer has it (if it does: "still running", nothing moved), and moves its plist to `….plist.retired-by-deckout`
@@ -211,7 +212,7 @@ the job definition it registered: a changed plist needs a new label.
   disabled) until macOS has answered the unregister: a registration step already under way finishes first, then the
   link is stopped again and the agent unregistered, last. If macOS refuses, Settings → General says so in red, unless
   Start Again was pressed meanwhile. Removal is asked for once: Settings' Stop and Remove… is disabled while removed,
-  and asking again does nothing, until Start Again. The config stays in `~/.config/vsd` (dev: `vsd-dev`).
+  and asking again does nothing, until Start Again. The config stays in `~/.deckout` (dev: `~/.deckout-dev`).
   Not verified: what macOS does when the app is binned while still registered (Stop and Remove first).
 - Brightness actions with no monitor control say why: none set up (Settings → Monitors), or set up but unreachable
   (m1ddc missing, or no monitor answered).

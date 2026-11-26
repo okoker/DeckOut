@@ -13,12 +13,19 @@ import Testing
                                    execDir: "/bin", exists: none) == nil)
     // Inside DeckOut: the identity's file, even when it doesn't exist yet (the app will write it).
     #expect(AgentLaunch.configPath(arguments: ["x"], identity: .dev, home: "/Users/x", execDir: "/bin",
-                                   exists: none) == "/Users/x/.config/vsd-dev/config.json")
+                                   exists: none) == "/Users/x/.deckout-dev/config.json")
     #expect(AgentLaunch.configPath(arguments: ["x"], identity: .release, home: "/Users/x", execDir: "/bin",
-                                   exists: { _ in true }) == "/Users/x/.config/vsd/config.json")
+                                   exists: { _ in true }) == "/Users/x/.deckout/config.json")
     // A hand install: today's candidates, the first that exists.
     #expect(AgentLaunch.configPath(arguments: ["x"], identity: nil, home: "/Users/x", execDir: "/opt/sdc",
                                    exists: { $0 == "/opt/sdc/config.json" }) == "/opt/sdc/config.json")
+}
+
+@Test func reloadNotificationIsPerDeckOut() {   // T-194
+    // One name per DeckOut, so `--post-reload` for DeckOut Dev never reloads DeckOut; a hand install has its own.
+    #expect(AgentLaunch.reloadNotification(identity: .release) == "io.github.okoker.deckout.agent.reload")
+    #expect(AgentLaunch.reloadNotification(identity: .dev) == "io.github.okoker.deckout.dev.agent.reload")
+    #expect(AgentLaunch.reloadNotification(identity: nil) == "io.github.okoker.deckout.reload")
 }
 
 @Test func logRollsOverLimit() throws {   // T-098

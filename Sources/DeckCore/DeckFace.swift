@@ -20,7 +20,7 @@ public struct FaceControl: Identifiable, Hashable {
 /// - N4: half the measured key-image pixels (`LockPhoto.n4Rects`: keys 56 pt at 86 pt pitch, rows 88 apart, the
 ///   strip's blocks 88 × 56 at 104 pitch, 176 below the top row); knobs drawn by eye under the strip (mockup
 ///   `docs/assets/config_app_main_window.html`).
-/// - N3: by eye from `docs/assets/streamdeck.jpg`, straightened: 3 × 2 screens, the big knob right of them, three
+/// - N3: by eye from `docs/assets/deck-n3.jpg`, straightened: 3 × 2 screens, the big knob right of them, three
 ///   buttons under the screens, two small knobs under the big knob. Nothing is cut to this drawing.
 public struct DeckFace {
     public let deck: DeckKind

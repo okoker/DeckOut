@@ -53,10 +53,8 @@ extension AppModel {
     /// The monitors as Settings lists them: the ones in use in Switch Monitor's order, then the rest.
     public var monitorsInOrder: [Monitor] { MonitorList.ordered(monitors, displays: config?.displays) }
 
-    /// "~/.config/vsd" (dev: "~/.config/vsd-dev"), for messages.
-    public var configFolderForPeople: String {
-        identity?.isDev == true ? "~/.config/vsd-dev" : "~/.config/vsd"
-    }
+    /// "~/.deckout" (dev: "~/.deckout-dev"), for messages.
+    public var configFolderForPeople: String { (identity ?? .release).configFolderForPeople }
 
     /// "LG HDR 4K · Left".
     public func monitorLabel(_ monitor: Monitor) -> String {

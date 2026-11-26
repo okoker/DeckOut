@@ -16,7 +16,8 @@ public struct AppIdentity: Equatable {
 
     private init(id: String) { bundleID = id }
 
-    /// Nil for anything but the two DeckOut bundle ids (e.g. the hand-installed `com.streamdeck.controller`).
+    /// Nil for anything but the two DeckOut bundle ids (e.g. `com.streamdeck.controller`, the hand install of 1.0,
+    /// from when the app was StreamDeckController, before it was renamed DeckOut).
     public init?(bundleID: String?) {
         switch bundleID {
         case AppIdentity.release.bundleID: self = .release
@@ -33,9 +34,16 @@ public struct AppIdentity: Equatable {
     public var agentLabel: String { bundleID + ".agent" }
     public var agentPlistName: String { agentLabel + ".plist" }
 
+    /// `~/.deckout/config.json` (dev: `~/.deckout-dev/config.json`). 1.0 and DeckOut 2.0.0 used `~/.config/vsd`,
+    /// from the app's first name (VSD Display Controller, then StreamDeckController, now DeckOut); nothing moves it.
     public func configPath(home: String) -> String {
-        home + (isDev ? "/.config/vsd-dev/config.json" : "/.config/vsd/config.json")
+        home + configFolderInHome + "/config.json"
     }
+
+    /// The settings folder as messages name it: `~/.deckout` (dev: `~/.deckout-dev`).
+    public var configFolderForPeople: String { "~" + configFolderInHome }
+
+    private var configFolderInHome: String { isDev ? "/.deckout-dev" : "/.deckout" }
 
     public func logFolder(home: String) -> String {
         home + "/Library/Logs/" + appName

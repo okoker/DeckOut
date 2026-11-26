@@ -56,7 +56,7 @@
         "4": { "type": "volume" }
       },
       "swipe": { "action": "next_preset" },
-      "lock_photo": "/Users/YOUR_NAME/.config/vsd/lock.jpg"
+      "lock_photo": "/Users/YOUR_NAME/.deckout/lock.jpg"
     }
   }
 }

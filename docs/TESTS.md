@@ -77,7 +77,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-070 | `ConfigFileTests/firstSaveKeepsABackupOnce` | The first save over an existing file keeps it as `config.json.before-app` (0600); later saves never overwrite that backup; no file, no backup |
 | T-071 | `ConfigFileTests/securityProblemsAreReported` | A symlink, a world-writable file and a missing file are each refused with a reason; a 0600 file passes |
 | T-072 | `ConfigFileTests/startupWithoutAUsableConfigRunsBlank` | A missing, unparseable or world-writable config at start gives no decks set up and a reason, never an exit (launchd would crash-loop) |
-| T-073 | `ConfigFileTests/resolvePathPrefersFlagThenExistingThenDefault` | `--config` wins; then the first existing of `~/.config/vsd/config.json` and the executable's folder; neither gives the home path; `--config` alone is an error |
+| T-073 | `ConfigFileTests/resolvePathPrefersFlagThenExistingThenDefault` | `--config` wins; then the first existing of `~/.deckout/config.json` and the executable's folder; neither gives the home path; `--config` alone is an error |
 | T-074 | `ConfigTests/lockPhotoReadsStringOrObject` | `lock_photo` reads as a path (zoom 1, centred) or as the framing object; zoom 0.5 or 11 makes the file invalid |
 | T-075 | `LockTests/framingZoomsAndMovesThePhoto` | Placement on the 800×464 face: aspect-fill, zoom about the centre, positive `offset_y` moves the photo down |
 | T-076 | `LockTests/framingNeverLeavesBlackEdges` | Tall and wide photos at any offset (±1, ±10) and zoom 1 or 3 still cover the whole face |
@@ -99,7 +99,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-092 | `ActionDispatcherTests/programsDontWaitForEachOther` | A quick command finishes at once while a slow one is still running (a Test run or a slow key never holds up the next press) |
 | T-093 | `ReloadTests/outsideReloadRebuildsTheMonitorControl` | A reload from outside rebuilds the monitor control (finds monitors plugged in since start); an app save with the same `displays` reuses it |
 | T-094 | `XPCTests/previewEndsWhenItsClientGoes` | When the connection that put up the lock photo preview goes away, the preview is taken down (the N4 doesn't stay on the photo after the app quits) |
-| T-095 | `IdentityTests/derivesNamesFromBundleID` | Release and dev DeckOut derive their agent label, plist name, config file and log folder from the bundle id; the dev variant never shares the live config |
+| T-095 | `IdentityTests/derivesNamesFromBundleID` | Release and dev DeckOut derive their agent label, plist name, config file (`~/.deckout`, dev `~/.deckout-dev`, also as messages name it) and log folder from the bundle id; the dev variant never shares the live config |
 | T-096 | `IdentityTests/unknownBundleIsNotDeckOut` | Only the two DeckOut bundle ids count as DeckOut: a hand install (`com.streamdeck.controller`) or no bundle keeps today's behaviour |
 | T-097 | `AgentLaunchTests/configPathOrder` | `--config` wins; inside DeckOut the identity's config path (even before it exists); a hand install searches today's candidates |
 | T-098 | `AgentLaunchTests/logRollsOverLimit` | The agent's log moves to `.1` at start when over the limit, so it never grows without end across restarts |
@@ -198,6 +198,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-191 | `AgentTests/nextPresetAsksTheAgent` | The daemon hands `next_preset`, on a swipe or a knob press, to the agent instead of running it as a command; on a locked Mac, never (the hand-off sits after the lock check) |
 | T-192 | `PresetTests/aNewN4SwipesThroughPresets` | A new N4 section made by the app has its swipe set to `next_preset`; an edit never adds it to a section that already exists |
 | T-193 | `scripts/check-bundle.sh --signed` (run by `make signed`) | After every T-107 check, the release app is ready to ship: the release bundle id; the app, the agent and m1ddc each signed with a Developer ID Application certificate (not ad hoc, not another team certificate such as Apple Development), all three by the same team, with the hardened runtime and a secure timestamp; the app's and the agent's entitlements exactly the Apple Events one (no `get-task-allow`), m1ddc's none; a deep, strict verify. It never prints the certificate's name. On an ad hoc build it fails with `not signed with a Developer ID (ad hoc)`, while the plain check passes |
+| T-194 | `AgentLaunchTests/reloadNotificationIsPerDeckOut` | The reload notification is the agent label + `.reload`, so `--post-reload` for DeckOut Dev never reloads DeckOut; a hand install has its own name |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

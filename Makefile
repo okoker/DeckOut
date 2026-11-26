@@ -2,7 +2,7 @@
 #   make app                  the dev variant ("DeckOut Dev", its own config and logs), debug build
 #   make app VARIANT=release  DeckOut itself, release build
 #   make install-dev          the dev variant, installed to ~/Applications/DeckOut Dev.app
-#   make uninstall-dev        removes DeckOut Dev from this Mac: Login Items, permissions, app, logs (keeps ~/.config/vsd-dev)
+#   make uninstall-dev        removes DeckOut Dev from this Mac: Login Items, permissions, app, logs (keeps ~/.deckout-dev)
 #   make test                 swift test
 #   make signed VARIANT=release   Developer ID signing and the disk image (needs signing.mk; the owner's go, each time)
 #   make notarize             notarises and staples that disk image (the owner's go, each time)
@@ -89,7 +89,7 @@ uninstall-dev:
 	    if [ -e "$$p" ]; then rm -rf "$$p" && echo "Removed $$p"; fi; \
 	done
 	@if defaults delete $(DEV_ID) 2>/dev/null; then echo "Removed the $(DEV_ID) defaults"; fi
-	@echo "DeckOut Dev removed. Kept: ~/.config/vsd-dev"
+	@echo "DeckOut Dev removed. Kept: ~/.deckout-dev"
 
 # Developer ID signing, inside out (m1ddc, the agent, the app), never --deep; then the disk image, signed too.
 signed:

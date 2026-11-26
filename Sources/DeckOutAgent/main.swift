@@ -13,13 +13,6 @@ setvbuf(stdout, nil, _IOLBF, 0)
 
 let arguments = CommandLine.arguments
 
-if arguments.contains("--post-reload") {
-    DistributedNotificationCenter.default().postNotificationName(
-        .init(Daemon.reloadNotification), object: nil, userInfo: nil, deliverImmediately: true)
-    print("Posted \(Daemon.reloadNotification)")
-    exit(0)
-}
-
 // MARK: - Identity, log, config path
 
 let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
@@ -27,6 +20,14 @@ let execDir = URL(fileURLWithPath: arguments[0])
     .deletingLastPathComponent().path
 // Inside DeckOut.app (a helper in Contents/MacOS, so Bundle.main is the app): DeckOut's names and paths.
 let identity = AppIdentity.current
+let reloadNotification = AgentLaunch.reloadNotification(identity: identity)
+
+if arguments.contains("--post-reload") {
+    DistributedNotificationCenter.default().postNotificationName(
+        .init(reloadNotification), object: nil, userInfo: nil, deliverImmediately: true)
+    print("Posted \(reloadNotification)")
+    exit(0)
+}
 
 // Started by launchd from the app's agent plist: log to DeckOut's log file (the plist can't name a per-user path).
 if let identity, arguments.contains("--mach-service") {
@@ -112,7 +113,7 @@ final class ReloadObserver: NSObject {
 let reloadObserver = ReloadObserver()
 DistributedNotificationCenter.default().addObserver(
     reloadObserver, selector: #selector(ReloadObserver.reload(_:)),
-    name: .init(Daemon.reloadNotification), object: nil, suspensionBehavior: .deliverImmediately)
+    name: .init(reloadNotification), object: nil, suspensionBehavior: .deliverImmediately)
 
 // Initialise AppKit for HUD overlay windows (no dock icon, no menu bar)
 NSApplication.shared.setActivationPolicy(.accessory)

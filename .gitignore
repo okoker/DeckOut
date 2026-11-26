@@ -6,8 +6,8 @@ CLAUDE.md
 docs/superpowers/
 config.json
 *.jpg
-!docs/assets/streamdeck.jpg
-!docs/assets/streamdeck-n4.jpg
+!docs/assets/deck-n3.jpg
+!docs/assets/deck-n4.jpg
 build/
 signing.mk
 docs/reference/releasing.md

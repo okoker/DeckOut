@@ -11,7 +11,8 @@ import Testing
     #expect(release.appName == "DeckOut")
     #expect(release.agentLabel == "io.github.okoker.deckout.agent")
     #expect(release.agentPlistName == "io.github.okoker.deckout.agent.plist")
-    #expect(release.configPath(home: "/Users/x") == "/Users/x/.config/vsd/config.json")
+    #expect(release.configPath(home: "/Users/x") == "/Users/x/.deckout/config.json")
+    #expect(release.configFolderForPeople == "~/.deckout")
     #expect(release.logFolder(home: "/Users/x") == "/Users/x/Library/Logs/DeckOut")
 
     let dev = try #require(AppIdentity(bundleID: "io.github.okoker.deckout.dev"))
@@ -20,7 +21,8 @@ import Testing
     #expect(dev.appName == "DeckOut Dev")
     #expect(dev.agentLabel == "io.github.okoker.deckout.dev.agent")
     #expect(dev.agentPlistName == "io.github.okoker.deckout.dev.agent.plist")
-    #expect(dev.configPath(home: "/Users/x") == "/Users/x/.config/vsd-dev/config.json")
+    #expect(dev.configPath(home: "/Users/x") == "/Users/x/.deckout-dev/config.json")
+    #expect(dev.configFolderForPeople == "~/.deckout-dev")
     #expect(dev.logFolder(home: "/Users/x") == "/Users/x/Library/Logs/DeckOut Dev")
     #expect(AppIdentity.helperName == "DeckOutAgent")
 }

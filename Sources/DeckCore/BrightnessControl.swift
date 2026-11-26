@@ -24,8 +24,8 @@ public final class BrightnessControl {
     private(set) var connectedDisplays: [ConnectedDisplay] = []
     private var targetMode: TargetMode = .all
 
-    private let queue = DispatchQueue(label: "streamdeck.brightness")
-    let writeQueue = DispatchQueue(label: "streamdeck.m1ddc.write", qos: .userInteractive)   // internal: tests wait on it
+    private let queue = DispatchQueue(label: "deckout.brightness")
+    let writeQueue = DispatchQueue(label: "deckout.m1ddc.write", qos: .userInteractive)   // internal: tests wait on it
     private let idleTimeout: TimeInterval
     private let hud: (String) -> Void
     private var inactivityTimer: DispatchSourceTimer?

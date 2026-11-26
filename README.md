@@ -2,7 +2,7 @@
 
 | TreasLin N3 | MiraBox Stream Dock N4 |
 |:---:|:---:|
-| <img src="docs/assets/streamdeck.jpg" alt="TreasLin N3" width="380"> | <img src="docs/assets/streamdeck-n4.jpg" alt="MiraBox Stream Dock N4" width="380"> |
+| <img src="docs/assets/deck-n3.jpg" alt="TreasLin N3" width="380"> | <img src="docs/assets/deck-n4.jpg" alt="MiraBox Stream Dock N4" width="380"> |
 
 **DeckOut runs USB stream decks from your Mac: the TreasLin N3, the MiraBox Stream Dock N4, and their clones.**
 
@@ -137,11 +137,12 @@ open it.
 ## Updating
 
 Quit DeckOut, download the new disk image, drag DeckOut onto Applications and choose Replace, then open DeckOut once:
-it restarts the daemon on the new version. Your settings stay.
+it restarts the daemon on the new version. Your settings stay, except coming from 2.0.0: it kept them in
+`~/.config/vsd`, which later versions don't read.
 
 ## Removing
 
-DeckOut → Settings → General → Stop and Remove…, then drag DeckOut to the Bin. Your settings stay in `~/.config/vsd`;
+DeckOut → Settings → General → Stop and Remove…, then drag DeckOut to the Bin. Your settings stay in `~/.deckout`;
 delete that folder too to remove everything, and DeckOut's entry under Privacy & Security → Accessibility.
 
 ## Coming from 1.0 (StreamDeckController, installed by hand)
@@ -149,10 +150,10 @@ delete that folder too to remove everything, and DeckOut's entry under Privacy &
 - Opening DeckOut finds the old controller and asks first: **Retire It** stops it and moves its launch file aside, to
   `~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout`; its program and your settings stay.
   With **Not Now** both run, and every press fires twice.
-- Your settings in `~/.config/vsd` carry over. DeckOut's first save keeps the file as it was in
-  `config.json.before-app`, because 1.0 can't read the newer format.
-- To go back: DeckOut → Settings → General → Stop and Remove…; put `config.json.before-app` back as `config.json`;
-  rename the launch file back to `com.streamdeck.controller.plist` and run
+- DeckOut keeps its settings in `~/.deckout` and doesn't read 1.0's `~/.config/vsd`: set the decks up again in the
+  app. 1.0's settings stay where they are.
+- To go back: DeckOut → Settings → General → Stop and Remove…; rename the launch file back to
+  `com.streamdeck.controller.plist` and run
   `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.streamdeck.controller.plist`.
 - 1.0's instructions asked for Input Monitoring; DeckOut needs Accessibility instead, so the old entry can go.
 
@@ -164,7 +165,7 @@ delete that folder too to remove everything, and DeckOut's entry under Privacy &
   the deck goes dark) and sends key images as JPEGs in chunks, turned to suit each deck's panel. Keyboard shortcuts and media keys go through `CGEvent`, the volume through CoreAudio, monitor brightness
   through m1ddc. It reconnects when a deck is unplugged and plugged back in.
 - **The app** (SwiftUI) and the daemon talk over XPC, each checking the other's code signature. The app saves your
-  setup to `~/.config/vsd/config.json`, and the daemon redraws only the screens that changed.
+  setup to `~/.deckout/config.json`, and the daemon redraws only the screens that changed.
 - Device details: `docs/reference/device_quirks.md` (N3) and `docs/reference/n4.md`. The app:
   `docs/reference/app.md`.
 
@@ -177,7 +178,7 @@ git clone https://github.com/okoker/DeckOut.git
 cd DeckOut
 make test                    # swift test
 make app VARIANT=release     # build/DeckOut.app, signed ad hoc; move it to /Applications to run it
-make app                     # build/DeckOut Dev.app: the development version, with its own settings in ~/.config/vsd-dev
+make app                     # build/DeckOut Dev.app: the development version, with its own settings in ~/.deckout-dev
 ```
 
 To sign and notarise with your own Developer ID: copy `signing.mk.example` to `signing.mk` and fill it in, then
@@ -186,8 +187,8 @@ To sign and notarise with your own Developer ID: copy `signing.mk.example` to `s
 ## History
 
 Version 1.0 was StreamDeckController, a background program you installed by hand, first called "VSD Display
-Controller" after the makers' software ("VSD Craft"). Version 2.0 is DeckOut, the app. The settings folder is still
-`~/.config/vsd/`, so a 1.0 setup carries over.
+Controller" after the makers' software ("VSD Craft"). Version 2.0 is DeckOut, the app; it kept the settings folder
+`~/.config/vsd/`, so a 1.0 setup carried over. Later versions use `~/.deckout/`.
 
 ## License
 

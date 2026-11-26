@@ -22,7 +22,10 @@
   `~/.config/vsd/config.json`, log `~/Library/Logs/DeckOut/agent.log`); Accessibility and Automation are granted to
   DeckOut.
 - DeckOut Dev is removed (`make uninstall-dev`). A dev session: Stop and Remove in DeckOut, `make install-dev`, test,
-  `make uninstall-dev`, open DeckOut again. Seed `~/.config/vsd-dev` from `~/.config/vsd` if it's gone.
+  `make uninstall-dev`, open DeckOut again. A build from `main` uses `~/.deckout-dev`: seed it from `~/.config/vsd`,
+  rewriting the image paths inside `config.json`.
+- `main` reads `~/.deckout` since 26/11/2026; this Mac's setup stays in `~/.config/vsd` until a build from `main`
+  replaces 2.0.0, then moves once, by hand (TODO).
 - Rollback copies, to delete from 28/11/2026 at the owner's go: the retired 1.0 install
   (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` and its program),
   `~/.config/vsd.bak-2026-11-21` (the 1.0 config folder) and `~/.config/vsd-dev` (DeckOut Dev's config).
@@ -50,6 +53,7 @@
 DeckOut 2.0.0 (Developer ID signed, notarised, released 21/11/2026) drives the TreasLin N3 and the MiraBox N4 from
 `/Applications` through its own agent; DeckOut Dev is removed and the 1.0 hand install retired. Tested on macOS 15
 on this Mac; the owner's second Mac (macOS 26) is next.
+26/11/2026 — Settings folder `~/.deckout`, per-DeckOut reload name, 1.0 names, on `main`: `swift test` 242/242 (new T-194), watched; T-194, T-095, T-097 and T-073 failed first against stubs keeping the old names; no `~/.deckout` or `~/.deckout-dev` appeared during the run; `make app` (build 261126.070211) passed T-107, its `DeckOutAgent --post-reload` posted `io.github.okoker.deckout.dev.agent.reload` (the bare `.build` binary: `io.github.okoker.deckout.reload`), and `strings` finds no `streamdeck` or `config/vsd` in the agent; the "stopped" screen's snapshot reads "~/.deckout". Not run: DeckOut Dev installed (the decks stayed on 2.0.0).
 21/11/2026 — Phase 7 release on `main`: `make signed VARIANT=release` at ad0cc56 (build 261121.185529), T-193 passing on the real Developer ID build; `make notarize` Accepted in under a minute (HTTP 403 before, until the company team's new agreement was accepted), stapled, `source=Notarized Developer ID`; v2.0.0-rc.1, then v2.0.0 published (sha256 fba1b450…, downloaded back and matched). Owner session moving the decks: Stop and Remove of DeckOut Dev, `make uninstall-dev`, config + 10 icons into `~/.config/vsd` (0 `vsd-dev` mentions, all 20 image paths present), a browser download opened inside the disk image asked to be moved, installed it ran first time (launchd runs = 1, no Constraint lines), 14/14 and 6/6 screens drawn, one Login Items entry, Accessibility via Allow…, the iTerm2 / Chrome-profile / Desktop `osascript` keys asked once per app and then worked, lock photo and swipe fine; an ad hoc XPC client got no reply. Not run: macOS 26 and 27, the bin-while-registered removal.
 21/11/2026 — Phase 7, two review minors on `main`: `make -n signed` showed the last disk image deleted only after signing, and a padded `SIGN_ID` reaching `codesign` with its spaces; both checks now pass (image deleted before the build, `SIGN_ID` and `NOTARY_PROFILE` trimmed), and a blank `SIGN_ID` is refused as unset (run only with uncommitted changes, so it stopped before `codesign`); the other refusals unchanged. Nothing built or signed.
 21/11/2026 — Phase 7 Task 1 on `main` (signing targets, nothing signed with a certificate): `make app VARIANT=release` failed first at the new Apple Events usage-text check, passes after; T-193 `check-bundle.sh --signed` on the ad hoc release build fails with "not signed with a Developer ID (ad hoc)" while the plain check passes; its parsing read against a scratch ad hoc copy signed with the runtime and the entitlements (the runtime pattern fixed to take `(adhoc,runtime)`); refusals run for real (dev variant, no `SIGN_ID`, uncommitted tree, no `NOTARY_PROFILE`); `make -n signed` signs inside out; a probe disk image built the same way (3.2 MB) mounted with DeckOut.app beside an Applications link, the app inside passing T-107; `make app` (dev) OK; `swift test` 241/241, watched. `make uninstall-dev` only dry-run (`make -n`): DeckOut Dev runs the decks until Task 5. Review fixes: in a scratch harness (fake home, stand-in `launchctl`/`tccutil`), `uninstall-dev` deleted the app while the agent stayed registered, and now refuses and keeps it; with a stand-in `codesign`, T-193 passed a signature lacking the Developer ID marks, and now fails it (the requirement parses in real `codesign`); `swift test` 241/241 again. Two release builds of the same code give the same agent CDHash.
@@ -67,7 +71,6 @@ on this Mac; the owner's second Mac (macOS 26) is next.
 20/11/2026 — BL-024 on `main`: `make app VARIANT=release` failed first at the new bundle check ("the release app carries the debug switches (--show-old-controller found)"), passes after (0 in the release binary, 1 in the dev one); `make app` (dev) OK; `swift test` 222/222, watched. Not installed: the debug build behaves as before.
 20/11/2026 — UAT fixes on `main` (toolbar, About licences): `swift test` 222/222 (new T-174), watched; T-174 failed first (a licence line measured 506 pt for 464); `make install-dev` (build 261120.132255), one `--snapshot` run: "toolbar menu off, display mode 2, window 540 pt high" (540 before too), the toolbar items' middles on the window buttons' row (25.5 pt; 19.5–21 under Icon and Text), KI-008 on the restart, registered again, drew 14 of 14 and 6 of 6. Owner: licences read well; not checked: the owner's look at the Icon Only toolbar.
 20/11/2026 — BL-003 on `deckout-7-uat-fixes` (ae9ee09): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
-20/11/2026 — BL-005 on `deckout-7-uat-fixes` (to 38094e3): `swift test` 217/217 (new T-169), watched; `make install-dev` (build 261120.103217), one `--snapshot` run: KI-008 on the restart, the app re-registered 10 s later, window "Deck controller running"; the agent drew 6 of 6 and 14 of 14 on connect; one `--post-reload` with nothing changed: "Drew 0 of 6 slots on n3 in 1 ms", "Drew 0 of 14 slots on n4 in 4 ms", "Reloaded in 7 ms" (433–453 ms before). Not checked: a changed key and an unlock on the decks (owner, at UAT).
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
@@ -75,6 +78,21 @@ on this Mac; the owner's second Mac (macOS 26) is next.
 - Phase 7 close-out: the second-Mac install (macOS 26), then the README's tested versions. Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 26/11/2026 — DeckOut keeps its settings in `~/.deckout`; 1.0's names are gone where nothing needs them
+- **Reference:** `docs/reference/app.md` (variants table; First run and removal), `docs/REQUIREMENTS.md`
+  (Configuration; reload), README (Updating, Removing, Coming from 1.0, History); T-194 (T-073, T-095, T-097 changed).
+- **For a person:** DeckOut built from here reads and writes `~/.deckout` (DeckOut Dev: `~/.deckout-dev`), named
+  after the app, and Settings and the "stopped" screen say so. It doesn't read `~/.config/vsd`: a Mac coming from 1.0
+  or 2.0.0 starts with an empty setup. `DeckOutAgent --post-reload` reloads only its own DeckOut (DeckOut Dev's used
+  to reload DeckOut too). Crash reports name `deckout.*` queues; the README's photos are `deck-n3.jpg` / `deck-n4.jpg`.
+- **Decision (owner, 26/11/2026):** `~/.deckout`, not `~/.config/deckout`; no migration, nothing for other installs:
+  the owner's setup is moved once, by hand, when this build replaces 2.0.0. `com.streamdeck.controller` stays (how
+  DeckOut finds 1.0) and so do the history mentions; where an old name stays, a comment says the app was renamed.
+  (CL calls:) the folder name lives only in `AppIdentity` (the app's messages and the hand-install fallback derive
+  from it); a hand install's reload name is `io.github.okoker.deckout.reload`.
+- **Checked:** run line above. Not checked: DeckOut running from the new folder on a Mac (waits for the build that
+  replaces 2.0.0).
 
 ### 21/11/2026 — DeckOut 2.0.0 is out: one signed, notarised download, and the owner's decks run on it
 - **Reference:** `docs/reference/app.md` (Signing and release; Debug builds), `README.md`; plan
@@ -124,22 +142,6 @@ on this Mac; the owner's second Mac (macOS 26) is next.
   ddcutil's and MonitorControl's 50 ms wait and reply checks (read at source). A fresh reviewer: no bugs; T-172's
   idle window widened (it could flake under load). Left as is: Switch Monitor pressed within ~50 ms of a turn can
   read the monitor before the turn's write lands (as before), so the next turn starts one step off.
-
-### 20/11/2026 — A reload redraws only the screens that changed, in milliseconds
-- **Reference:** `docs/reference/n4.md` (Locked Mac; Running it), `docs/reference/device_quirks.md`,
-  `docs/REQUIREMENTS.md` (reload); plan `docs/superpowers/plans/2026-11-20-deckout-bl-005-redraw-changes.md`; T-169;
-  BL-005.
-- **For a person:** every edit in DeckOut, and every reload from a script, used to redraw all 20 screens (~0.45 s, with
-  presses waiting); now only the screens whose picture changed are sent, and a reload with nothing to send takes 7 ms.
-  A script that rewrites a key's icon at the same path and posts a reload still shows the new picture (icon files are
-  read again every time and compared by content); live blocks are drawn from their latest reading. Unlocking the Mac
-  repaints every screen, which puts right a deck that reset itself.
-- **Decision (owner, 20/11/2026):** every reload, the app's and outside ones, sends only changes; unlock repaints all.
-  (CL calls:) change is judged on the file's bytes, not its path, date or size; an icon that won't decode logs its
-  warning once, then stays black until its bytes change.
-- **Checked:** run line above. One implementer, read by CL, then a fresh reviewer: no critical or important issues;
-  its minor (a failed final packet left slots marked as shown) fixed. Parked: a huge file set as an icon is read in
-  full on every reload.
 
 ## History
 Older work: `old_progress/README.md`.

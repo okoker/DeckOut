@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import DeckCore
 
-// Every test works in its own fresh temporary folder; nothing touches ~/.config/vsd.
+// Every test works in its own fresh temporary folder; nothing touches ~/.deckout.
 
 private func freshFolder() throws -> String {
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-config-\(UUID().uuidString)")
@@ -39,7 +39,7 @@ private let sample = AppConfig(
 }
 
 @Test func saveCreatesAMissingFolderPrivately() throws {            // part of T-069
-    let folder = try freshFolder() + "/vsd"
+    let folder = try freshFolder() + "/deckout"
     try ConfigFile.save(sample, to: folder + "/config.json")
     #expect(mode(of: folder) == 0o700)
 }
@@ -92,7 +92,7 @@ private let sample = AppConfig(
 
 @Test func resolvePathPrefersFlagThenExistingThenDefault() {        // T-073
     let home = "/Users/someone", exec = "/opt/deck"
-    let homeConfig = home + "/.config/vsd/config.json", execConfig = exec + "/config.json"
+    let homeConfig = home + "/.deckout/config.json", execConfig = exec + "/config.json"
     func resolve(_ arguments: [String], existing: Set<String>) -> String? {
         ConfigFile.resolvePath(arguments: arguments, home: home, execDir: exec, exists: { existing.contains($0) })
     }

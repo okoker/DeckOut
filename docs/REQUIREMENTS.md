@@ -38,8 +38,8 @@ Maps verified on the unit (18/11/2026); details in `docs/design/n4_support.md`.
 - macOS requires CFRunLoop running for IOKit HID input delivery
 
 ## Configuration
-One JSON file: `--config <path>`, else the first that exists of `~/.config/vsd/config.json` and `config.json` next to
-the executable, else `~/.config/vsd/config.json`. Read at start-up and re-read on `SIGHUP` or the reload notification
+One JSON file: `--config <path>`, else the first that exists of `~/.deckout/config.json` and `config.json` next to
+the executable, else `~/.deckout/config.json`. Read at start-up and re-read on `SIGHUP` or the reload notification
 (`--post-reload`); a reload that fails the security checks or doesn't parse keeps the previous config.
 - **Security checks on every read:** the file must not be a symlink, must be owned by the user and not writable by
   group or others.
@@ -217,8 +217,10 @@ install). Without either, all other features work — brightness actions log a w
 - On button press: executes mapped action (ignores release events for buttons)
 - On knob rotate: applies ±step for each tick
 - On knob press: executes the knob's press action
-- Reloads the config on `SIGHUP` or the distributed notification `com.streamdeck.controller.reload`
-  (`DeckOutAgent --post-reload` posts it), then redraws in place — no clear, so nothing blinks — sending only
+- Reloads the config on `SIGHUP` or the distributed notification `<agent label>.reload`
+  (`io.github.okoker.deckout.agent.reload`; dev `io.github.okoker.deckout.dev.agent.reload`; a hand install
+  `io.github.okoker.deckout.reload`; 1.0 used `com.streamdeck.controller.reload`), which `DeckOutAgent --post-reload`
+  posts, then redraws in place — no clear, so nothing blinks — sending only
   the screens whose image changed. A reload reads every icon file again and renders it again only when its bytes
   changed (not its date or size), so a script that rewrites its icon at the same path and posts a reload shows the
   new picture; live blocks are drawn from their latest reading. A slot with nothing set is drawn black.
@@ -253,7 +255,7 @@ install). Without either, all other features work — brightness actions log a w
 - Logs to stdout (a hand install's plist sends it to `~/Library/Logs/StreamDeckController.log`). Inside DeckOut,
   started by launchd with `--mach-service`, it writes `~/Library/Logs/DeckOut/agent.log` (dev variant:
   `~/Library/Logs/DeckOut Dev/agent.log`), moved to `agent.log.1` at start when over 5 MB
-- Inside DeckOut the config is `~/.config/vsd/config.json` (dev variant: `~/.config/vsd-dev/config.json`), unless
+- Inside DeckOut the config is `~/.deckout/config.json` (dev variant: `~/.deckout-dev/config.json`), unless
   `--config` names another; a hand install searches as above
 - `status` also reports the build (`CFBundleVersion`) the agent started with; version and build are read at launch
 - A reload from outside (`SIGHUP`, `--post-reload`) logs the whole config; one the app asks for logs one line
@@ -270,7 +272,7 @@ install). Without either, all other features work — brightness actions log a w
 - **N4 with `lock_photo`:** on lock the photo is drawn across all 14 slots (scaled to fill the deck's face, then
   zoomed and moved by its framing, each slot cut at its measured position); on unlock the layout is redrawn. Without a photo, every deck keeps its
   layout, inert
-- Keep the photo in `~/.config/vsd/`: macOS asks before a background program reads Desktop, Documents, Downloads
+- Keep the photo in `~/.deckout/`: macOS asks before a background program reads Desktop, Documents, Downloads
   or iCloud Drive, and an unsigned daemon loses that permission on every rebuild
 
 ## Safety Constraints

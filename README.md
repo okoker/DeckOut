@@ -142,9 +142,12 @@ open it.
 
 ## Updating
 
-Quit DeckOut, download the new disk image, drag DeckOut onto Applications and choose Replace, then open DeckOut once:
-it restarts the daemon on the new version. Your settings stay, except coming from 2.0.0: it kept them in
-`~/.config/vsd`, which later versions don't read.
+1. DeckOut → Settings → General → Stop and Remove…, then quit DeckOut. Finder won't replace the app while its daemon
+   runs ("DeckOut.app is in use"). The decks go dark until step 3.
+2. Download the new disk image, drag DeckOut onto Applications and choose Replace.
+3. Open DeckOut and click Start Again.
+
+Your settings stay, except coming from 2.0.0: it kept them in `~/.config/vsd`, which later versions don't read.
 
 2.2 moves the knobs into each preset, which 2.1.0 can't read. Its first save keeps your file as it was, in
 `~/.deckout/config.json.before-2.2`. To go back to 2.1.0, put that copy back as `config.json` before opening 2.1.0

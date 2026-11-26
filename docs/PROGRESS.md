@@ -1,6 +1,6 @@
 # Progress
 
-## Session Handover — 26/11/2026 (late): DeckOut 2.2.0 released; this Mac still on 2.1.0
+## Session Handover — 26/11/2026 (late): DeckOut 2.2.0 released and on this Mac; DeckOut Dev removed
 
 ### What was done
 - Knob lists fast-forwarded into `main`, pushed (37cb921..bd611ab), branch `knob-lists` deleted. After the owner's
@@ -16,11 +16,8 @@
   `"~/Applications/DeckOut Dev.app/Contents/MacOS/DeckOut" --unregister`.
 
 ### Environment state
-- The signed DeckOut 2.1.0 runs the decks; the owner installs 2.2.0 here (owner, 26/11/2026). DeckOut Dev: still in
-  `~/Applications`, its agent removed by the owner.
-- Cleanup waiting for the owner's go: `make uninstall-dev`, `~/.deckout-dev` (the sample, the site lists, icons), the
-  plan's workspace `.superpowers/sdd/2026-11-26-deckout-knob-lists/` (its minors are BL-043), an earlier session
-  scratchpad's `icons-dl/`.
+- The signed DeckOut 2.2.0 runs the decks (run line below). DeckOut Dev removed (`make uninstall-dev`; `~/.deckout-dev`
+  in the Bin as `deckout-dev-2026-11-26`); the plan's workspace and the old `icons-dl/` deleted (owner's go).
 - Rollback copies to delete from 28/11/2026 (owner's go): the retired 1.0 plist and program,
   `~/.config/vsd.bak-2026-11-21`, `~/.config/vsd-dev`. Developer ID certificate expires 01/02/2027 (BL-039).
 
@@ -31,18 +28,17 @@
   reconnecting at the lock screen shows its layout ≤5 s; an unplug mid-redraw logs up to 15 warnings.
 
 ### What's next
-1. The owner updates this Mac to 2.2.0 (quit DeckOut, replace from the image, open once). Worth a look after: the
-   agent restarts on 2.2.0 within 15 s with Accessibility kept (BL-039: this agent changed); New Preset on the N4
-   gives the baseline (delete it after); `~/.deckout/config.json.before-2.2` appears at the first save.
-2. Cleanup above (go).
-3. BL-042 control run (DeckOut stopped, decks plugged in for hours). Second Mac (macOS 26), macOS 27 call, BL-029.
+1. Owner: New Preset on the N4 gives the baseline (delete it after); a keyboard-shortcut key still works
+   (Accessibility after the re-register).
+2. BL-042 control run (DeckOut stopped, decks plugged in for hours). Second Mac (macOS 26), macOS 27 call, BL-029.
 
 ## Current Status
 DeckOut 2.2.0 (Developer ID signed, notarised, released 26/11/2026; 2.1.0 earlier the same day, 2.0.0 on 21/11/2026)
 drives the TreasLin N3 and the MiraBox N4 from `/Applications` through its own agent, with its settings in
-`~/.deckout`; this Mac runs 2.1.0 until the owner installs 2.2.0; the 1.0 hand install is retired. Tested on macOS 15
+`~/.deckout`; DeckOut Dev is removed and the 1.0 hand install retired. Tested on macOS 15
 on this Mac; the owner's second Mac (macOS 26) is next.
 26/11/2026 — Release 2.2.0 from 7052845 (`knob-lists` fast-forwarded into `main`): `swift test` 268/268, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.203128), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 88bc431a…; v2.2.0 published (no candidate), downloaded back with `gh`: same sha256, accepted with a quarantine flag set by hand. Not run: the install on this Mac (owner), the update across builds (BL-039), New Preset in the real app.
+26/11/2026 — 2.2.0 on this Mac (owner, from the download): Finder's Replace refused while the 2.1.0 agent ran ("DeckOut.app is in use"; a kill would be undone by `KeepAlive`); Stop and Remove, Replace, open, Start Again: the agent came up at 20:40:25 from `/Applications` (runs 1) and drew 14 of 14 and 6 of 6; the first save (a swipe) kept `config.json.before-2.2` (10,130 bytes, the 18:46 file), and the new file equals it with the deck-level knobs moved into every preset (checked by a script); swipes switch Default ↔ Server. On the way, Spotlight opened DeckOut Dev and its sample read as "configs gone"; DeckOut Dev then removed. Not checked: New Preset in the real app; Accessibility after the re-register.
 26/11/2026 — New-preset baseline on `knob-lists`: `swift test` 268/268 (new T-220; T-211 rewritten), watched; both failed first (knob 1's volume and ZR7 came over into a new preset; a fresh N4's Default was blank). T-128 and T-157 assumed a blank block 2 in a fresh N4: their setup moved (block 3; an N4 already in the file), their checks unchanged. Not run: New Preset in the real app.
 26/11/2026 — Knob lists on `knob-lists` (c766780..533491a): `swift test` 265/265 (242 + new T-195–T-217), watched; each new behaviour test failed first (T-201 on the missing copy, T-215 on the missing block image, T-217 on no push after a reload, the rest on the missing API); `make app` (build 261126.174339) passed T-107. Review fixes (2540305): `swift test` 267/267 (new T-218, T-219, both failed first: the deck jumped back to item 3, the item editor kept its identity). Not run: DeckOut Dev on the decks (Task 9).
 26/11/2026 — Release 2.1.0 from da7f66b: `swift test` 242/242, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.124509), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 cc4c07ac…; v2.1.0 published (no candidate), downloaded back: same sha256, accepted with the quarantine flag set. This Mac: dry run first (13 paths under `/.config/vsd/`, 22 image paths, none missing), then `~/.config/vsd` → `~/.deckout`, paths rewritten (0 `vsd` left, all 22 present, 0600), `/Applications/DeckOut.app` replaced from the image while the 2.0.0 agent ran (same designated requirement), app opened: the agent restarted on 2.1.0 about a second later (launchd runs 1 → 2, last exit 0, the same pid 2 minutes on), read `~/.deckout` and drew 6 of 6 and 14 of 14 with the lock photo from the new folder; BTM showed the item "enabled, allowed". AMFI's "Constraint not matched" logged at the same second is unrelated (15 times in 3 hours, before and after). Owner, after: "all working as intended".

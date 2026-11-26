@@ -234,6 +234,11 @@ the job definition it registered: a changed plist needs a new label.
   Start Again was pressed meanwhile. Removal is asked for once: Settings' Stop and Remove… is disabled while removed,
   and asking again does nothing, until Start Again. The config stays in `~/.deckout` (dev: `~/.deckout-dev`).
   Not verified: what macOS does when the app is binned while still registered (Stop and Remove first).
+- **Updating:** Finder refuses to replace the app while its agent runs ("The operation can't be completed because
+  the item "DeckOut.app" is in use", 2.1.0 → 2.2.0 on 26/11/2026), and killing the agent doesn't help (launchd's
+  `KeepAlive` starts it again). So the README says: Stop and Remove…, quit, replace, open, Start Again. Replaced from
+  the command line (`ditto`) while the agent runs, the bundle is swapped, and opening the app restarts the agent on the
+  new build (2.0.0 → 2.1.0).
 - Brightness actions with no monitor control say why: none set up (Settings → Monitors), or set up but unreachable
   (m1ddc missing, or no monitor answered).
 

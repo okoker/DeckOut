@@ -16,3 +16,4 @@ Completed work moved out of `PROGRESS.md`, oldest first.
 - 12 — DeckOut plan 7, UAT fixes (20/11/2026): long commands readable and editable, strip blocks take images, presets cancellable → `12_deckout_plan7_uat_fixes.md`
 - 13 — DeckOut backlog fixes 1 (20/11/2026): strip images follow the tap's app, Stop and Remove can't be undone behind your back → `13_deckout_backlog_fixes_1.md`
 - 14 — DeckOut BL-005, redraw changes (20/11/2026): a reload redraws only the screens that changed, in milliseconds → `14_deckout_bl005_redraw_changes.md`
+- 15 — DeckOut BL-003, monitor brightness (20/11/2026): brightness moves from where the monitor really is, never jumping to 5 % → `15_deckout_bl003_monitor_brightness.md`

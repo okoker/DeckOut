@@ -57,6 +57,7 @@
 DeckOut 2.1.0 (Developer ID signed, notarised, released 26/11/2026; 2.0.0 on 21/11/2026) drives the TreasLin N3 and
 the MiraBox N4 from `/Applications` through its own agent, with its settings in `~/.deckout`; DeckOut Dev is removed
 and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's second Mac (macOS 26) is next.
+26/11/2026 — Knob lists on `knob-lists` (c766780..533491a): `swift test` 265/265 (242 + new T-195–T-217), watched; each new behaviour test failed first (T-201 on the missing copy, T-215 on the missing block image, T-217 on no push after a reload, the rest on the missing API); `make app` (build 261126.174339) passed T-107. Not run: DeckOut Dev on the decks (Task 9).
 26/11/2026 — Release 2.1.0 from da7f66b: `swift test` 242/242, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.124509), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 cc4c07ac…; v2.1.0 published (no candidate), downloaded back: same sha256, accepted with the quarantine flag set. This Mac: dry run first (13 paths under `/.config/vsd/`, 22 image paths, none missing), then `~/.config/vsd` → `~/.deckout`, paths rewritten (0 `vsd` left, all 22 present, 0600), `/Applications/DeckOut.app` replaced from the image while the 2.0.0 agent ran (same designated requirement), app opened: the agent restarted on 2.1.0 about a second later (launchd runs 1 → 2, last exit 0, the same pid 2 minutes on), read `~/.deckout` and drew 6 of 6 and 14 of 14 with the lock photo from the new folder; BTM showed the item "enabled, allowed". AMFI's "Constraint not matched" logged at the same second is unrelated (15 times in 3 hours, before and after). Owner, after: "all working as intended".
 26/11/2026 — Settings folder `~/.deckout`, per-DeckOut reload name, 1.0 names, on `main`: `swift test` 242/242 (new T-194), watched; T-194, T-095, T-097 and T-073 failed first against stubs keeping the old names; no `~/.deckout` or `~/.deckout-dev` appeared during the run; `make app` (build 261126.070211) passed T-107, its `DeckOutAgent --post-reload` posted `io.github.okoker.deckout.dev.agent.reload` (the bare `.build` binary: `io.github.okoker.deckout.reload`), and `strings` finds no `streamdeck` or `config/vsd` in the agent; the "stopped" screen's snapshot reads "~/.deckout". Not run: DeckOut Dev installed (the decks stayed on 2.0.0).
 21/11/2026 — Phase 7 release on `main`: `make signed VARIANT=release` at ad0cc56 (build 261121.185529), T-193 passing on the real Developer ID build; `make notarize` Accepted in under a minute (HTTP 403 before, until the company team's new agreement was accepted), stapled, `source=Notarized Developer ID`; v2.0.0-rc.1, then v2.0.0 published (sha256 fba1b450…, downloaded back and matched). Owner session moving the decks: Stop and Remove of DeckOut Dev, `make uninstall-dev`, config + 10 icons into `~/.config/vsd` (0 `vsd-dev` mentions, all 20 image paths present), a browser download opened inside the disk image asked to be moved, installed it ran first time (launchd runs = 1, no Constraint lines), 14/14 and 6/6 screens drawn, one Login Items entry, Accessibility via Allow…, the iTerm2 / Chrome-profile / Desktop `osascript` keys asked once per app and then worked, lock photo and swipe fine; an ad hoc XPC client got no reply. Not run: macOS 26 and 27, the bin-while-registered removal.
@@ -75,14 +76,31 @@ and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's se
 20/11/2026 — BL-014 (Shortcut list part) on `main`: `swift test` 224/224 (new T-175), watched; T-175 failed first (the list came back the same after DeckOut came to the front and after a second picker). Not installed yet; not checked: a Shortcut made in the Shortcuts app showing up in the real picker (owner).
 20/11/2026 — BL-024 on `main`: `make app VARIANT=release` failed first at the new bundle check ("the release app carries the debug switches (--show-old-controller found)"), passes after (0 in the release binary, 1 in the dev one); `make app` (dev) OK; `swift test` 222/222, watched. Not installed: the debug build behaves as before.
 20/11/2026 — UAT fixes on `main` (toolbar, About licences): `swift test` 222/222 (new T-174), watched; T-174 failed first (a licence line measured 506 pt for 464); `make install-dev` (build 261120.132255), one `--snapshot` run: "toolbar menu off, display mode 2, window 540 pt high" (540 before too), the toolbar items' middles on the window buttons' row (25.5 pt; 19.5–21 under Icon and Text), KI-008 on the restart, registered again, drew 14 of 14 and 6 of 6. Owner: licences read well; not checked: the owner's look at the Icon Only toolbar.
-20/11/2026 — BL-003 on `deckout-7-uat-fixes` (ae9ee09): `swift test` 221/221 (new T-170–T-173), watched; T-170, T-171, T-173 failed first against the old code (a 0 read at start-up became 5 %, a failed read 55 %, the message measured 940 pt for 660); m1ddc on both LG monitors, 100 back-to-back reads each: stock 87 of 200 wrong (exit 0), patched 0 wrong, 0 failed; `make install-dev` (build 261120.111028), one `--snapshot` run: KI-008 on the restart, registered again, window "Deck controller running", the agent found both monitors without reading them ("Monitors ready in 31 ms", was 311–520) and drew 14 of 14 and 6 of 6. Not checked: a knob turn and the HUD on screen (owner).
 19/11/2026 — DeckOut plan 1 on `deckout-1-background`: `swift test` 95/95 (new T-061–T-094); device session with the owner: volume ±5, app/url/open/Shortcut keys, play/pause (QuickTime), preset switch, framed lock photo, blank start without config; log: shell environment resolved (arp-scan via /opt/homebrew/bin), 10 SIGHUPs → 1 reload (75 ms). Not met: reload under 50 ms; next/previous track unverified.
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
+- Knob lists and per-preset knobs on branch `knob-lists`: built and tested; on the deck next (plan Task 9).
 - Phase 7 close-out: the second-Mac install (macOS 26), then the README's tested versions. Backlog: `docs/BACKLOG.md`.
 
 ## Completed
+
+### 26/11/2026 — An N4 knob can pick from a list of sites or apps; every preset has its own knobs
+- **Reference:** `docs/design/knob_lists.md`, `docs/REQUIREMENTS.md` (Structure; Knobs; Saving; Daemon Behaviour;
+  Lock Behaviour), `docs/reference/n4.md` (Config; Knob lists), `docs/reference/app.md` (Editing: Knob lists; Presets),
+  README; plan `docs/superpowers/plans/2026-11-26-deckout-knob-lists.md` (gitignored); T-195–T-217; BL-035 (fixed),
+  BL-041 (website icons, deferred).
+- **For a person:** in DeckOut, a knob's Turn can be "Pick from a list": websites, apps, anything a key can do, each
+  with its own icon. Turning the knob steps through them and the strip block above it shows the pick; pressing the
+  knob or tapping the block opens it. Nothing while the Mac is locked. Knobs now belong to each preset: an existing
+  setup's knobs are copied into every preset, so nothing changes until edited; New Preset copies only volume, mute,
+  brightness and switch-monitor; Duplicate copies all. The first save keeps `config.json.before-2.2` for going back.
+- **Decision (owner, 26/11/2026):** knobs per preset, each preset owning all its knobs (not a deck default with
+  overrides); the list lives on the knob, the block above only shows it; icons by hand, fetching them is BL-041;
+  going back to 2.1.0 with an N4-only file loses its knobs (accepted: one other user); the deck keeps its own pick
+  while a list is edited. (CL calls:) the pick lives in memory per preset, wraps both ways; a reload repeats it to
+  the app (T-217).
+- **Checked:** run line above; the window drawn against the owner-approved mock (T-195, T-216). Not yet: on the deck.
 
 ### 26/11/2026 — DeckOut 2.1.0 keeps its settings in `~/.deckout`; 1.0's names are gone where nothing needs them
 - **Reference:** `docs/reference/app.md` (variants table; First run and removal), `docs/REQUIREMENTS.md`
@@ -134,22 +152,6 @@ and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's se
 - **Checked:** run line above. A fresh reviewer: no critical; its important finding (KI-013 said only the swipe could
   be lost) reworded; minors are BL-035–BL-037. On the N4, the first build switched on 18 of ~50 swipes; a timed round
   showed every swipe and every gap tap arriving as `0x38`.
-
-### 20/11/2026 — Monitor brightness moves from where the monitor really is, never jumping to 5 %
-- **Reference:** `docs/REQUIREMENTS.md` (External Monitor Brightness), `docs/reference/app.md` (Settings: m1ddc),
-  `Vendor/m1ddc/README.md`; T-170–T-173; BL-003.
-- **For a person:** the first brightness turn after the agent started, or after 30 s idle, could take a monitor at
-  100 % to 5 %. m1ddc read the monitor's reply 10 ms after asking (DDC/CI wants 40) and printed whatever was in the
-  buffer: an empty or shifted reply came out as `0`. It now waits 50 ms, takes only a valid reply and asks again;
-  the agent reads each monitor on the first turn instead of trusting a start-up reading, and a monitor that gives no
-  reading is left alone with "Left: Monitor Error" on screen. Start-up no longer reads the monitors (31 ms, was ~0.4 s).
-- **Decision (owner, 20/11/2026):** leave a monitor with no reading alone, saying "Monitor Error" (it covers cases not
-  seen yet); patch DeckOut's own m1ddc and ship it in the app; offer the patch upstream afterwards. (CL calls:) a
-  reading outside 0–100 counts as none; the HUD shrinks text that wouldn't fit its box, and centres it.
-- **Checked:** run line above. Upstream 1.3.2 reads the same way (waydabber/m1ddc#37 notes it); the patch follows
-  ddcutil's and MonitorControl's 50 ms wait and reply checks (read at source). A fresh reviewer: no bugs; T-172's
-  idle window widened (it could flake under load). Left as is: Switch Monitor pressed within ~50 ms of a turn can
-  read the monitor before the turn's write lands (as before), so the next turn starts one step off.
 
 ## History
 Older work: `old_progress/README.md`.

@@ -39,8 +39,7 @@ A knob's turn sets the **Volume** or the **Monitor Brightness**. On the N4 a kno
 sites, apps or anything a key can do: turning it steps through the list, the strip block above it shows the pick, and
 pressing the knob (or tapping the block) opens it. Each preset has its own knobs. On the N4, a swipe across the strip
 steps through your presets, and a strip block can show a live reading instead of a picture: internet latency, CPU and
-memory, or
-the volume.
+memory, or the volume.
 
 Keys show an app's icon, a picture, a symbol from the built-in library (1,530 Phosphor symbols) or a line of text on
 a colour. Presets give a deck several layouts. While the Mac is locked, keys, taps and swipes do nothing, knobs keep

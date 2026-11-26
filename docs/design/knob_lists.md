@@ -1,5 +1,7 @@
 # Knob Lists and Per-Preset Knobs — Design
 
+**✅ BUILT 26/11/2026 → `docs/reference/n4.md` (Knob lists), `docs/reference/app.md` (Editing: Knob lists).** This
+design stays as the record of why.
 Approved by the owner 26/11/2026; builder-checked the same day.
 Current behaviour this changes: `docs/REQUIREMENTS.md` (Configuration, Actions), `docs/reference/n4.md`,
 `docs/reference/app.md` (Editing).

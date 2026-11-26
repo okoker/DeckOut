@@ -212,6 +212,12 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-205 | `KnobListTests/listBlockShowsThePick` | The block above a list knob shows the pick's icon (the first item before any turn), black for an item without one or an empty list, and the list wins over the block's own setting |
 | T-206 | `KnobListTests/lockedListDoesNothing` | While the Mac is locked a list knob's turn, press and its block's tap do nothing (pick unchanged, nothing run, no change pushed); unlocked, turns move the pick and push a change each, and a press or tap runs the pick through the same tail as a key (`next_preset` to the agent) |
 | T-207 | `AgentTests/liveStripCarriesThePicks` | The agent's live strip carries each list knob's pick on the N4's live preset (none for an empty list), and a turn's change reaches the app as one push; an older agent's reply, without picks, still reads |
+| T-208 | `KnobListEditingTests/makeListClearsTheBlockAboveInOneUndo` | Making a knob a list empties it and clears the strip block above it in the live preset, as one undo step named "Make List" |
+| T-209 | `KnobListEditingTests/listEditsAreOneUndoEach` | Adding (after the item given, else at the end), setting an action, moving and removing list items each make one undo step; the knob's caption reads "List of N" |
+| T-210 | `KnobListEditingTests/listItemAppIconFollowsTheApp` | An Open App item without a chosen image gets its app's icon (a PNG in `icons/`); an image the person chose stays when the app changes |
+| T-211 | `PresetTests/newPresetCopiesBuiltInKnobsOnly` | New Preset (N4 and N3) copies only the live preset's knobs' built-in halves, the rest `none`, and no list; keys stay blank; Duplicate copies every knob, lists included |
+| T-212 | `KnobListEditingTests/listKnobSurvivesAppSave` | An unrelated edit in the app saves a list knob unchanged: items, icons and tiles (the whole config is saved on every edit) |
+| T-213 | `KnobListEditingTests/missingListIconMarksTheKnob` | A list item whose icon or app is gone marks its knob, naming the first such item ("Item 2: the app isn't there any more") |
 | T-217 | `KnobListTests/aReloadRepeatsThePicks` | A reload whose live preset has list knobs tells the app the picks again (a swipe or an edit may change them); one without lists tells nothing |
 
 ## On the device

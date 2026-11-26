@@ -182,6 +182,89 @@ extension AppModel {
         store?.change("Clear Knob") { $0.setKnob(deck, id, nil) }
     }
 
+    // MARK: Knob lists (N4)
+
+    /// The strip block above a knob, which shows its list's pick: `knob_1` → `"1"`.
+    static func blockAbove(_ knob: String) -> String { String(knob.dropFirst("knob_".count)) }
+
+    /// Makes the knob a list, empty, and clears the strip block above it in the live preset, in one undo step: the
+    /// block shows the list's pick from now on.
+    public func makeKnobList(_ knob: String) {
+        store?.change("Make List") { config in
+            config.setKnob(.n4, knob, KnobConfig(list: []))
+            config.setStripBlock(Self.blockAbove(knob), nil)
+        }
+    }
+
+    /// Adds an item that does nothing after the one at `after` (at the end without one); returns where it went.
+    @discardableResult
+    public func addListItem(knob: String, after: Int?) -> Int {
+        let count = config?.knob(.n4, knob)?.list?.count ?? 0
+        let at = after.map { min($0 + 1, count) } ?? count
+        editList(knob, "Add Item") { $0.insert(ButtonConfig(action: "none"), at: min(at, $0.count)) }
+        return at
+    }
+
+    public func removeListItem(knob: String, at: Int) {
+        editList(knob, "Remove Item") { list in
+            if list.indices.contains(at) { list.remove(at: at) }
+        }
+    }
+
+    public func moveListItem(knob: String, from: Int, to: Int) {
+        editList(knob, "Move Item") { list in
+            guard list.indices.contains(from), list.indices.contains(to) else { return }
+            list.insert(list.remove(at: from), at: to)
+        }
+    }
+
+    /// Sets an item's action, keeping its icon, except that an app's own icon follows the app, as on a key.
+    public func setListItemAction(_ choice: ActionChoice, knob: String, at: Int) {
+        guard let store else { return }
+        let folder = IconFiles.folder(forConfig: store.path)
+        editItem(knob, at, "Change Action") { item in
+            if case .openApp(let path) = choice, !path.isEmpty, Self.followsApp(item.icon),
+               let appIcon = IconFiles.appIcon(appPath: path, folder: folder) {
+                item.icon = appIcon
+                item.tile = nil
+            }
+            item.action = choice.action
+            item.step = choice.step
+        }
+    }
+
+    public func setListItemIcon(_ path: String?, knob: String, at: Int) {
+        editItem(knob, at, "Change Icon") { item in
+            item.icon = path
+            item.tile = nil
+        }
+    }
+
+    /// Draws the tile at the strip block's shape (the item shows on the block above the knob) and puts it on the item.
+    public func setListItemTile(_ tile: IconTile, knob: String, at: Int, library: SymbolLibrary? = nil) {
+        guard let path = drawTile(tile, library: library, width: TileRenderer.stripWidth, height: TileRenderer.stripHeight)
+        else { return }
+        editItem(knob, at, tile.kind == .text ? "Change Text Icon" : "Change Symbol Icon") { item in
+            item.icon = path
+            item.tile = tile
+        }
+    }
+
+    /// One undo step that changes the knob's list in the live preset; nothing when the knob holds no list.
+    private func editList(_ knob: String, _ name: String, _ edit: @escaping (inout [ButtonConfig]) -> Void) {
+        store?.change(name) { config in
+            guard var list = config.knob(.n4, knob)?.list else { return }
+            edit(&list)
+            config.setKnob(.n4, knob, KnobConfig(list: list))
+        }
+    }
+
+    private func editItem(_ knob: String, _ at: Int, _ name: String, _ edit: @escaping (inout ButtonConfig) -> Void) {
+        editList(knob, name) { list in
+            if list.indices.contains(at) { edit(&list[at]) }
+        }
+    }
+
     public func stripBlock(_ id: String) -> StripBlockConfig? { config?.stripBlock(id) }
 
     /// What the block shows. Switching type keeps the tap; a picture keeps its image; the internet settings start

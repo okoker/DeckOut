@@ -21,7 +21,21 @@ public enum MissingFiles {
         let buttons = deck == .n4 ? config.n4?.keys ?? [:] : config.n3?.buttons ?? [:]
         for (id, button) in buttons { look(id, action: button.action, icon: button.icon) }
         let knobs = deck == .n4 ? config.n4?.knobs ?? [:] : config.n3?.knobs ?? [:]
-        for (id, knob) in knobs { look(id, action: knob.press.action, icon: nil) }
+        for (id, knob) in knobs {
+            guard let list = knob.list else {
+                look(id, action: knob.press.action, icon: nil)
+                continue
+            }
+            // A list knob: the first item with a problem, by its number.
+            for (index, item) in list.enumerated() {
+                let problem = actionProblem(item.action, exists: exists)
+                    ?? item.icon.flatMap { exists($0) ? nil : "The icon file isn't there any more" }
+                if let problem {
+                    problems[id] = "Item \(index + 1): " + problem.prefix(1).lowercased() + problem.dropFirst()
+                    break
+                }
+            }
+        }
         if deck == .n4 {
             for (id, block) in config.n4?.strip ?? [:] {
                 if let action = block.action, let problem = actionProblem(action, exists: exists) {

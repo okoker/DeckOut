@@ -86,7 +86,9 @@ extension AppConfig {
         return freeName(in: names, from: names.count + 1) { "Preset \($0)" }
     }
 
-    /// A blank layout under `name` (trimmed), made live. False, and nothing changed, for an empty or taken name.
+    /// A blank layout under `name` (trimmed), made live, but for the live preset's knobs' built-in halves (volume,
+    /// mute, monitor brightness, switch monitor: owner, 26/11/2026). False, and nothing changed, for an empty or
+    /// taken name.
     @discardableResult
     public mutating func addPreset(_ name: String, deck: DeckKind) -> Bool {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -94,10 +96,12 @@ extension AppConfig {
         config.ensureDeck(deck)
         guard !trimmed.isEmpty, !config.presetNames(deck).contains(trimmed) else { return false }
         config.edit(deck) {
-            $0.presets.append(N4Preset(name: trimmed, keys: [:], strip: [:]))
+            $0.presets.append(N4Preset(name: trimmed, keys: [:], strip: [:],
+                                       knobs: $0.active.knobs.compactMapValues { $0.builtInsOnly() }))
             $0.activePreset = trimmed
         } n3: {
-            $0.presets.append(N3Preset(name: trimmed, buttons: [:]))
+            $0.presets.append(N3Preset(name: trimmed, buttons: [:],
+                                       knobs: $0.active.knobs.compactMapValues { $0.builtInsOnly() }))
             $0.activePreset = trimmed
         }
         self = config

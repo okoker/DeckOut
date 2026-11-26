@@ -87,7 +87,7 @@ the job definition it registered: a changed plist needs a new label.
 - **The deck:** drawn from `DeckFace` (the N4 at half its measured key-image pixels; the N3 by eye from the photo),
   showing each key's icon and the strip's picture blocks as the deck shows them (`DeckPreview`: the N4's own drawing
   code; both decks and their previews keep a non-square icon's shape, on black), and the live blocks from the
-  images the agent draws. Knobs carry a caption of what turning them does. A click
+  images the agent draws. Knobs carry a caption of what turning them does (a list: "List of 5"). A click
   selects a control (red ring); a click on the stage clears it.
 - **Editor** (right-hand panel, for the selected control): see Editing.
 - **Toolbar, with a deck on screen:** the preset pull-down and the deck's brightness slider (0–100).
@@ -157,7 +157,8 @@ the job definition it registered: a changed plist needs a new label.
   its tap to another app, as a key does, in the same undo step (your image, text or symbol stays). Setting a tap
   never puts an image on a block (a new block stays blank until its image is picked, a live reading stays); a live
   reading drops the image.
-- **Files that are gone:** keys, presses and taps whose app, file, folder, script, icon or picture is missing get a
+- **Files that are gone:** keys, presses, taps and knob list items whose app, file, folder, script, icon or picture is
+  missing (a list knob names its first such item: "Item 2: the app isn't there any more") get a
   red mark on the drawing and the reason in the editor; a script that isn't executable gets Make Executable (adds
   the owner's execute bit; when that fails it says why under the button, e.g. "Only the script's owner can make it
   executable.", until another control is selected); a script or file in Desktop, Documents, Downloads or iCloud Drive gets a note that macOS
@@ -170,7 +171,10 @@ the job definition it registered: a changed plist needs a new label.
   deleting the live one makes the first left live; ⌘Z brings it back); a line; the other presets in file order.
   New Preset… and Rename… open a sheet with the name ("Preset N" offered for a new one): Cancel (Esc) changes
   nothing; Create / Rename (Return) is greyed out, with the reason, while the name is empty or taken. A new preset
-  is blank and live; Rename renames the preset the sheet was opened for. Picking one makes it live on the deck.
+  is blank and live, but for the live preset's knobs' built-in halves (volume, mute, monitor brightness, switch
+  monitor; a knob with a list or another action comes over as nothing: owner, 26/11/2026); Duplicate copies
+  everything, lists included. Rename renames the preset the sheet was opened for. Picking one makes it live on the
+  deck.
 - **Accessibility:** a keyboard shortcut or media key on a control, with the agent not allowed, shows a note with
   Allow…: the agent asks macOS to list it, the Accessibility pane opens, and the app checks again every 2 s for a
   minute (one watch: another click starts the minute again). macOS checks the app the agent lives in (DeckOut,

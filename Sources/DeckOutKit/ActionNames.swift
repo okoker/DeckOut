@@ -25,12 +25,22 @@ public enum ActionNames {
 
     /// A knob's caption under it in the drawing: what turning it does.
     public static func knobCaption(_ knob: KnobConfig) -> String {
+        if let list = knob.list { return "List of \(list.count)" }
         switch knob.rotate.action {
         case "none": return "—"
         case "system_volume": return "Volume"
         case "display_brightness": return "Brightness"
         case "zr7_volume": return "ZR7"
         default: return summary(knob.rotate.action).title
+        }
+    }
+
+    /// A knob list item's name in its row: the site's host, the app's or file's name, else the action's title.
+    public static func itemName(_ item: ButtonConfig) -> String {
+        switch ActionChoice(action: item.action, step: item.step) {
+        case .openWebsite(let url): return URL(string: url)?.host ?? url
+        case .openApp, .openFile, .runScript: return summary(item.action).detail ?? item.action
+        default: return summary(item.action).title
         }
     }
 

@@ -169,3 +169,34 @@ private let twoPresets = AppConfig(n4: N4Section(
     existing.setBrightness(.n4, 40)
     #expect(existing.n4?.swipe == nil)
 }
+
+@Test func newPresetCopiesBuiltInKnobsOnly() {   // T-211
+    // New Preset starts blank but for the knobs' built-in halves (volume, mute, monitor brightness, switch monitor);
+    // Duplicate copies everything, lists included (owner, 26/11/2026).
+    let volume = KnobAction(action: "system_volume", step: 5)
+    let workKnobs = [
+        "knob_1": KnobConfig(list: [ButtonConfig(action: "url:https://github.com")]),
+        "knob_2": KnobConfig(rotate: volume, press: KnobAction(action: "app:/Applications/Safari.app")),
+        "knob_4": KnobConfig(rotate: volume, press: KnobAction(action: "system_mute_toggle")),
+    ]
+    var config = AppConfig(
+        n3: N3Section(brightness: 75, presets: [N3Preset(name: "A", buttons: [:], knobs: [
+            "big": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
+                              press: KnobAction(action: "shell:open -a Notes")),
+            "small_1": KnobConfig(rotate: KnobAction(action: "none"), press: KnobAction(action: "media_next")),
+        ])], activePreset: "A"),
+        n4: N4Section(brightness: 75, swipe: nil, lockPhoto: nil,
+                      presets: [N4Preset(name: "Work", keys: ["key_1": ButtonConfig(action: "media_next")], strip: [:],
+                                         knobs: workKnobs)],
+                      activePreset: "Work"))
+    _ = config.addPreset("Music", deck: .n4)
+    #expect(config.livePreset(.n4) == "Music")
+    #expect(config.n4?.keys.isEmpty == true)
+    #expect(config.n4?.knobs == ["knob_2": KnobConfig(rotate: volume, press: KnobAction(action: "none")),
+                                 "knob_4": workKnobs["knob_4"]!])
+    _ = config.addPreset("B", deck: .n3)
+    #expect(config.n3?.knobs == ["big": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
+                                                   press: KnobAction(action: "none"))])
+    let copy = config.duplicatePreset("Work", deck: .n4)
+    #expect(config.n4?.presets.first { $0.name == copy }?.knobs == workKnobs)
+}

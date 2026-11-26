@@ -46,7 +46,7 @@ struct KnobListEditor: View {
     private func row(_ index: Int, _ item: ButtonConfig) -> some View {
         HStack(spacing: 8) {
             thumbnail(item.icon)
-            Text(Self.itemName(item))
+            Text(ActionNames.itemName(item))
                 .font(.system(size: 12.5))
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -112,14 +112,5 @@ struct KnobListEditor: View {
         IconRow(model: model, shape: .stripBlock, choice: choice, icon: item.icon, tile: item.tile,
                 setIcon: { setIcon(index, $0) }, setTile: { setTile(index, $0) })
         TestRow(choice: choice) { await model.test(choice) }
-    }
-
-    /// A row's name: the site's host, the app's or file's name, else the action's title.
-    private static func itemName(_ item: ButtonConfig) -> String {
-        switch ActionChoice(action: item.action, step: item.step) {
-        case .openWebsite(let url): return URL(string: url)?.host ?? url
-        case .openApp, .openFile, .runScript: return ActionNames.summary(item.action).detail ?? item.action
-        default: return ActionNames.summary(item.action).title
-        }
     }
 }

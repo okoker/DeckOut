@@ -79,6 +79,8 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var staticImages: [String: CGImage] = [:]
     /// Upright images of the live strip blocks, rebuilt with each push.
     @Published public private(set) var liveImages: [String: CGImage] = [:]
+    /// Each list knob's pick on the N4's live preset, as the deck shows it (knob → item index), from the agent.
+    @Published public internal(set) var livePicks: [String: Int] = [:]
     public let link: AgentLink?
     /// The config the window edits; nil outside a DeckOut bundle.
     public let store: ConfigStore?
@@ -145,6 +147,7 @@ public final class AppModel: ObservableObject {
         }.store(in: &watchers)
         link?.$liveStrip.receive(on: DispatchQueue.main).sink { [weak self] strip in
             self?.liveImages = strip.images.compactMapValues { DeckPreview.upright(jpeg: $0) }
+            self?.livePicks = strip.picks
         }.store(in: &watchers)
     }
 

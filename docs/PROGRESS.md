@@ -1,57 +1,61 @@
 # Progress
 
-## Session Handover — 26/11/2026: DeckOut 2.1.0 released; settings in `~/.deckout`; the decks run on it
+## Session Handover — 26/11/2026 (evening): knob lists built on `knob-lists`; deck check half done
 
 ### What was done
-- 26/11/2026: the settings folder and 1.0's names (f06bc9e), released as 2.1.0 from da7f66b (no candidate: the owner
-  asked to build and replace everywhere; the signing targets are 2.0.0's); this Mac updated and its setup moved
-  (entry below).
-- Phase 7 (plan `docs/superpowers/plans/2026-11-21-deckout-phase-7-release.md`, gitignored; ledger
-  `.superpowers/sdd/2026-11-21-deckout-phase-7-release/progress.md`): signing targets and T-193 (1eef572, 17afc28,
-  ad0cc56), README for 2.0.0 (b264653), BL-039 (6f0ba6b). v2.0.0 published 21/11/2026 from ad0cc56, the rc.1 image
-  byte for byte; the rc.1 page deleted, its tag kept. The owner's decks moved to the signed app (entry below).
-- After the release: README rewritten for DeckOut as it is today (1f1fea4: both decks alike, the app's window, a
-  Chrome-on-a-Desktop script, two monitors on one knob, Why DeckOut with the vendors' measured download sizes; no
-  hand-editing of the config). 1.0's unused `Info.plist` and launch file removed from the repo root (3ea8848);
-  `config.example.json` moved to `Tests/DeckCoreTests/Fixtures/config-decks-no-presets.json` (92795b6). GitHub About
-  text and topics updated. Live docs that still described 1.0 brought up to date.
+- Branch `knob-lists`, 10 commits on 37cb921 (c766780 … 8ce43dd), not pushed or merged: knobs per preset, N4 knob
+  lists, `.before-2.2`, picks to the app, list editor, BL-035, review fixes. `swift test` 267/267. Plan
+  `docs/superpowers/plans/2026-11-26-deckout-knob-lists.md`; ledger (rulings, deferred minors)
+  `.superpowers/sdd/2026-11-26-deckout-knob-lists/progress.md`: Tasks 1–8 done, Task 9 (on the deck) half done.
+- On the deck (DeckOut Dev, sample 2.1.0 file): the conversion held (knobs 1 and 4 volume on both presets, swipes
+  fine); knob 1 as a list of 5 sites: 29 turns, redraw median 4 ms (max 65), 5 block taps opened the sites; a press
+  of knob 1 opens the pick too (as designed, owner checked).
 
 ### Uncommitted state
-- Only `.DS_Store` and `_user_private/`. Local and gitignored: `signing.mk` (the certificate's SHA-1, the notary
-  profile name) and `docs/reference/releasing.md` (the private release how-to).
+- `docs/BACKLOG.md`: BL-042 (both decks dropping; owner suspects the agent / app). `docs/TODO.md`, this section.
+
+### Gotchas
+- A slow N4 looks like a broken build: at 12 Mbps every press is a babble error and a reset (dead knobs, constant
+  redraws, the window jumping N4 → N3). It fell at 17:53 under 2.1.0 alone. Before any deck test check both decks'
+  `USBSpeed` is 3 (`ioreg -a -p IOUSB -l -r -c IOUSBHostDevice`); fix: re-plug.
+- Quitting DeckOut Dev leaves its agent running: both agents drew both decks 18:15–18:21 (layouts flipping). Stop it
+  with `"~/Applications/DeckOut Dev.app/Contents/MacOS/DeckOut" --unregister`.
+- The sample file is sparse on purpose (one Notes key per deck); the owner read it as "everything gone". Say so first.
+
+### Bug found (not yet looked into)
+- Music preset, knob 1 (volume, step 2 = 4 % per click; the sample's, not the owner's): press mutes fine, but turning
+  only moves between 0 and the level knob 4 (step 5 = 10 %) last set: up clicks often do nothing; after knob 4 sets
+  53 %, knob 1 does nothing, then works only below. `VolumeControl.adjust` reads the volume, adds the step, writes
+  it; unchanged since the live volume block (before 2.1.0), so 2.1.0 likely has it for small steps too. Hypothesis
+  (unverified): the output device quantises volume and a 4 % rise is rounded back. Next: which output device, its
+  steps (read only), whether step 2 fails on `main` too; then a test-first fix (e.g. step from the last value set).
 
 ### Environment state
-- The decks run on DeckOut 2.1.0 in `/Applications` (agent `io.github.okoker.deckout.agent`, config
-  `~/.deckout/config.json`, log `~/Library/Logs/DeckOut/agent.log`); Accessibility and Automation are granted to
-  DeckOut. `~/.config/vsd` is gone (moved to `~/.deckout`). Owner checked 2.1.0 on the decks (26/11/2026: "all
-  working as intended"); the pre-move config copy and the local 2.0.0 image are deleted (2.0.0 stays on GitHub).
-- The repo lives in `~/Desktop/_playground/deckout` since 26/11/2026, moved from
-  `~/Desktop/_playground/utilities/vsd_display` (deleted, with its Claude project folder).
-- DeckOut Dev is removed (`make uninstall-dev`). A dev session: Stop and Remove in DeckOut, `make install-dev`, test,
-  `make uninstall-dev`, open DeckOut again. A build from `main` uses `~/.deckout-dev`: seed it from `~/.deckout`,
-  rewriting the image paths inside `config.json`.
-- Rollback copies, to delete from 28/11/2026 at the owner's go: the retired 1.0 install
-  (`~/Library/LaunchAgents/com.streamdeck.controller.plist.retired-by-deckout` and its program),
-  `~/.config/vsd.bak-2026-11-21` (the 1.0 config folder) and `~/.config/vsd-dev` (DeckOut Dev's config).
-- Signing: the Developer ID certificate is from the original Sub-CA and expires 01/02/2027; a release after that
-  needs a G2 certificate, and G2 certificates last one year, so renewal is yearly (BL-039). Notarising uses the
-  team's notary profile, named in `signing.mk`.
+- No DeckOut agent runs: the decks are idle. Signed DeckOut: Stop and Remove'd and quit (Start Again brings it back).
+  DeckOut Dev: still installed in `~/Applications`, its agent unregistered (`--unregister`); opening the app registers
+  it again (check the signed one isn't running first). `~/.deckout-dev`: the sample + knob 1 list; site icons in
+  `site-icons/`; `.before-2.2` and `.before-app` there. Both decks at 480 Mbps since the 18:40 re-plug.
+- Cleanup left (owner, 26/11/2026: lots of it): `make uninstall-dev` and `~/.deckout-dev` when the deck check is done;
+  the scratchpad's `icons-dl/`; the plan's workspace `.superpowers/sdd/2026-11-26-deckout-knob-lists/` after merge.
+- Rollback copies to delete from 28/11/2026 (owner's go): the retired 1.0 plist and program,
+  `~/.config/vsd.bak-2026-11-21`, `~/.config/vsd-dev`. Developer ID certificate expires 01/02/2027 (BL-039).
 
 ### Still open, recorded only here
-- Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s like `shell:` (owner's call); M6 `--show-lock-photo`
-  ignores reloads; M10 unverified: `NSXPCListener(machServiceName:)` with a name the job doesn't own may crash-loop
-  under KeepAlive; M11 unverified: a `.zshrc` touching Documents / Desktop / iCloud prompts in the agent's name.
-- Older: the volume tile shows "0%" on outputs with no volume control; knob inputs skip the lock recheck (≤5 s
-  window); a deck reconnecting at the lock screen shows its layout ≤5 s before the photo; an unplug mid-redraw logs
-  up to 15 warnings.
+- Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s (owner's call); M6 `--show-lock-photo` ignores
+  reloads; M10/M11 unverified (Mach service name not owned; `.zshrc` touching guarded folders).
+- Volume tile "0%" on outputs without volume control; ordinary knobs skip the lock recheck (≤5 s); a deck
+  reconnecting at the lock screen shows its layout ≤5 s; an unplug mid-redraw logs up to 15 warnings.
 
 ### What's next
-1. Fresh install on the owner's second Mac (macOS 26), phase 7 plan Task 8: from the release page, then removal both
-   ways (binning without Stop and Remove, then a logout). Then the README's tested versions and removal advice, and
-   `reference/app.md`'s "binned while registered" line.
-2. From 28/11/2026: delete the rollback copies (owner's go).
-3. macOS 27: the owner's call whether to install on the second Mac before telling friends (KI-016).
-4. Then BL-029 (script blocks), once its scripting and scheduling are worked out.
+1. Task 9's rest: press knob 1; swipe away and back (pick kept); lock / unlock; "On the deck" follows; half-type a
+   URL then − (T-219 by hand); New Preset copies only built-ins; N3 big knob (no N3 input logged yet). Owner to
+   say whether block 1 kept showing CPU after Pick from a list (the log: blanked at once, "Drew 1 of 14").
+2. Resume: check both decks at 480 Mbps and no agent running, open DeckOut Dev (registers its agent). End the dev
+   session with `make uninstall-dev` (go); the owner opens DeckOut → Start Again.
+3. Owner picks from the deferred review minors (ledger); merge `knob-lists` (go); release 2.2.0 (each step a go;
+   `releasing.md` has the rollback note).
+4. The volume bug above (systematic debugging, owner's go before changing the volume of the Mac).
+5. BL-042 control run (DeckOut stopped, decks plugged in for hours). Second Mac (macOS 26), macOS 27 call, BL-029.
 
 ## Current Status
 DeckOut 2.1.0 (Developer ID signed, notarised, released 26/11/2026; 2.0.0 on 21/11/2026) drives the TreasLin N3 and

@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-042
+Next free ID: BL-043
 
 ---
 
@@ -99,3 +99,24 @@ Next free ID: BL-042
   none (fall back to a text tile). A favicon service (Google's, DuckDuckGo's), not the site itself, is ruled out:
   it would learn the person's list of sites. Deferred from the knob lists design, which picks icons by hand
   (`docs/design/knob_lists.md`). `IconRow.swift`, `IconFiles.swift` (owner, 26/11/2026)
+- BL-042 [P1] [bug] Both decks, on different USB ports, go out of whack around the same time. The owner suspects the
+  agent and / or the app: earlier failures hit one deck at a time. Seen 26/11/2026 (times from the kernel log):
+  - The N3 (dock port) dropped all afternoon under the signed 2.1.0 agent: "hardware connection lost" at 14:05, 14:33,
+    15:05, 16:01; "Retries exhausted" then "reset API call" at 17:06, 17:14, 17:21; more at 17:22, 17:24, 18:11,
+    18:18, 18:41. Each time back at 480 Mbps.
+  - The N4 (LG monitor port): transaction errors on its input endpoint 0x82 at 17:53:43–47, then macOS reset the N4
+    and its built-in hub chip (05e3:0610). Both came back at 12 Mbps at 17:53:49, with the 2.1.0 agent alone running
+    and no tests running. At 12 Mbps every press is a babble error and a reset (~220 between 18:06 and 18:16). It
+    stayed there until the owner re-plugged both decks (18:40:50 / 18:41:00, 480 Mbps).
+  - 18:15–18:21: the 2.1.0 agent and a DeckOut Dev agent ran at once, both drawing both decks (a test-session slip).
+  Against the agent: the code that opens and talks to the decks (`DeckManager`, `DeckConnection`, `Packets`,
+  `DeckModel`) is byte-identical in v2.0.0, v2.1.0 and `knob-lists`; that code ran ~17 h with no drops on 23–24/11.
+  DeckOut can't pick the link speed. For it: the agent writes to both decks constantly (a keepalive every 5 s; new
+  images whenever a live strip block changes), so a firmware hang from something it sends can't be ruled out from
+  logs. Next: a control run with DeckOut stopped (Stop and Remove) and both decks plugged in for hours, then read the
+  kernel log. Drops with DeckOut stopped clear it; none points at the agent: then the same run with DeckOut but no
+  live strip blocks, then with no keepalive. Query (the kernel log keeps only ~14 h): `/usr/bin/log show --last 3h
+  --predicate 'process == "kernel" AND (eventMessage CONTAINS "enumerated 0x" OR eventMessage CONTAINS
+  "terminateDevice" OR eventMessage CONTAINS "Retries exhausted")' --style compact`; N4 = 0x6602, N3 = 0x5548.
+  `DeckManager.swift`, `DeckConnection.swift`, `Daemon.swift` (`tick`, `redrawLive`) (owner, 26/11/2026)
+

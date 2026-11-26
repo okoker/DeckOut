@@ -49,7 +49,10 @@ the executable, else `~/.deckout/config.json`. Read at start-up and re-read on `
   would crash-loop.
 - **Saving (for the config app):** written atomically (a temp file in the same folder, then `rename`) at mode 0600,
   creating the folder at 0700 if needed. The first save over an existing file copies it to
-  `config.json.before-app` once, so a rollback to the v1.0.0 daemon (which can't read presets) has the old file.
+  `config.json.before-app` once, so a rollback to the v1.0.0 daemon (which can't read presets) has the old file; the
+  first save by 2.2 likewise keeps `config.json.before-2.2` once, for going back to 2.1.0 (which can't read knobs in
+  presets: with an N3 section it refuses the file; with only an N4 it loads it with every knob dead, and its first
+  save drops the presets' knobs).
 - **Saving by the agent:** only for `next_preset` (see Actions). It reads the file fresh, through the same checks,
   changes that deck's `active_preset` and nothing else in the config, and saves it the same way (in the written
   form, as an app save does). A file that doesn't load is never

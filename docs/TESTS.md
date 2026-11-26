@@ -205,6 +205,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-198 | `ConfigTests/listKnobRoundTrips` | A list knob reads with its items (action, icon, tile) and turn and press `none`, is written as its `list` alone, and reads back the same |
 | T-199 | `ConfigTests/badKnobsAreRefused` | A knob with a list and a turn or press, a knob with neither, and a list on an N3 knob (in a preset or on the deck) make the file invalid; an empty N4 list loads |
 | T-200 | `ConfigTests/builtInsOnlyKeepsVolumeAndBrightness` | What New Preset copies from a knob: only halves with built-in actions (volume, mute, monitor brightness, switch monitor), the rest `none`; nothing from a list or a knob with no built-in half |
+| T-201 | `ConfigFileTests/firstSaveKeepsTheRollbackCopy` | The first save over a file keeps it as it was in `.before-2.2` (mode 0600), even when a `.before-app` already exists; later saves leave the copy alone; a save with no file there makes none |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

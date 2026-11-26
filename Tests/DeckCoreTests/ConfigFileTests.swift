@@ -59,6 +59,27 @@ private let sample = AppConfig(
     #expect(!FileManager.default.fileExists(atPath: other + ".before-app"))
 }
 
+@Test func firstSaveKeepsTheRollbackCopy() throws {                 // T-201
+    // DeckOut 2.1.0 can't read knobs in presets: the first save by 2.2 keeps the file as it was, once, so going back
+    // is a restore. A `.before-app` from an earlier app save doesn't stop it.
+    let folder = try freshFolder()
+    let path = folder + "/config.json", copy = path + ConfigFile.rollbackSuffix
+    #expect(ConfigFile.rollbackSuffix == ".before-2.2")
+    try write("2.1.0 file", to: path, mode: 0o600)
+    try write("1.0 file", to: path + ".before-app", mode: 0o600)
+    try ConfigFile.save(sample, to: path)
+    #expect(try String(contentsOfFile: copy, encoding: .utf8) == "2.1.0 file")
+    #expect(mode(of: copy) == 0o600)
+    var changed = sample
+    changed.n4?.brightness = 20
+    try ConfigFile.save(changed, to: path)
+    #expect(try String(contentsOfFile: copy, encoding: .utf8) == "2.1.0 file")
+
+    let other = try freshFolder() + "/config.json"
+    try ConfigFile.save(sample, to: other)
+    #expect(!FileManager.default.fileExists(atPath: other + ConfigFile.rollbackSuffix))
+}
+
 @Test func securityProblemsAreReported() throws {                   // T-071
     let folder = try freshFolder()
     let real = folder + "/real.json", link = folder + "/link.json", open = folder + "/open.json"

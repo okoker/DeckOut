@@ -97,7 +97,7 @@ the job definition it registered: a changed plist needs a new label.
 ## Editing
 - **The config store** (`ConfigStore`): every change makes a whole new config, saved atomically at 0600 through
   `ConfigFile.save` (which refuses a config that wouldn't load back; the first save over a file keeps
-  `.before-app`), then the agent is asked to reload (it logs one line per app reload). Undo / redo (Edit menu, ⌘Z /
+  `.before-app`, and the first by 2.2 `.before-2.2`), then the agent is asked to reload (it logs one line per app reload). Undo / redo (Edit menu, ⌘Z /
   ⇧⌘Z, named for the change) put back whole configs; a text field being edited undoes its typing first; in a sheet
   (the command window, a preset's name) ⌘Z / ⇧⌘Z only touch its typing, never the deck behind it; slider steps
   less than a second apart are one undo step (KI-012); up to 200 steps. Undo / Redo are greyed out with nothing to
@@ -145,7 +145,7 @@ the job definition it registered: a changed plist needs a new label.
   config is read and before any edit (once per run, and only with nothing to undo or redo), DeckOut deletes the
   files it made that nothing names any more: `app-` / `image-` / `tile-<16 hex>.png` in `icons/` and
   `lock-photo-<16 hex>.jpg` beside the config. A file is kept if its name appears anywhere in any other file in the
-  config folder or its subfolders (the config, `.before-app`, copies kept there): the bytes are searched, not the
+  config folder or its subfolders (the config, `.before-app`, `.before-2.2`, copies kept there): the bytes are searched, not the
   config's fields. Never touched: other names, the right name in the wrong folder, links. Nothing is removed when the
   config is missing or doesn't load, or another file there can't be read. The app's log lists what went. Each app
   judges by its own config folder only (DeckOut Dev's and the signed DeckOut's are separate).

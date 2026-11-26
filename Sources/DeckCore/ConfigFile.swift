@@ -5,8 +5,13 @@ import Foundation
 /// Reads refuse a file that is a symlink, owned by someone else, or writable by group or others: anyone who can
 /// change it can make the decks run commands as you. Writes are atomic (a temp file in the same folder, then
 /// `rename`), at mode 0600, and the first save keeps the file as it was in `<path>.before-app`, because the
-/// v1.0.0 daemon can't read the preset format and rolling back needs the old file.
+/// v1.0.0 daemon can't read the preset format and rolling back needs the old file; likewise `<path>.before-2.2` for
+/// 2.1.0, which can't read knobs in presets.
 public enum ConfigFile {
+
+    /// The copy the first save by 2.2 keeps of the file as it was (`<path>.before-2.2`): 2.1.0 can't read knobs in
+    /// presets, so going back to it is a restore of this copy (docs/design/knob_lists.md).
+    public static let rollbackSuffix = ".before-2.2"
 
     public enum LoadError: Error, Equatable, CustomStringConvertible {
         case missing(path: String)
@@ -97,7 +102,8 @@ public enum ConfigFile {
     }
 
     /// Writes `config` to `path` atomically at mode 0600, creating the folder (0700) if needed. Before the first
-    /// save over an existing file, copies that file to `<path>.before-app` (once; later saves leave it alone).
+    /// save over an existing file, copies that file to `<path>.before-app`, and before the first save by 2.2 to
+    /// `<path>.before-2.2` (each once; later saves leave them alone).
     /// Throws `SaveError.wouldNotLoad`, writing nothing, when the encoded config wouldn't load back.
     public static func save(_ config: AppConfig, to path: String) throws {
         let url = URL(fileURLWithPath: path)
@@ -116,9 +122,9 @@ public enum ConfigFile {
             throw SaveError.wouldNotLoad(describe(error))
         }
 
+        // Each copy once, of the file as it was before the first save that needed it.
         var st = stat()
-        let backup = path + ".before-app"
-        if lstat(path, &st) == 0, lstat(backup, &st) != 0 {
+        for backup in [path + ".before-app", path + rollbackSuffix] where lstat(path, &st) == 0 && lstat(backup, &st) != 0 {
             try writeNewFile(try Data(contentsOf: url), to: backup)
         }
 

@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-041
+Next free ID: BL-042
 
 ---
 
@@ -93,3 +93,12 @@ Next free ID: BL-041
   (`SettingsView.swift`), the README's License line, `SECURITY.md`, `REQUIREMENTS.md` (m1ddc lines), `reference/app.md`
   (m1ddc; "Homebrew's stock m1ddc can still print a bad `0`" holds only before 1.3.3). Ships with the next release.
   (owner, 22/11/2026)
+- BL-041 [P2] [feature] A website's own icon, fetched by DeckOut. Today a key or knob-list item that opens a website
+  shows only an icon chosen by hand (picture, text or library symbol). The app would fetch the site's icon when the
+  address is set: the page's declared icons (prefer a large one such as `apple-touch-icon`), else `/favicon.ico`,
+  saved as a PNG in `icons/` like any other icon, never re-fetched by the agent. Trade-offs: the app starts going
+  online, which it doesn't today; it parses pages and decodes images from sites it doesn't control (size caps,
+  timeouts, ImageIO only, nothing executed); many sites offer only 16–32 px, blurry on a 176 × 112 block; some offer
+  none (fall back to a text tile). A favicon service (Google's, DuckDuckGo's), not the site itself, is ruled out:
+  it would learn the person's list of sites. Deferred from the knob lists design, which picks icons by hand
+  (`docs/design/knob_lists.md`). `IconRow.swift`, `IconFiles.swift` (owner, 26/11/2026)

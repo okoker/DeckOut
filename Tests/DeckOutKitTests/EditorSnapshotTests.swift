@@ -175,3 +175,61 @@ private func lowestRedInPanel(_ png: Data, window: CGSize) throws -> CGFloat? {
         }
     }
 }
+
+// The knob list editor before it is wired in (Task 1 of the knob lists plan): the window with knob 1 holding five
+// items, the row being edited (3) apart from the item the deck shows (1), and the whole panel. PNGs for a look.
+@MainActor @Test func knobListEditorDraws() throws {   // T-195 (design check)
+    let model = try previewModel(.empty, deck: .n4, selection: nil)
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckout-knob-list-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    func tile(_ text: String, _ background: String) throws -> String {
+        let tile = IconTile(kind: .text, text: text, symbol: nil, style: nil, background: background, foreground: nil)
+        let png = try #require(TileRenderer.render(tile, library: nil, width: 352, height: 224))
+        let path = folder.appendingPathComponent("\(text).png").path
+        try png.write(to: URL(fileURLWithPath: path))
+        return path
+    }
+    let safari = "/Applications/Safari.app"
+    let items = [
+        ButtonConfig(action: "url:https://en.wikipedia.org", icon: try tile("Wikipedia", "#3A3A3C")),
+        ButtonConfig(action: "url:https://github.com", icon: try tile("GitHub", "#5E5CE6")),
+        ButtonConfig(action: "url:https://www.bbc.co.uk", icon: try tile("BBC", "#FF375F")),
+        ButtonConfig(action: "app:\(safari)", icon: "\(safari)/Contents/Resources/AppIcon.icns"),
+        ButtonConfig(action: "url:https://duckduckgo.com", icon: try tile("DuckDuckGo", "#FF9F0A")),
+    ]
+    let face = DeckFace.of(.n4)
+    func panel() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            EditorTitle(text: face.control("knob_1")?.label ?? "Knob 1")
+            FieldRow("Turn") {
+                Picker("", selection: .constant(0)) { Text("Pick from a list").tag(0) }.labelsHidden()
+            }
+            FieldNote(text: "Press the knob, or tap the block above, to open the pick.")
+            KnobListEditor(model: model, items: items, selected: .constant(2), deckPick: 0,
+                           add: {}, remove: { _ in }, move: { _, _ in }, setAction: { _, _ in },
+                           setIcon: { _, _ in }, setTile: { _, _ in })
+            Spacer(minLength: 0)
+            Button("Clear Knob") {}.buttonStyle(.plain).foregroundStyle(Color(rgb: 0xFF3B30))
+        }
+        .padding(18)
+        .frame(width: 300, alignment: .topLeading)
+        .background(.background.secondary)
+    }
+    let block = try #require(DeckPreview.stripPicture(path: items[0].icon!))
+    let window = HStack(spacing: 0) {
+        DeckView(face: face, images: ["1": block], captions: ["knob_1": "List of 5", "knob_4": "Volume"],
+                 selection: .constant("knob_1"))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(StageBackground())
+        Divider()
+        ScrollView(.vertical) { panel() }.frame(width: 300).background(.background.secondary)
+    }
+    for dark in [false, true] {
+        let shot = try Snapshot.windowPNG(window, size: MainWindow.size, dark: dark)
+        #expect(shot.count > 1000)
+        try shot.write(to: snapshotFolder.appendingPathComponent("knob-list-mock-\(dark ? "dark" : "light").png"))
+        let full = try Snapshot.windowPNG(panel(), size: CGSize(width: 300, height: 760), dark: dark)
+        #expect(full.count > 1000)
+        try full.write(to: snapshotFolder.appendingPathComponent("knob-list-mock-panel-\(dark ? "dark" : "light").png"))
+    }
+}

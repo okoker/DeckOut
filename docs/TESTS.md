@@ -199,6 +199,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-192 | `PresetTests/aNewN4SwipesThroughPresets` | A new N4 section made by the app has its swipe set to `next_preset`; an edit never adds it to a section that already exists |
 | T-193 | `scripts/check-bundle.sh --signed` (run by `make signed`) | After every T-107 check, the release app is ready to ship: the release bundle id; the app, the agent and m1ddc each signed with a Developer ID Application certificate (not ad hoc, not another team certificate such as Apple Development), all three by the same team, with the hardened runtime and a secure timestamp; the app's and the agent's entitlements exactly the Apple Events one (no `get-task-allow`), m1ddc's none; a deep, strict verify. It never prints the certificate's name. On an ad hoc build it fails with `not signed with a Developer ID (ad hoc)`, while the plain check passes |
 | T-194 | `AgentLaunchTests/reloadNotificationIsPerDeckOut` | The reload notification is the agent label + `.reload`, so `--post-reload` for DeckOut Dev never reloads DeckOut; a hand install has its own name |
+| T-195 | `EditorSnapshotTests/knobListEditorDraws` | The knob list editor draws in a real offscreen window, light and dark (PNGs for a look): rows with the block-shaped icon and name, the row being edited apart from the item marked "On the deck", the selected item's action, icon and Test |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

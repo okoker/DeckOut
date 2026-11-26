@@ -110,7 +110,7 @@ everything you work on.
 |---|---|---|
 | VSD Craft 3.10 (VSDinside) | 822 MB | about 980 MB, 3,800+ files (measured for 1.0) |
 | Stream Dock 3.10 (MiraBox) | 630 MB | not measured |
-| **DeckOut 2.1.0** | **3.2 MB** | **7 MB, 13 files** |
+| **DeckOut 2.2.0** | **3.2 MB** | **7 MB, 13 files** |
 
 DeckOut is open source (MIT), signed with a Developer ID and notarised by Apple. It asks for no administrator
 password and installs no driver. Its daemon answers only the DeckOut app, checked by code signature. The only thing
@@ -122,7 +122,7 @@ macOS 15 (Sequoia) or later, on an Apple Silicon Mac. Tested on macOS 15.
 
 ## Install
 
-1. Download `DeckOut-2.1.0.dmg` from [Releases](https://github.com/okoker/DeckOut/releases/latest).
+1. Download `DeckOut-2.2.0.dmg` from [Releases](https://github.com/okoker/DeckOut/releases/latest).
 2. Open it and drag DeckOut onto Applications. DeckOut runs only from Applications: opened anywhere else, it asks to
    be moved there.
 3. Open DeckOut. macOS asks whether to open an app downloaded from the internet: Open. Then macOS shows "Background
@@ -145,6 +145,10 @@ open it.
 Quit DeckOut, download the new disk image, drag DeckOut onto Applications and choose Replace, then open DeckOut once:
 it restarts the daemon on the new version. Your settings stay, except coming from 2.0.0: it kept them in
 `~/.config/vsd`, which later versions don't read.
+
+2.2 moves the knobs into each preset, which 2.1.0 can't read. Its first save keeps your file as it was, in
+`~/.deckout/config.json.before-2.2`. To go back to 2.1.0, put that copy back as `config.json` before opening 2.1.0
+(edits made since are lost).
 
 ## Removing
 

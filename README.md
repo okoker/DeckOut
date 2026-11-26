@@ -87,7 +87,6 @@ seconds without a turn the knob goes back to all.
 | Touch strip | — | 4 blocks of 176 × 112 px: tap one, or swipe across |
 | USB IDs (vendor / product) | `0x5548` / `0x1001` | `0x6602` / `0x1001` |
 | Also sold as | TreasLin N3 Pro, MiraBox HSV602, AJAZZ AKP03, DOPWii / KKM-K3 | any deck with the same USB IDs |
-| Connect it to | — | a USB-A port: on USB-C it may not power up after a replug (KI-009) |
 
 Both can be plugged in at once, each with its own layout and presets.
 

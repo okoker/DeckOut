@@ -8,8 +8,11 @@ import Testing
 // step.
 @MainActor @Test func stripIconEdits() throws {   // T-157
     let notes = "/System/Applications/Notes.app"
-    var config = AppConfig.empty
-    config.setStripBlock("1", StripBlockConfig(type: .internet, action: "url:https://example.com"))
+    // An N4 already in the file, so its blocks start empty (a fresh one would start from the baseline, T-220).
+    let config = AppConfig(n4: N4Section(brightness: 75, swipe: nil, lockPhoto: nil, presets: [
+        N4Preset(name: "Default", keys: [:],
+                 strip: ["1": StripBlockConfig(type: .internet, action: "url:https://example.com")])],
+        activePreset: "Default"))
     let model = try previewModel(config, deck: .n4, selection: "3")
     let store = try #require(model.store)
     /// Makes the edit, then checks that one undo puts the block (and the whole config) back as it was before it, and

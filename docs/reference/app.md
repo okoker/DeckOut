@@ -108,7 +108,8 @@ the job definition it registered: a changed plist needs a new label.
   doesn't load is never saved over, the status line says why, and it is read again before every change until it
   loads. A failed save is shown; the next change tries again. Coming back to the app picks up a hand edit too.
 - **Where edits land:** keys, N3 buttons, knobs and strip blocks in the live preset; brightness on the deck. A deck
-  with no section gets one on its first edit ("Default", brightness 75; on the N4 a swipe set to `next_preset`).
+  with no section gets one on its first edit ("Default", brightness 75; on the N4 a swipe set to `next_preset` and
+  the baseline below as its preset). A section already in the file is never replaced.
 - **Actions** (`ActionChoice`): keys, N3 buttons, knob presses and strip taps offer Nothing; Open App, Open Website,
   Open File or Folder; Keyboard Shortcut, Run a Shortcut; Play / Pause, Next Track, Previous Track; Volume Up / Down,
   Mute; Monitor Brightness Up / Down, Switch Monitor; Run Script, Run Command. Knob turns offer Nothing, Volume and
@@ -183,9 +184,12 @@ the job definition it registered: a changed plist needs a new label.
   deleting the live one makes the first left live; ⌘Z brings it back); a line; the other presets in file order.
   New Preset… and Rename… open a sheet with the name ("Preset N" offered for a new one): Cancel (Esc) changes
   nothing; Create / Rename (Return) is greyed out, with the reason, while the name is empty or taken. A new preset
-  is blank and live, but for the live preset's knobs' built-in halves (volume, mute, monitor brightness, switch
-  monitor; a knob with a list or another action comes over as nothing: owner, 26/11/2026); Duplicate copies
-  everything, lists included. Rename renames the preset the sheet was opened for. Picking one makes it live on the
+  is live. On the N4 it is the same baseline whatever the live preset holds (`AppConfig.baselineN4`, owner,
+  26/11/2026): knob 2 monitor brightness (press: switch monitor), knob 4 volume step 5 (press: mute), block 1
+  latency (no tap), block 2 CPU / memory (tap: Activity Monitor); knobs 1 and 3, blocks 3–4 and the keys empty.
+  Nothing personal ships in it (no ZR7, no scripts): a person's own settings stay in their file. On the N3 it is
+  blank but for the live preset's knobs' built-in halves (volume, mute, monitor brightness, switch monitor; a knob
+  with another action comes over as nothing). Duplicate copies everything, lists included. Rename renames the preset the sheet was opened for. Picking one makes it live on the
   deck.
 - **Accessibility:** a keyboard shortcut or media key on a control, with the agent not allowed, shows a note with
   Allow…: the agent asks macOS to list it, the Accessibility pane opens, and the app checks again every 2 s for a

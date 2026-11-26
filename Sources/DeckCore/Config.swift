@@ -522,7 +522,7 @@ public struct KnobConfig: Codable, Equatable {
         }
     }
 
-    /// What New Preset copies from this knob: each half whose action is built in (volume, mute, monitor
+    /// What New Preset on the N3 copies from this knob (the N4 starts from a fixed baseline): each half whose action is built in (volume, mute, monitor
     /// brightness, switch monitor, ZR7: `LockPolicy.builtIns`), the other as `none`. Nil for a list, or when
     /// neither half is built in (owner, 26/11/2026).
     public func builtInsOnly() -> KnobConfig? {

@@ -1,6 +1,6 @@
 import DeckCore
 
-/// Reading and changing one control in the config: keys, buttons, knobs and strip blocks, all in the live preset. A deck with no section yet gets one on its first edit: one preset, "Default", brightness 75.
+/// Reading and changing one control in the config: keys, buttons, knobs and strip blocks, all in the live preset. A deck with no section yet gets one on its first edit: one preset, "Default" (on the N4 the baseline, `baselineN4`), brightness 75. A section already in the file is never replaced.
 extension AppConfig {
 
     public func button(_ deck: DeckKind, _ id: String) -> ButtonConfig? {
@@ -46,7 +46,22 @@ extension AppConfig {
     }
 
     static let newN4 = N4Section(brightness: 75, swipe: .nextPreset, lockPhoto: nil,
-                                 presets: [N4Preset(name: "Default", keys: [:], strip: [:])], activePreset: "Default")
+                                 presets: [baselineN4("Default")], activePreset: "Default")
+
+    /// What a new N4 preset starts with, whatever the live preset holds, and an N4's first preset (owner,
+    /// 26/11/2026): knob 2 monitor brightness (press: switch monitor), knob 4 volume (press: mute), block 1 latency
+    /// (no tap), block 2 CPU / memory (tap: Activity Monitor); knobs 1 and 3, blocks 3–4 and the keys empty. Nothing
+    /// personal (no ZR7, no scripts): a person's own setup lives in their file.
+    static func baselineN4(_ name: String) -> N4Preset {
+        N4Preset(name: name, keys: [:],
+                 strip: ["1": StripBlockConfig(type: .internet),
+                         "2": StripBlockConfig(type: .load,
+                                               action: "app:/System/Applications/Utilities/Activity Monitor.app")],
+                 knobs: ["knob_2": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
+                                              press: KnobAction(action: "display_brightness_cycle")),
+                         "knob_4": KnobConfig(rotate: KnobAction(action: "system_volume", step: 5),
+                                              press: KnobAction(action: "system_mute_toggle"))])
+    }
     static let newN3 = N3Section(brightness: 75, presets: [N3Preset(name: "Default", buttons: [:])],
                                  activePreset: "Default")
 }
@@ -86,9 +101,9 @@ extension AppConfig {
         return freeName(in: names, from: names.count + 1) { "Preset \($0)" }
     }
 
-    /// A blank layout under `name` (trimmed), made live, but for the live preset's knobs' built-in halves (volume,
-    /// mute, monitor brightness, switch monitor: owner, 26/11/2026). False, and nothing changed, for an empty or
-    /// taken name.
+    /// A new layout under `name` (trimmed), made live: on the N4 the baseline (`baselineN4`), on the N3 blank but for
+    /// the live preset's knobs' built-in halves (volume, mute, monitor brightness, switch monitor) (owner,
+    /// 26/11/2026). False, and nothing changed, for an empty or taken name.
     @discardableResult
     public mutating func addPreset(_ name: String, deck: DeckKind) -> Bool {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -96,8 +111,7 @@ extension AppConfig {
         config.ensureDeck(deck)
         guard !trimmed.isEmpty, !config.presetNames(deck).contains(trimmed) else { return false }
         config.edit(deck) {
-            $0.presets.append(N4Preset(name: trimmed, keys: [:], strip: [:],
-                                       knobs: $0.active.knobs.compactMapValues { $0.builtInsOnly() }))
+            $0.presets.append(Self.baselineN4(trimmed))
             $0.activePreset = trimmed
         } n3: {
             $0.presets.append(N3Preset(name: trimmed, buttons: [:],

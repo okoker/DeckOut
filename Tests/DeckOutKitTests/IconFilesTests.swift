@@ -73,9 +73,9 @@ private func writeBigPNG(side: Int) throws -> String {
     config.setButton(.n4, "key_3", nil)
     #expect(config.n4?.presets[1].keys["key_3"] == nil)
 
-    config.setStripBlock("2", StripBlockConfig(type: .load))
-    #expect(config.stripBlock("2")?.type == .load)
-    #expect(config.n4?.presets[0].strip["2"] == nil)
+    config.setStripBlock("3", StripBlockConfig(type: .load))        // block 3: empty in the baseline Default
+    #expect(config.stripBlock("3")?.type == .load)
+    #expect(config.n4?.presets[0].strip["3"] == nil)
 
     // Knobs belong to the deck, not a preset.
     config.setKnob(.n3, "big", KnobConfig(rotate: KnobAction(action: "system_volume", step: 2), press: KnobAction(action: "system_mute_toggle")))

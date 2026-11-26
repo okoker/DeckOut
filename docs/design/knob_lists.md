@@ -60,9 +60,12 @@ ruled out: it would learn the list of sites.
 
 ## Decided by the owner (26/11/2026)
 - Knobs are per preset, on both decks. An existing file's knobs go into every preset.
-- **New Preset** copies the live preset's knobs, but only their built-in parts: volume, mute, monitor brightness,
-  switch monitor (and ZR7 volume / mute). That is the existing `LockPolicy.builtIns` set. Anything else starts blank:
-  a list, an app, a command. **Duplicate** copies everything, lists included (as now).
+- **New Preset** on the N4 starts from a fixed baseline (owner, after the deck check): knob 2 monitor brightness /
+  switch monitor, knob 4 volume / mute, block 1 latency (no tap), block 2 CPU / memory (tap: Activity Monitor), the
+  rest empty; an N4's first preset starts the same way, and an existing file is never changed. Not a copy of the live
+  preset's built-in knob halves, which would carry a knob set for one preset into every new one (like the sample's
+  knob 1 on volume, read as interference); and nothing personal (ZR7, a script), which lives in the person's file. The N3
+  keeps the built-ins copy (`LockPolicy.builtIns`). **Duplicate** copies everything, lists included (as now).
 - The list is on the knob (A). A list item is anything a key can do, with its own icon.
 - Icons are picked by hand. For the test the builder picks 5 random websites and fetches their icons by hand.
 - Going back to 2.1.0 with an N4-only file loses its knobs; accepted, the rollback copy is the way back (The file).
@@ -170,8 +173,7 @@ UI first: the plan's first step mocks the knob editor in the real window (`--sna
   reorder or removal the deck's pick keeps its number, so it may show another item. No call from the app tells the
   agent what to show. The mock shows the selected row and the deck's pick as two separate things.
 - **Knob caption** on the deck drawing: the list's size, e.g. "List of 5".
-- **New Preset** copies the live preset's knobs' built-in halves (Decided, above): a knob with turn volume and press
-  Open App comes over as turn volume and press Nothing; a list comes over as nothing.
+- **New Preset** on the N4 starts from the baseline (Decided, above), whatever the live preset holds.
 - **BL-035 widens:** text half-typed in a knob or list-item field can commit to the same knob in the preset a swipe
   just made live, because the editor is rebuilt per control, not per preset. Fix it in this build: rebuild the editor
   when the live preset changes (CL call).
@@ -183,7 +185,7 @@ UI first: the plan's first step mocks the knob editor in the real window (`--sna
 - **Agent:** turns wrap both ways; press and tap run the pick; locked does nothing; the position survives a preset
   switch and back and a reload, and resets when the list shrinks below it; the block draws the pick's icon and only
   that slot is sent.
-- **App:** New Preset copies built-ins only; Duplicate copies a list; making a list clears the block above in one
+- **App:** New Preset on the N4 gives the baseline; Duplicate copies a list; making a list clears the block above in one
   undo step.
 - **On the deck** (DeckOut Dev session; each step with the owner's go, per the dev-testing routine): knob 1 of the N4
   with 5 random websites, icons fetched by hand into `~/.deckout-dev/icons/`. Turn both ways past the ends, press,

@@ -170,14 +170,34 @@ private let twoPresets = AppConfig(n4: N4Section(
     #expect(existing.n4?.swipe == nil)
 }
 
-@Test func newPresetCopiesBuiltInKnobsOnly() {   // T-211
-    // New Preset starts blank but for the knobs' built-in halves (volume, mute, monitor brightness, switch monitor);
+/// What a new N4 preset, and an N4's first preset, start with (owner, 26/11/2026): nothing personal, so no ZR7 and no
+/// script; a person's own setup lives in their file.
+private let baselineKnobs = [
+    "knob_2": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
+                         press: KnobAction(action: "display_brightness_cycle")),
+    "knob_4": KnobConfig(rotate: KnobAction(action: "system_volume", step: 5),
+                         press: KnobAction(action: "system_mute_toggle")),
+]
+private let baselineStrip = [
+    "1": StripBlockConfig(type: .internet),
+    "2": StripBlockConfig(type: .load, action: "app:/System/Applications/Utilities/Activity Monitor.app"),
+]
+
+@Test func newPresetStartsFromTheBaseline() {   // T-211
+    // A new N4 preset is the same layout whatever the live preset holds: knob 1's volume, the list, ZR7, the script,
+    // the volume block and the keys are not carried over. The N3 still copies the big knob's built-in halves;
     // Duplicate copies everything, lists included (owner, 26/11/2026).
-    let volume = KnobAction(action: "system_volume", step: 5)
     let workKnobs = [
-        "knob_1": KnobConfig(list: [ButtonConfig(action: "url:https://github.com")]),
-        "knob_2": KnobConfig(rotate: volume, press: KnobAction(action: "app:/Applications/Safari.app")),
-        "knob_4": KnobConfig(rotate: volume, press: KnobAction(action: "system_mute_toggle")),
+        "knob_1": KnobConfig(rotate: KnobAction(action: "system_volume", step: 2),
+                             press: KnobAction(action: "system_mute_toggle")),
+        "knob_2": KnobConfig(list: [ButtonConfig(action: "url:https://github.com")]),
+        "knob_3": KnobConfig(rotate: KnobAction(action: "zr7_volume", step: 3), press: KnobAction(action: "zr7_mute_toggle")),
+        "knob_4": KnobConfig(rotate: KnobAction(action: "system_volume", step: 5),
+                             press: KnobAction(action: "app:/Applications/Safari.app")),
+    ]
+    let workStrip = [
+        "1": StripBlockConfig(type: .internet, action: "shell:/Users/someone/network.sh"),
+        "4": StripBlockConfig(type: .volume),
     ]
     var config = AppConfig(
         n3: N3Section(brightness: 75, presets: [N3Preset(name: "A", buttons: [:], knobs: [
@@ -186,17 +206,46 @@ private let twoPresets = AppConfig(n4: N4Section(
             "small_1": KnobConfig(rotate: KnobAction(action: "none"), press: KnobAction(action: "media_next")),
         ])], activePreset: "A"),
         n4: N4Section(brightness: 75, swipe: nil, lockPhoto: nil,
-                      presets: [N4Preset(name: "Work", keys: ["key_1": ButtonConfig(action: "media_next")], strip: [:],
-                                         knobs: workKnobs)],
+                      presets: [N4Preset(name: "Work", keys: ["key_1": ButtonConfig(action: "media_next")],
+                                         strip: workStrip, knobs: workKnobs)],
                       activePreset: "Work"))
     _ = config.addPreset("Music", deck: .n4)
     #expect(config.livePreset(.n4) == "Music")
-    #expect(config.n4?.keys.isEmpty == true)
-    #expect(config.n4?.knobs == ["knob_2": KnobConfig(rotate: volume, press: KnobAction(action: "none")),
-                                 "knob_4": workKnobs["knob_4"]!])
+    let music = config.n4?.presets.first { $0.name == "Music" }
+    #expect(music == N4Preset(name: "Music", keys: [:], strip: baselineStrip, knobs: baselineKnobs))
     _ = config.addPreset("B", deck: .n3)
     #expect(config.n3?.knobs == ["big": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
                                                    press: KnobAction(action: "none"))])
     let copy = config.duplicatePreset("Work", deck: .n4)
     #expect(config.n4?.presets.first { $0.name == copy }?.knobs == workKnobs)
+    #expect(config.n4?.presets.first { $0.name == copy }?.strip == workStrip)
+}
+
+@Test func aFreshN4StartsFromTheBaseline() {   // T-220
+    // An N4 the app sets up for the first time gets the baseline as its "Default", and the first edit keeps it beside
+    // the change. An N4 already in the file is never touched, even one whose presets are blank; the N3's first preset
+    // stays blank (owner, 26/11/2026: a fresh install never overwrites a config).
+    var fresh = AppConfig.empty
+    fresh.ensureDeck(.n4)
+    #expect(fresh.n4?.presets == [N4Preset(name: "Default", keys: [:], strip: baselineStrip, knobs: baselineKnobs)])
+
+    var firstEdit = AppConfig.empty
+    firstEdit.setStripBlock("4", StripBlockConfig(type: .volume))
+    var expectedStrip = baselineStrip
+    expectedStrip["4"] = StripBlockConfig(type: .volume)
+    #expect(firstEdit.n4?.presets.first?.strip == expectedStrip)
+    #expect(firstEdit.n4?.presets.first?.knobs == baselineKnobs)
+
+    let existing = AppConfig(n4: N4Section(brightness: 40, swipe: nil, lockPhoto: nil,
+                                           presets: [N4Preset(name: "Mine", keys: [:], strip: [:])], activePreset: "Mine"))
+    var kept = existing
+    kept.ensureDeck(.n4)
+    #expect(kept == existing)
+    kept.setStripBlock("4", StripBlockConfig(type: .volume))
+    #expect(kept.n4?.presets.first?.strip == ["4": StripBlockConfig(type: .volume)])
+    #expect(kept.n4?.presets.first?.knobs.isEmpty == true)
+
+    var n3 = AppConfig.empty
+    n3.ensureDeck(.n3)
+    #expect(n3.n3?.presets == [N3Preset(name: "Default", buttons: [:])])
 }

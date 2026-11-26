@@ -7,7 +7,7 @@ Edge cases, uncertain solutions, and accepted limitations we're aware of but not
 
 When ready to address: move to `BACKLOG.md` or `TODO.md`, delete from here.
 
-Next free ID: KI-018
+Next free ID: KI-019
 
 ---
 
@@ -28,6 +28,7 @@ Next free ID: KI-018
 | KI-015 | 21/11/2026 | After Stop and Remove (no controller running) the N3 keeps showing the last pictures it was sent, while the N4 goes back to its own blank screen; the N3's keys do nothing. A person may think DeckOut still runs. Seen when the owner's decks moved to the signed app. Not looked into: whether the agent can blank the N3 when it is stopped. |
 | KI-016 | 21/11/2026 | macOS 27 is untested (owner, 21/11/2026: test on 15 and 26, then release). The agent's plist inside a downloaded DeckOut (`Contents/Library/LaunchAgents/io.github.okoker.deckout.agent.plist`) carries the `com.apple.quarantine` flag from the download (seen on macOS 15, which accepts it). macOS 27's launchd refuses quarantined plists (macOS 27 release notes); whether that covers a plist inside an app bundle registered through `SMAppService` is unknown. If it does, the controller never starts on 27 and the decks stay blank. Settles with one install on 27. |
 | KI-017 | 21/11/2026 | The signed app runs under the hardened runtime with one entitlement, Apple Events. A key's command or script that needs location, contacts, calendars, photos, the camera or the microphone may be refused without a prompt, where 1.0 or a dev build asked (macOS checks the app the agent lives in). Not seen: none of the owner's keys need these. Fix if met: the matching entitlement and usage text (phase 7 review). |
+| KI-018 | 26/11/2026 | A volume knob with a small step can stall, depending on the speaker. On the DeckOut Dev sample's Music preset with the Jabra SPEAK 510 (USB) as the output, knob 1 (step 2, 4 % a click) often didn't raise the volume, and after knob 4 (step 5) set 53 % it worked only below that; step 5 works. Likely the output device takes volume only in its own steps and rounds a small change back (`VolumeControl.adjust` reads the volume, adds the step and writes it), so the smallest step that works depends on the speaker chosen (owner, 26/11/2026). Not checked: the Jabra's steps; `main` behaving the same. The N4 baseline's volume knob uses step 5. `VolumeControl.swift` |
 
 ## Accepted Risks
 

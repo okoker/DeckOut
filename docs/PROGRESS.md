@@ -22,18 +22,14 @@
   with `"~/Applications/DeckOut Dev.app/Contents/MacOS/DeckOut" --unregister`.
 - The sample file is sparse on purpose (one Notes key per deck); the owner read it as "everything gone". Say so first.
 
-### Bug found (not yet looked into)
-- Music preset, knob 1 (volume, step 2 = 4 % per click; the sample's, not the owner's): press mutes fine, but turning
-  only moves between 0 and the level knob 4 (step 5 = 10 %) last set: up clicks often do nothing; after knob 4 sets
-  53 %, knob 1 does nothing, then works only below. `VolumeControl.adjust` reads the volume, adds the step, writes
-  it; unchanged since the live volume block (before 2.1.0), so 2.1.0 likely has it for small steps too. Hypothesis
-  (unverified): the output device quantises volume and a 4 % rise is rounded back. Next: which output device, its
-  steps (read only), whether step 2 fails on `main` too; then a test-first fix (e.g. step from the last value set).
+### Volume on a small step: KI-018
+- The sample's knob 1 (volume, step 2) stalling on the Jabra is KI-018 (owner: steps depend on the speaker). Knob 1
+  muting / moving the volume was the sample file's own setting; New Preset no longer carries it (baseline below).
 
 ### Environment state
-- No DeckOut agent runs: the decks are idle. Signed DeckOut: Stop and Remove'd and quit (Start Again brings it back).
-  DeckOut Dev: still installed in `~/Applications`, its agent unregistered (`--unregister`); opening the app registers
-  it again (check the signed one isn't running first). `~/.deckout-dev`: the sample + knob 1 list; site icons in
+- The signed DeckOut 2.1.0 runs the decks again (owner, 26/11/2026 evening). DeckOut Dev: still installed in
+  `~/Applications`, stopped and removed by the owner; opening it registers its agent again (stop the signed one
+  first). `~/.deckout-dev`: the sample + knob 1 list; site icons in
   `site-icons/`; `.before-2.2` and `.before-app` there. Both decks at 480 Mbps since the 18:40 re-plug.
 - Cleanup left (owner, 26/11/2026: lots of it): `make uninstall-dev` and `~/.deckout-dev` when the deck check is done;
   the scratchpad's `icons-dl/`; the plan's workspace `.superpowers/sdd/2026-11-26-deckout-knob-lists/` after merge.
@@ -48,19 +44,19 @@
 
 ### What's next
 1. Task 9's rest: press knob 1; swipe away and back (pick kept); lock / unlock; "On the deck" follows; half-type a
-   URL then − (T-219 by hand); New Preset copies only built-ins; N3 big knob (no N3 input logged yet). Owner to
+   URL then − (T-219 by hand); New Preset gives the baseline; N3 big knob (no N3 input logged yet). Owner to
    say whether block 1 kept showing CPU after Pick from a list (the log: blanked at once, "Drew 1 of 14").
 2. Resume: check both decks at 480 Mbps and no agent running, open DeckOut Dev (registers its agent). End the dev
    session with `make uninstall-dev` (go); the owner opens DeckOut → Start Again.
 3. Owner picks from the deferred review minors (ledger); merge `knob-lists` (go); release 2.2.0 (each step a go;
    `releasing.md` has the rollback note).
-4. The volume bug above (systematic debugging, owner's go before changing the volume of the Mac).
-5. BL-042 control run (DeckOut stopped, decks plugged in for hours). Second Mac (macOS 26), macOS 27 call, BL-029.
+4. BL-042 control run (DeckOut stopped, decks plugged in for hours). Second Mac (macOS 26), macOS 27 call, BL-029.
 
 ## Current Status
 DeckOut 2.1.0 (Developer ID signed, notarised, released 26/11/2026; 2.0.0 on 21/11/2026) drives the TreasLin N3 and
 the MiraBox N4 from `/Applications` through its own agent, with its settings in `~/.deckout`; DeckOut Dev is removed
 and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's second Mac (macOS 26) is next.
+26/11/2026 — New-preset baseline on `knob-lists`: `swift test` 268/268 (new T-220; T-211 rewritten), watched; both failed first (knob 1's volume and ZR7 came over into a new preset; a fresh N4's Default was blank). T-128 and T-157 assumed a blank block 2 in a fresh N4: their setup moved (block 3; an N4 already in the file), their checks unchanged. Not run: New Preset in the real app.
 26/11/2026 — Knob lists on `knob-lists` (c766780..533491a): `swift test` 265/265 (242 + new T-195–T-217), watched; each new behaviour test failed first (T-201 on the missing copy, T-215 on the missing block image, T-217 on no push after a reload, the rest on the missing API); `make app` (build 261126.174339) passed T-107. Review fixes (2540305): `swift test` 267/267 (new T-218, T-219, both failed first: the deck jumped back to item 3, the item editor kept its identity). Not run: DeckOut Dev on the decks (Task 9).
 26/11/2026 — Release 2.1.0 from da7f66b: `swift test` 242/242, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.124509), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 cc4c07ac…; v2.1.0 published (no candidate), downloaded back: same sha256, accepted with the quarantine flag set. This Mac: dry run first (13 paths under `/.config/vsd/`, 22 image paths, none missing), then `~/.config/vsd` → `~/.deckout`, paths rewritten (0 `vsd` left, all 22 present, 0600), `/Applications/DeckOut.app` replaced from the image while the 2.0.0 agent ran (same designated requirement), app opened: the agent restarted on 2.1.0 about a second later (launchd runs 1 → 2, last exit 0, the same pid 2 minutes on), read `~/.deckout` and drew 6 of 6 and 14 of 14 with the lock photo from the new folder; BTM showed the item "enabled, allowed". AMFI's "Constraint not matched" logged at the same second is unrelated (15 times in 3 hours, before and after). Owner, after: "all working as intended".
 26/11/2026 — Settings folder `~/.deckout`, per-DeckOut reload name, 1.0 names, on `main`: `swift test` 242/242 (new T-194), watched; T-194, T-095, T-097 and T-073 failed first against stubs keeping the old names; no `~/.deckout` or `~/.deckout-dev` appeared during the run; `make app` (build 261126.070211) passed T-107, its `DeckOutAgent --post-reload` posted `io.github.okoker.deckout.dev.agent.reload` (the bare `.build` binary: `io.github.okoker.deckout.reload`), and `strings` finds no `streamdeck` or `config/vsd` in the agent; the "stopped" screen's snapshot reads "~/.deckout". Not run: DeckOut Dev installed (the decks stayed on 2.0.0).
@@ -97,12 +93,15 @@ and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's se
 - **For a person:** in DeckOut, a knob's Turn can be "Pick from a list": websites, apps, anything a key can do, each
   with its own icon. Turning the knob steps through them and the strip block above it shows the pick; pressing the
   knob or tapping the block opens it. Nothing while the Mac is locked. Knobs now belong to each preset: an existing
-  setup's knobs are copied into every preset, so nothing changes until edited; New Preset copies only volume, mute,
-  brightness and switch-monitor; Duplicate copies all. The first save keeps `config.json.before-2.2` for going back.
+  setup's knobs are copied into every preset, so nothing changes until edited; a new N4 preset (and a brand-new N4's
+  first) starts the same every time: knob 2 monitor brightness, knob 4 volume, block 1 latency, block 2 CPU / memory
+  (tap: Activity Monitor), the rest empty; an existing file is never changed. Duplicate copies all. The first save keeps `config.json.before-2.2` for going back.
 - **Decision (owner, 26/11/2026):** knobs per preset, each preset owning all its knobs (not a deck default with
   overrides); the list lives on the knob, the block above only shows it; icons by hand, fetching them is BL-041;
   going back to 2.1.0 with an N4-only file loses its knobs (accepted: one other user); the deck keeps its own pick
-  while a list is edited. (CL calls:) the pick lives in memory per preset, wraps both ways; a reload repeats it to
+  while a list is edited. After the deck check: New Preset on the N4 gives a fixed baseline with nothing personal
+  (ZR7 and the network script stay in the owner's file), not the live preset's built-in knobs, which would carry a knob
+  set for one preset (like the sample's knob 1 on volume, read as interference) into every new one; a fresh install never overwrites a config. (CL calls:) the pick lives in memory per preset, wraps both ways; a reload repeats it to
   the app (T-217).
 - **Checked:** run line above; the window drawn against the owner-approved mock (T-195, T-216). A fresh opus review of
   the branch: no critical or important code issues; two minors re-graded important and fixed test-first (T-218,

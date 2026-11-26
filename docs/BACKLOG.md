@@ -23,12 +23,6 @@ Next free ID: BL-044
   `docs/ideas/script_blocks.md`. Initial work: its first slice (a weather script, the agent's runner, a `script` block
   set by hand). After the phase 7 release, once the scripting and scheduling are worked out (owner, 21/11/2026).
   `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
-- BL-036 [P2] [feature] A `next_preset` typed by hand onto a key or a knob works on the deck, but the window shows it as
-  "Unknown action". Give it a name in the window (it stays out of the menus). `ActionNames.swift` (BL-033 review,
-  21/11/2026)
-- BL-037 [P2] [debt] Test gaps in the swipe's preset switch: T-190 has no missing-file or symlinked-config case (the
-  agent must write nothing); T-191 doesn't check `next_preset` never reaches the dispatcher (a command run).
-  `AgentTests.swift` (BL-033 review, 21/11/2026)
 - BL-040 [P2] [debt] Use upstream m1ddc 1.3.3 (released 21/11/2026) unpatched, in place of 1.3.1 with DeckOut's
   patch. 1.3.3 carries that patch's read fix (waydabber/m1ddc#81, merged 21/11/2026), plus `--read-wait <ms>`
   (default 50), "Unsupported VCP code" at once with exit 1 for a result `01`, and up to 8 monitors (1.3.2). Vendor
@@ -68,12 +62,7 @@ Next free ID: BL-044
   --predicate 'process == "kernel" AND (eventMessage CONTAINS "enumerated 0x" OR eventMessage CONTAINS
   "terminateDevice" OR eventMessage CONTAINS "Retries exhausted")' --style compact`; N4 = 0x6602, N3 = 0x5548.
   `DeckManager.swift`, `DeckConnection.swift`, `Daemon.swift` (`tick`, `redrawLive`) (owner, 26/11/2026)
-- BL-043 [P2] [debt] Knob lists review minors (fresh opus review of `knob-lists`, deferred 26/11/2026): a list item
-  running a non-executable script shows the problem but no Make Executable button; the "strip block N's own setting
-  is set aside" line prints only at start-up, not on app or swipe reloads (no test); the load-time Accessibility
-  warning and load summary cover only the live preset's knobs, so a `key:` item in another preset warns only when it
-  goes live; T-207 doesn't exercise the agent's `start()` wiring, and no test checks that the agent's `next_preset`
-  save keeps a list; a fresh install's second save makes a `.before-2.2` copy of a file 2.2 wrote (as `.before-app`
-  does); the knob ↔ block mapping is written in four places; `KnobConfig.list` is a public var beside rotate / press
-  that mean nothing for a list. (The fast-spin lag it raised was measured on the deck: redraw median 4 ms.)
-  `Daemon.swift`, `Agent.swift`, `ConfigFile.swift`, `Config.swift` (owner, 26/11/2026)
+- BL-043 [P2] [bug] A knob list item set to a script that isn't executable shows the problem but no Make Executable
+  button, as a key or a strip block has: the list's problem note is built with no action (`ProblemNote(…, choice:
+  .nothing)`), so the button's script check never matches. A person adding a new script to a list has to `chmod +x`
+  it in Terminal. Pass the item with the problem instead. `KnobEditor.swift` (knob lists review, owner, 26/11/2026)

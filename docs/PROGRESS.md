@@ -19,7 +19,7 @@
 - The signed DeckOut 2.2.0 runs the decks (run line below). DeckOut Dev removed (`make uninstall-dev`; `~/.deckout-dev`
   in the Bin as `deckout-dev-2026-11-26`); the plan's workspace and the old `icons-dl/` deleted (owner's go).
 - Rollback copies to delete from 28/11/2026 (owner's go): the retired 1.0 plist and program,
-  `~/.config/vsd.bak-2026-11-21`, `~/.config/vsd-dev`. Developer ID certificate expires 01/02/2027 (BL-039).
+  `~/.config/vsd.bak-2026-11-21`, `~/.config/vsd-dev`. Developer ID certificate expires 01/02/2027.
 
 ### Still open, recorded only here
 - Plan 1 review minors: M1 `script:`/`shortcut:` killed at 30 s (owner's call); M6 `--show-lock-photo` ignores

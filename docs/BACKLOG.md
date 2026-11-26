@@ -9,34 +9,12 @@ Next free ID: BL-044
 
 ---
 
-### Fixed (01/04/2026)
-
-- ~~[P0] [security] Config permissions: reject load when writable/wrong owner/symlink. `main.swift`~~
-- ~~[P0] [bug] SIGHUP reload race: explicit `shutdown()` before replacing dispatcher. `main.swift`~~
-- ~~[P1] [debt] `reportBuffer` replaced with `UnsafeMutablePointer`. `HIDDevice.swift`~~
-- ~~[P1] [debt] `Unmanaged.passUnretained` lifetime documented. `HIDDevice.swift`~~
-- ~~[P1] [security] HID input report: check `IOReturn` result + min length. `HIDDevice.swift`~~
-- ~~[P1] [bug] Shell timeout (30s) + stderr handler cleanup in catch. `ActionDispatcher.swift`~~
-
-### Fixed (02/04/2026)
-
-- ~~[P1] [debt] `key:` silent failure: `AXIsProcessTrusted()` check at startup with clear log message. `ActionDispatcher.swift`~~
-- ~~[P1] [bug] Pipe deadlock: read stdout before `waitUntilExit()` in `runProcess`. `BrightnessControl.swift`~~
-- ~~[P1] [bug] Stale display mapping: `refreshDisplays()` on mode cycle + cache invalidation on write failure. `BrightnessControl.swift`~~
-- ~~[P2] [debt] Icon size cap: reject source images >1024px before full decode. `ImageLoader.swift`~~
-
 ### Open
 
 - BL-002 [P2] [feature] No handling for the Mac waking from system sleep. If a deck keeps power through sleep but resets
   without re-enumerating, its keys could show the deck's own logo until the next lock / unlock or replug. On
   `NSWorkspace.didWakeNotification`: re-run the start-up sequence, redraw, recheck the lock. Untested here — this Mac
   never system-sleeps. `Daemon.swift` (19/11/2026)
-- BL-014 [P2] [feature] Shortcut recorder: media keys pressed in the recorder show nothing (they arrive as system
-  events), rather than "can't be sent"; on non-US layouts the label shows the US character for the key position (the
-  key sent is right: both sides work by position). Say media keys aren't recordable; label with the layout's
-  character. `ShortcutRecorder.swift` (plan 3 review)
-- BL-020 [P2] [debt] The self-test checks that a tile's PNG exists and is in the app's config, not that the agent drew
-  it (status or log). `SelfTest.swift` (plan 5 review)
 - BL-029 [P2] [feature] Live strip blocks a person can add (the weather, a build status, a price). Today the three
   live readings (internet, CPU and memory, volume) are written into the agent, so each new one needs code. Owner
   (20/11/2026): new kinds are not built into the app; they are scripts in a `blocks/` folder, which the agent runs on
@@ -45,18 +23,6 @@ Next free ID: BL-044
   `docs/ideas/script_blocks.md`. Initial work: its first slice (a weather script, the agent's runner, a `script` block
   set by hand). After the phase 7 release, once the scripting and scheduling are worked out (owner, 21/11/2026).
   `StripBlockType`, `StripRenderer`, `Daemon.swift` (UAT, 20/11/2026)
-- BL-034 [P1] [bug] Owner's hand-check of the 20/11/2026 fixes in the real app (build 261120.165253 or later); each
-  is test-proven but not clicked. BL-031: in Edit in Window…, ⌘Z past the typing leaves the deck change behind it;
-  New Preset… and Rename… still open, and ⌘Z in them only undoes typing; the command window stays open through an
-  unplug. BL-022: Library on a key with a text icon, closed without a pick, leaves the key as it was; a picked symbol
-  then Bold / Fill changes the key at once. BL-015: Edit → Undo is greyed with nothing to undo; after typing in a
-  field, ⌘Z undoes the typing. BL-007: a wide picture on an N3 key shows boxed on black, not squashed. BL-017: with
-  Lock Photo… open, overwrite the photo's file (same name) and the window shows the new picture without a relaunch.
-  BL-012: Make Executable on a script it can't change (someone else's, or on a read-only disk) says why under the
-  button. BL-014: a Shortcut made in the Shortcuts app while DeckOut is open shows in the Run a Shortcut picker
-  once DeckOut is back in front. Toolbar: Icon Only, its buttons level with the window's close / minimise / zoom
-  buttons, and no right-click Icon and Text menu. Then delete the backup `~/.config/vsd-dev.bak-2026-11-20` (the
-  start-up icon cleanup removed exactly the 31 predicted files). Run lines in `PROGRESS.md`.
 - BL-036 [P2] [feature] A `next_preset` typed by hand onto a key or a knob works on the deck, but the window shows it as
   "Unknown action". Give it a name in the window (it stays out of the menus). `ActionNames.swift` (BL-033 review,
   21/11/2026)
@@ -71,15 +37,6 @@ Next free ID: BL-044
   country connection (the Mac app takes only `protonvpn://refresh`, has no Shortcuts or AppleScript; the CLI is Linux
   only), with the Auto Connect workaround. Straight quotes only. No host, user, profile, VM or URL names from the
   owner's config. `README.md`
-- BL-039 [P1] [bug] The first release signed with a new Developer ID certificate is an update across a certificate
-  switch: test it as 2.1.0's update was tested (26/11/2026, KI-008: the app replaced while its agent ran, then opened
-  once; the new agent ran at the first try). Expected: the agent runs on the new build within 15 s, launchd's `runs`
-  goes up by one (macOS logs unrelated `Constraint not matched` lines too, so the count is the test), Accessibility is
-  kept, Login Items has one entry; compare `codesign -dr -` of the old and new agent. The certificate expires
-  01/02/2027 (original Sub-CA); its G2 replacement, and every G2 certificate after it, lasts one year (Apple, "Replace
-  Developer ID certificates"), so this comes back after each yearly renewal. If it fails: `AgentLink` re-registers
-  every 15 s while the agent doesn't answer (`init(…, recoveryInterval: TimeInterval = 15)`; a test from T-112's mute
-  listener expecting repeated hooks until it answers). `AgentLink.swift`, `AgentRegistrar.swift` (owner, 21/11/2026)
 - BL-040 [P2] [debt] Use upstream m1ddc 1.3.3 (released 21/11/2026) unpatched, in place of 1.3.1 with DeckOut's
   patch. 1.3.3 carries that patch's read fix (waydabber/m1ddc#81, merged 21/11/2026), plus `--read-wait <ms>`
   (default 50), "Unsupported VCP code" at once with exit 1 for a result `01`, and up to 8 monitors (1.3.2). Vendor

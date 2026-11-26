@@ -116,7 +116,7 @@ macOS 15 (Sequoia) or later, on an Apple Silicon Mac. Tested on macOS 15.
 
 ## Install
 
-1. Download `DeckOut-2.0.0.dmg` from [Releases](https://github.com/okoker/DeckOut/releases/latest).
+1. Download `DeckOut-2.1.0.dmg` from [Releases](https://github.com/okoker/DeckOut/releases/latest).
 2. Open it and drag DeckOut onto Applications. DeckOut runs only from Applications: opened anywhere else, it asks to
    be moved there.
 3. Open DeckOut. macOS asks whether to open an app downloaded from the internet: Open. Then macOS shows "Background

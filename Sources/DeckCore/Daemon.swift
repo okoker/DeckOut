@@ -76,6 +76,11 @@ public final class Daemon {
     var onLiveImages: (([StripBlockType: Data]) -> Void)?
     /// Called when a control set to `next_preset` is used (not while locked): the agent owns the file.
     var onNextPreset: ((DeckKind) -> Void)?
+    /// Fires after a turn moves a list knob's pick (the agent tells the app, which draws the block above it).
+    var onPicksChanged: (() -> Void)?
+
+    /// Where each list knob is in its list, in memory only (docs/design/knob_lists.md).
+    private(set) var picks = KnobPicks()
 
     /// The decks plugged in now.
     var connectedKinds: [DeckKind] { decks.connections.map { $0.model.kind } }
@@ -200,7 +205,7 @@ public final class Daemon {
     func drawAll(_ connection: DeckConnection, everySlot: Bool = false) {
         let started = Date()
         let model = connection.model
-        let plan = LayoutPlan.slots(model: model, config: config)
+        let plan = LayoutPlan.slots(model: model, config: config, picks: picks)
         if model.clearsBeforeRedraw { connection.clearAll() }
         var images = slotImages.images(plan: plan, model: model)
         var live: [StripBlockType: Data] = [:]
@@ -405,6 +410,10 @@ public final class Daemon {
     }
 
     func handle(_ kind: DeckKind, _ input: DeckInput) {
+        if let outcome = ActionResolver.listOutcome(input, deck: kind, config: config, picks: picks) {
+            handleList(kind, input, outcome)
+            return
+        }
         switch input {
         case .keyDown, .stripTap, .swipe: lockMonitor.recheck()     // don't trust a stale "unlocked"
         default: break
@@ -422,10 +431,44 @@ public final class Daemon {
             return
         }
         print("Input \(kind.rawValue) \(input) → \(resolved.action)\(step)")
+        perform(kind, resolved)
+    }
+
+    /// Runs an action that passed the lock check: `next_preset` goes to the agent, which owns the file; the rest to
+    /// the dispatcher.
+    private func perform(_ kind: DeckKind, _ resolved: ResolvedAction) {
         if resolved.action == ActionConfig.nextPreset.action {
             onNextPreset?(kind)
             return
         }
         dispatcher.execute(resolved)
+    }
+
+    /// A list knob's turn, press, or the tap of the block above it. While the Mac is locked none of them does
+    /// anything, whatever the pick is. A turn moves the pick and redraws (only the block above changes, so only it
+    /// is sent); a press or tap runs the pick as a key press would.
+    private func handleList(_ kind: DeckKind, _ input: DeckInput, _ outcome: ListOutcome) {
+        lockMonitor.recheck()                                       // a press may open a site or an app
+        guard !lockMonitor.locked else {
+            print("Input \(kind.rawValue) \(input) → list: ignored while locked")
+            return
+        }
+        switch outcome {
+        case .turn(let knob, let sign):
+            guard let n4 = config.n4, let list = n4.knobs[knob]?.list,
+                  let at = picks.turn(.n4, preset: n4.active.name, knob: knob, by: sign, count: list.count) else {
+                print("Input \(kind.rawValue) \(input) → list is empty")
+                return
+            }
+            print("Input \(kind.rawValue) \(input) → list \(at + 1)/\(list.count) \(list[at].action)")
+            for connection in decks.connections where connection.model.kind == .n4 { showCurrent(connection) }
+            onPicksChanged?()
+        case .empty:
+            print("Input \(kind.rawValue) \(input) → list is empty")
+        case .run(let resolved):
+            let step = resolved.step.map { " step \($0)" } ?? ""
+            print("Input \(kind.rawValue) \(input) → list: \(resolved.action)\(step)")
+            perform(kind, resolved)
+        }
     }
 }

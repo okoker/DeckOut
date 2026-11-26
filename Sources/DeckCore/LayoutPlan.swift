@@ -14,7 +14,9 @@ enum SlotContent: Hashable {
 /// deck shows (`ShownSlots`); unlock sends every slot.
 enum LayoutPlan {
 
-    static func slots(model: DeckModel, config: AppConfig) -> [UInt8: SlotContent] {
+    /// A strip block whose knob below holds a list shows the list's pick (`picks`), whatever the block's own
+    /// setting: an icon, else black.
+    static func slots(model: DeckModel, config: AppConfig, picks: KnobPicks = KnobPicks()) -> [UInt8: SlotContent] {
         var plan: [UInt8: SlotContent] = [:]
         let keys: [String: ButtonConfig]
         switch model.kind {
@@ -25,6 +27,12 @@ enum LayoutPlan {
             plan[slot] = keys[key]?.icon.map { .icon($0) } ?? .blank
         }
         for (block, slot) in model.stripSlots {
+            let knob = KnobPicks.knob(under: block)
+            if let n4 = config.n4, let list = n4.knobs[knob]?.list {
+                let at = picks.pick(.n4, preset: n4.active.name, knob: knob, count: list.count)
+                plan[slot] = at.flatMap { list[$0].icon }.map { .picture($0) } ?? .blank
+                continue
+            }
             guard let blockConfig = config.n4?.strip[block] else {
                 plan[slot] = .blank
                 continue

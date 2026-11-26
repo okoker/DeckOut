@@ -55,3 +55,10 @@ func redTopBlueBottomPNG(width: Int = 100, height: Int = 100) throws -> String {
         ctx.fill(CGRect(x: 0, y: height / 2, width: width, height: height / 2))   // top
     }
 }
+
+/// Runs `body` on the main thread (where the Daemon and the Agent live) and waits for what it hands back.
+func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async -> T {
+    await withCheckedContinuation { (done: CheckedContinuation<T, Never>) in
+        DispatchQueue.main.async { body { done.resume(returning: $0) } }
+    }
+}

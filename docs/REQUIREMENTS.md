@@ -229,6 +229,13 @@ install). Without either, all other features work — brightness actions log a w
 - On button press: executes mapped action (ignores release events for buttons)
 - On knob rotate: applies ±step for each tick
 - On knob press: executes the knob's press action
+- **List knobs (N4):** a knob whose preset gives it a `list` steps through the list as it turns (one item per click,
+  wrapping both ways), and the strip block above it (`knob_1` ↔ `"1"` … `knob_4` ↔ `"4"`) shows the pick's icon (black
+  without one), whatever that block's own setting (the load summary warns when a preset sets both). A press of the
+  knob, or a tap of that block, runs the pick as a key press would; an empty list, or a pick set to `none`, does
+  nothing. The pick is kept in memory per deck, preset and knob: a swipe away and back finds it, a reload keeps it
+  while the list still reaches it (else the first item), a restart starts at the first item, and it is never written
+  to the file
 - Reloads the config on `SIGHUP` or the distributed notification `<agent label>.reload`
   (`io.github.okoker.deckout.agent.reload`; dev `io.github.okoker.deckout.dev.agent.reload`; a hand install
   `io.github.okoker.deckout.reload`; 1.0 used `com.streamdeck.controller.reload`), which `DeckOutAgent --post-reload`
@@ -277,7 +284,8 @@ install). Without either, all other features work — brightness actions log a w
 - Lock state comes from the distributed notifications `com.apple.screenIsLocked` / `com.apple.screenIsUnlocked`
   (instant), re-checked against the session's `CGSSessionScreenIsLocked` on every 5 s tick and before acting on a
   key, strip tap or swipe — the lock notification can fire when a screen saver merely starts
-- **While locked:** keys, strip taps and swipes do nothing. Knobs run only the built-in actions (`system_volume`,
+- **While locked:** keys, strip taps and swipes do nothing, and neither do a list knob's turn and press. Other knobs
+  run only the built-in actions (`system_volume`,
   `system_mute_toggle`, `zr7_volume`, `zr7_mute_toggle`, `display_brightness`, `display_brightness_cycle`);
   `shell:`, `key:`, `app:`, `url:`, `open:`, `script:`, `shortcut:` and the media keys never run from any control.
   Live strip readings pause

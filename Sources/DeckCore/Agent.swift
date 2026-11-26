@@ -293,6 +293,15 @@ public final class Agent: AgentControl {
             print("  Brightness:        \(n4.brightness)")
             printButtons(n4.keys, label: "Keys")
             printKnobs(n4.knobs)
+            // A hand edit may set a block whose knob below holds a list: the list wins (LayoutPlan.slots).
+            for preset in n4.presets {
+                for (knob, _) in preset.knobs.filter({ $0.value.list != nil }).sorted(by: { $0.key < $1.key }) {
+                    let block = String(knob.dropFirst("knob_".count))
+                    if preset.strip[block] != nil {
+                        print("  Warning: \(preset.name): \(knob) has a list: strip block \(block)'s own setting is set aside")
+                    }
+                }
+            }
             print("  Strip blocks:      \(n4.strip.count)")
             for (name, block) in n4.strip.sorted(by: { $0.key < $1.key }) {
                 let tap = block.action.map { ", tap=\($0)" } ?? ""
@@ -326,6 +335,10 @@ public final class Agent: AgentControl {
     private static func printKnobs(_ knobs: [String: KnobConfig]) {
         print("  Knobs configured:  \(knobs.count)")
         for (name, knob) in knobs.sorted(by: { $0.key < $1.key }) {
+            if let list = knob.list {
+                print("    \(name): list of \(list.count)")
+                continue
+            }
             let rotateStep = knob.rotate.step.map { ", step: \($0)" } ?? ""
             print("    \(name): rotate=\(knob.rotate.action)\(rotateStep), press=\(knob.press.action)")
         }

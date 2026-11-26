@@ -4,12 +4,6 @@ import Testing
 
 // The agent is never started here: `start()` opens the decks. Its reloads and status work without that.
 
-private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async -> T {
-    await withCheckedContinuation { (done: CheckedContinuation<T, Never>) in
-        DispatchQueue.main.async { body { done.resume(returning: $0) } }
-    }
-}
-
 @Test func agentReloadReportsAndClearsTheProblem() async throws {  // T-091
     let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-agent-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

@@ -45,6 +45,35 @@ enum ActionResolver {
     }
 }
 
+/// What an input on a list knob does (N4): a turn moves the pick; a press of the knob, or a tap of the block above
+/// it, runs the pick, or nothing when the list is empty or the pick does nothing.
+enum ListOutcome: Equatable {
+    case turn(knob: String, sign: Int)
+    case run(ResolvedAction)
+    case empty(knob: String)
+}
+
+extension ActionResolver {
+
+    /// The list knob `input` belongs to, and what it does with it, on the deck's live preset. Nil when the input
+    /// touches no list knob (always on the N3): it takes the usual path.
+    static func listOutcome(_ input: DeckInput, deck: DeckKind, config: AppConfig, picks: KnobPicks) -> ListOutcome? {
+        guard deck == .n4, let n4 = config.n4 else { return nil }
+        let knob: String
+        switch input {
+        case .knobTurn(let turned, let sign):
+            return n4.knobs[turned]?.list == nil ? nil : .turn(knob: turned, sign: sign)
+        case .knobDown(let pressed): knob = pressed
+        case .stripTap(let block): knob = KnobPicks.knob(under: block)
+        case .keyDown, .keyUp, .knobUp, .swipe: return nil
+        }
+        guard let list = n4.knobs[knob]?.list else { return nil }
+        guard let at = picks.pick(.n4, preset: n4.active.name, knob: knob, count: list.count),
+              list[at].action != "none" else { return .empty(knob: knob) }
+        return .run(ResolvedAction(action: list[at].action, step: list[at].step))
+    }
+}
+
 enum LockPolicy {
 
     /// Actions that only adjust volume or brightness. The only ones that run while the Mac is locked,

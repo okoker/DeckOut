@@ -206,6 +206,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-199 | `ConfigTests/badKnobsAreRefused` | A knob with a list and a turn or press, a knob with neither, and a list on an N3 knob (in a preset or on the deck) make the file invalid; an empty N4 list loads |
 | T-200 | `ConfigTests/builtInsOnlyKeepsVolumeAndBrightness` | What New Preset copies from a knob: only halves with built-in actions (volume, mute, monitor brightness, switch monitor), the rest `none`; nothing from a list or a knob with no built-in half |
 | T-201 | `ConfigFileTests/firstSaveKeepsTheRollbackCopy` | The first save over a file keeps it as it was in `.before-2.2` (mode 0600), even when a `.before-app` already exists; later saves leave the copy alone; a save with no file there makes none |
+| T-202 | `KnobListTests/picksWrapBothWays` | A list knob's pick steps one item per click and wraps both ways (five turns of five items come back to the first; one turn back from the first is the last; 100 turns land where arithmetic says); an empty list has no pick |
+| T-203 | `KnobListTests/picksSurviveAndClamp` | Each preset keeps its own pick, so a swipe away and back finds it; a list shrunk below the pick goes back to the first item; a renamed preset starts at the first |
+| T-204 | `KnobListTests/listInputsResolve` | On the N4's live preset, a list knob's turn moves the pick, and its press or a tap of the block above it runs the pick's action; other knobs, blocks and keys take the usual path; an empty list or a `none` pick does nothing; nothing on the N3 |
+| T-205 | `KnobListTests/listBlockShowsThePick` | The block above a list knob shows the pick's icon (the first item before any turn), black for an item without one or an empty list, and the list wins over the block's own setting |
+| T-206 | `KnobListTests/lockedListDoesNothing` | While the Mac is locked a list knob's turn, press and its block's tap do nothing (pick unchanged, nothing run, no change pushed); unlocked, turns move the pick and push a change each, and a press or tap runs the pick through the same tail as a key (`next_preset` to the agent) |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

@@ -32,7 +32,7 @@ public final class ActionDispatcher {
         }
         if let n4 = config.n4 {
             actions += n4.keys.values.map(\.action)
-            actions += n4.knobs.values.flatMap { [$0.rotate.action, $0.press.action] }
+            actions += n4.knobs.values.flatMap { [$0.rotate.action, $0.press.action] + ($0.list ?? []).map(\.action) }
             actions += n4.strip.values.compactMap(\.action)
             actions += [n4.swipe?.action].compactMap { $0 }
         }

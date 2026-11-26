@@ -93,3 +93,10 @@ private func n4(knobs: [String: KnobConfig] = [:], strip: [String: StripBlockCon
     let other = try previewModel(n4(knobs: ["knob_1": app]), deck: .n4, selection: nil)
     #expect(other.problems["knob_1"] == "Item 2: the app isn't there any more")
 }
+
+@Test func listItemEditorIsRebuiltAfterARemove() {                    // T-219
+    // Removing an item can leave the selection on the same number: the item editor must still be built afresh, so
+    // text half-typed for the removed item never lands on the one that moved up.
+    #expect(KnobListEditor.itemIdentity(index: 2, count: 5) != KnobListEditor.itemIdentity(index: 2, count: 4))
+    #expect(KnobListEditor.itemIdentity(index: 2, count: 5) != KnobListEditor.itemIdentity(index: 3, count: 5))
+}

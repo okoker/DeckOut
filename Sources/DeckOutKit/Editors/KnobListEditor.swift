@@ -23,7 +23,7 @@ struct KnobListEditor: View {
             buttons
             if let index = selected, items.indices.contains(index) {
                 Divider().padding(.vertical, 2)
-                itemEditor(index).id(index)      // fresh fields per item
+                itemEditor(index).id(Self.itemIdentity(index: index, count: items.count))
             } else if items.isEmpty {
                 Text("Add a website or an app with +.")
                     .font(.system(size: 11))
@@ -31,6 +31,11 @@ struct KnobListEditor: View {
             }
         }
     }
+
+    /// What the selected item's editor is built for: fresh fields per item, and after every add or remove (a remove
+    /// can leave the selection on the same number, and text half-typed for the removed item must not land on the
+    /// one that moved up).
+    static func itemIdentity(index: Int, count: Int) -> String { "\(index) of \(count)" }
 
     private var rows: some View {
         VStack(spacing: 0) {

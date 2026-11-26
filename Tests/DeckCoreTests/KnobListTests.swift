@@ -127,3 +127,20 @@ private func listConfig(_ list: [ButtonConfig], strip: [String: StripBlockConfig
     }
     #expect(counts == [1, 1])
 }
+
+@Test func aShrunkListStartsAgain() async {                         // T-218
+    // A reload whose list no longer reaches the pick puts it back on the first item for good: growing the list again
+    // doesn't jump the deck back to the old place without a turn.
+    nonisolated(unsafe) let daemon = Daemon(config: listConfig([wikipedia, github, bbc]),
+                                            environment: ShellEnvironment(fixed: [:]),
+                                            lockMonitor: LockMonitor(isLockedNow: { false }))
+    let picks: [Int?] = await onMain { done in
+        daemon.handle(.n4, .knobTurn("knob_1", 2))
+        let turned = daemon.picks.pick(.n4, preset: "Work", knob: "knob_1", count: 3)
+        daemon.reload(listConfig([wikipedia, github]))
+        let shrunk = daemon.picks.pick(.n4, preset: "Work", knob: "knob_1", count: 2)
+        daemon.reload(listConfig([wikipedia, github, bbc]))
+        done([turned, shrunk, daemon.picks.pick(.n4, preset: "Work", knob: "knob_1", count: 3)])
+    }
+    #expect(picks == [2, 0, 0])
+}

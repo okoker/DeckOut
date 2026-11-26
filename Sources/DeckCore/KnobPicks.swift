@@ -24,6 +24,13 @@ struct KnobPicks: Equatable {
         return at < count ? at : 0
     }
 
+    /// After a reload: a pick the list of `count` items no longer reaches goes back to the first item for good, so
+    /// a list that grows again doesn't jump the deck back to the old place without a turn.
+    mutating func settle(_ deck: DeckKind, preset: String, knob: String, count: Int) {
+        let key = Key(deck: deck, preset: preset, knob: knob)
+        if let at = index[key], at >= count { index[key] = nil }
+    }
+
     /// Moves the pick by `sign` items, wrapping from the last to the first and back. Nil for an empty list.
     @discardableResult
     mutating func turn(_ deck: DeckKind, preset: String, knob: String, by sign: Int, count: Int) -> Int? {

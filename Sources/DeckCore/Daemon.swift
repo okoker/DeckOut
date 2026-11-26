@@ -129,6 +129,11 @@ public final class Daemon {
         let started = Date()
         let displaysChanged = Self.displaysChanged(config.displays, newConfig.displays)
         config = newConfig
+        for preset in newConfig.n4?.presets ?? [] {
+            for (knob, settings) in preset.knobs {
+                if let list = settings.list { picks.settle(.n4, preset: preset.name, knob: knob, count: list.count) }
+            }
+        }
         dispatcher = makeDispatcher()
         if displaysChanged || rebuildMonitors { rebuildBrightness(for: newConfig.displays) }
         for connection in decks.connections {

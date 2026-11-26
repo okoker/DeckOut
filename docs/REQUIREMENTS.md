@@ -56,8 +56,8 @@ the executable, else `~/.deckout/config.json`. Read at start-up and re-read on `
   saved over; with one preset, or no section for the deck, nothing is written.
 
 ### Structure
-Shared settings at the top; one section per deck under `decks`. Each deck holds its presets (the keys, and on the
-N4 the strip) and names the live one in `active_preset`; knobs, brightness, the swipe and the lock photo belong to the
+Shared settings at the top; one section per deck under `decks`. Each deck holds its presets (the keys, the knobs, and
+on the N4 the strip) and names the live one in `active_preset`; brightness, the swipe and the lock photo belong to the
 deck.
 ```json
 {
@@ -65,16 +65,15 @@ deck.
   "decks": {
     "n3": {
       "brightness": 50,
-      "knobs": { "big": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } },
       "presets": [
         { "name": "Default",
-          "buttons": { "lcd_1": { "action": "shell:open -a Safari", "icon": "/Applications/Safari.app/Contents/Resources/AppIcon.icns" } } }
+          "buttons": { "lcd_1": { "action": "shell:open -a Safari", "icon": "/Applications/Safari.app/Contents/Resources/AppIcon.icns" } },
+          "knobs": { "big": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } } }
       ],
       "active_preset": "Default"
     },
     "n4": {
       "brightness": 50,
-      "knobs": { "knob_1": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } } },
       "swipe": { "action": "none" },
       "lock_photo": { "path": "/path/to/photo.jpg", "zoom": 1.5, "offset_x": 0, "offset_y": 0.2 },
       "presets": [
@@ -86,19 +85,27 @@ deck.
             "2": { "type": "load", "action": "shell:open -a 'Activity Monitor'" },
             "3": { "type": "empty" },
             "4": { "type": "volume" }
+          },
+          "knobs": {
+            "knob_3": { "list": [ { "action": "url:https://github.com", "icon": "/path/to/github.png" },
+                                  { "action": "app:/Applications/Safari.app", "icon": "/path/to/safari.png" } ] },
+            "knob_4": { "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } }
           } },
-        { "name": "Music", "keys": { "key_1": { "action": "shell:open -a Music" } }, "strip": {} }
+        { "name": "Music", "keys": { "key_1": { "action": "shell:open -a Music" } }, "strip": {}, "knobs": {} }
       ],
       "active_preset": "Work"
     }
   }
 }
 ```
-- **N3:** buttons `lcd_1`–`lcd_6`, `btn_1`–`btn_3` (per preset); knobs `big`, `small_1`, `small_2`. `brightness` and
-  `knobs` are required.
-- **N4:** keys `key_1`–`key_5` (top row, left → right), `key_6`–`key_10` (bottom row) and strip blocks `"1"`–`"4"` left
-  → right (per preset); knobs `knob_1`–`knob_4` left → right. `brightness` is required; `knobs`, `swipe` and
-  `lock_photo` may be left out, and a preset may leave out `keys` and `strip`.
+- **N3:** buttons `lcd_1`–`lcd_6`, `btn_1`–`btn_3` and knobs `big`, `small_1`, `small_2` (per preset). `brightness` is
+  required; a preset may leave out `buttons` and `knobs`.
+- **N4:** keys `key_1`–`key_5` (top row, left → right), `key_6`–`key_10` (bottom row), strip blocks `"1"`–`"4"` left
+  → right and knobs `knob_1`–`knob_4` left → right (per preset). `brightness` is required; `swipe` and `lock_photo`
+  may be left out, and a preset may leave out `keys`, `strip` and `knobs`.
+- **Knobs:** a turn and a press (`rotate` and `press`, both required), or on the N4 a list (`list`: items with a key's
+  fields, `action` and optional `icon`, `step`, `tile`; may be empty). A knob with both, or neither, and a list on an N3
+  knob make the file invalid.
 - **Presets:** at least one, each with a name; an empty name or two presets with the same name make the file invalid.
   `active_preset` names the live one; a name no preset has falls back to the first, with a log line. The load
   summary prints `Preset: Work (2 presets)` per deck.
@@ -113,11 +120,13 @@ deck.
   (outside that range the file is invalid), offsets as fractions of the 800×464 face (positive `offset_y` moves the
   photo down). The photo always covers the face: an offset that would show an edge is clamped. Written as the object.
 - **Older files still load:** a deck section without `presets` reads as one preset named "Default", made from its
-  `buttons` (N3, then required) or `keys` + `strip` (N4). A file with no `decks` key is read as the N3 section —
+  `buttons` and `knobs` (N3, both then required) or `keys` + `strip` + `knobs` (N4). Knobs on the deck (files from
+  2.1.0 and before) go into every preset that has no `knobs` of its own (even `{}` counts as its own). A file with no `decks` key is read as the N3 section —
   top-level `brightness`, `buttons`, `knobs` (the v1.0.0 layout). When `decks` is present, top-level
   `brightness`/`buttons`/`knobs` are ignored.
 - **Written form:** the daemon library writes the file pretty-printed with sorted keys, always in the `decks` form
-  with `presets` and `active_preset`, and only keys it knows; `host`, `arrow_ms` and `timeout_s` only for `internet`
+  with `presets` and `active_preset`, knobs in every preset and never on the deck, a list knob as its `list` alone,
+  and only keys it knows; `host`, `arrow_ms` and `timeout_s` only for `internet`
   blocks.
 
 ## Actions

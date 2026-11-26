@@ -28,7 +28,7 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
 
     // A config appears: the reload loads it and clears the problem.
     let config = AppConfig(n4: N4Section(
-        brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+        brightness: 50, swipe: nil, lockPhoto: nil,
         presets: [N4Preset(name: "Work", keys: [:], strip: [:]), N4Preset(name: "Music", keys: [:], strip: [:])],
         activePreset: "Music"))
     try ConfigFile.save(config, to: path)
@@ -55,7 +55,7 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
     let path = folder.appendingPathComponent("config.json").path
     func config(active: String) -> AppConfig {
         AppConfig(n4: N4Section(
-            brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+            brightness: 50, swipe: nil, lockPhoto: nil,
             presets: [N4Preset(name: "Work", keys: [:], strip: ["1": StripBlockConfig(type: .internet),
                                                                   "3": StripBlockConfig(type: .internet),
                                                                   "4": StripBlockConfig(type: .volume)]),
@@ -86,7 +86,7 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     let path = folder.appendingPathComponent("config.json").path
     try ConfigFile.save(AppConfig(n4: N4Section(
-        brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+        brightness: 50, swipe: nil, lockPhoto: nil,
         presets: [N4Preset(name: "Work", keys: [:], strip: ["1": StripBlockConfig(type: .internet),
                                                             "2": StripBlockConfig(type: .load),
                                                             "4": StripBlockConfig(type: .volume)])],
@@ -128,7 +128,7 @@ private func onMain<T>(_ body: @escaping (@escaping (T) -> Void) -> Void) async 
     let folder = FileManager.default.temporaryDirectory.appendingPathComponent("deckcore-log-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     let path = folder.appendingPathComponent("config.json").path
-    try ConfigFile.save(AppConfig(n4: N4Section(brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+    try ConfigFile.save(AppConfig(n4: N4Section(brightness: 50, swipe: nil, lockPhoto: nil,
                                                 presets: [N4Preset(name: "Work", keys: [:], strip: [:])],
                                                 activePreset: "Work")), to: path)
     nonisolated(unsafe) var lines: [String] = []
@@ -161,10 +161,10 @@ private func next(_ agent: Agent, _ deck: DeckKind) async {
     // A swipe set to next_preset: the deck's next preset in menu order, wrapping round, saved to the file so the
     // agent, the app (a status push) and a restart all follow.
     func config(live: String, musicKey: ButtonConfig? = nil) -> AppConfig {
-        AppConfig(n3: N3Section(brightness: 50, knobs: [:],
+        AppConfig(n3: N3Section(brightness: 50,
                                 presets: [N3Preset(name: "A", buttons: [:]), N3Preset(name: "B", buttons: [:])],
                                 activePreset: "A"),
-                  n4: N4Section(brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+                  n4: N4Section(brightness: 50, swipe: nil, lockPhoto: nil,
                                 presets: [N4Preset(name: "Work", keys: [:], strip: [:]),
                                           N4Preset(name: "Music", keys: musicKey.map { ["key_1": $0] } ?? [:], strip: [:]),
                                           N4Preset(name: "Games", keys: [:], strip: [:])],
@@ -213,11 +213,11 @@ private func next(_ agent: Agent, _ deck: DeckKind) async {
     // The agent writes the config only to save a switch, and never over a file it can't use: the file's bytes and
     // mode stay, no `.before-app` copy appears, the live preset stays, and the log says why.
     func n4(_ names: [String]) -> N4Section {
-        N4Section(brightness: 50, knobs: [:], swipe: nil, lockPhoto: nil,
+        N4Section(brightness: 50, swipe: nil, lockPhoto: nil,
                   presets: names.map { N4Preset(name: $0, keys: [:], strip: [:]) }, activePreset: names[0])
     }
     let good = AppConfig(n4: n4(["Work", "Music"]))
-    let n3Only = AppConfig(n3: N3Section(brightness: 50, knobs: [:],
+    let n3Only = AppConfig(n3: N3Section(brightness: 50,
                                          presets: [N3Preset(name: "A", buttons: [:]), N3Preset(name: "B", buttons: [:])],
                                          activePreset: "A"))
     // The file the agent starts from, what happens to it before the swipe, and the line the swipe logs.
@@ -257,10 +257,11 @@ private func next(_ agent: Agent, _ deck: DeckKind) async {
     // The daemon hands next_preset (on a swipe, or on a knob press set by hand) to the agent, which owns the file,
     // instead of the dispatcher; on a locked Mac, never.
     let config = AppConfig(n4: N4Section(
-        brightness: 50,
-        knobs: ["knob_1": KnobConfig(rotate: KnobAction(action: "system_volume"), press: KnobAction(action: "next_preset"))],
-        swipe: .nextPreset, lockPhoto: nil,
-        presets: [N4Preset(name: "Work", keys: [:], strip: [:])], activePreset: "Work"))
+        brightness: 50, swipe: .nextPreset, lockPhoto: nil,
+        presets: [N4Preset(name: "Work", keys: [:], strip: [:], knobs: [
+            "knob_1": KnobConfig(rotate: KnobAction(action: "system_volume"), press: KnobAction(action: "next_preset")),
+        ])],
+        activePreset: "Work"))
     for locked in [false, true] {
         nonisolated(unsafe) let daemon = Daemon(config: config, environment: ShellEnvironment(fixed: [:]),
                                                 lockMonitor: LockMonitor(isLockedNow: { locked }))

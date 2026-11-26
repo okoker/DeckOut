@@ -6,7 +6,7 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | ID | Test | Holds down |
 |----|------|------------|
 | T-001 | `LegacyTests/n3ParserMatchesToday` | N3 input decoding as in v1.0.0: LCD key, side button, big-knob turn, small-knob turn and press; a non-ACK report and a short report decode to nothing |
-| T-002 | `LegacyTests/oldConfigParses` | v1.0.0's `config.example.json` (frozen in `Fixtures/config-v1.0.0.json`) still loads as the N3 section: brightness 50, 9 buttons, 3 knobs, 2 displays, no N4 |
+| T-002 | `LegacyTests/oldConfigParses` | v1.0.0's `config.example.json` (frozen in `Fixtures/config-v1.0.0.json`) still loads as the N3 section: brightness 50, 9 buttons, 3 knobs (in its one preset), 2 displays, no N4 |
 | T-003 | `DeckModelTests/modelsMatchOnlyTheTwoDecks` | HID isolation: exactly two models, N3 `0x5548:0x1001` and N4 `0x6602:0x1001`, both on vendor usage page `0xFFA0` usage 1 |
 | T-004 | `DeckModelTests/n3Table` | Every N3 key, side button, knob turn and knob press/release decodes to its config key; N4-only codes decode to nothing on the N3 |
 | T-005 | `DeckModelTests/n4Table` | Every N4 key (press/release), knob turn (sign), knob press, strip tap and swipe decodes to its config key; `0x38` is a swipe as well as `0x39`; N3-only codes decode to nothing on the N4 |
@@ -200,6 +200,11 @@ A catalogue: what each test is and what it holds down. Run the suite with `swift
 | T-193 | `scripts/check-bundle.sh --signed` (run by `make signed`) | After every T-107 check, the release app is ready to ship: the release bundle id; the app, the agent and m1ddc each signed with a Developer ID Application certificate (not ad hoc, not another team certificate such as Apple Development), all three by the same team, with the hardened runtime and a secure timestamp; the app's and the agent's entitlements exactly the Apple Events one (no `get-task-allow`), m1ddc's none; a deep, strict verify. It never prints the certificate's name. On an ad hoc build it fails with `not signed with a Developer ID (ad hoc)`, while the plain check passes |
 | T-194 | `AgentLaunchTests/reloadNotificationIsPerDeckOut` | The reload notification is the agent label + `.reload`, so `--post-reload` for DeckOut Dev never reloads DeckOut; a hand install has its own name |
 | T-195 | `EditorSnapshotTests/knobListEditorDraws` | The knob list editor draws in a real offscreen window, light and dark (PNGs for a look): rows with the block-shaped icon and name, the row being edited apart from the item marked "On the deck", the selected item's action, icon and Test |
+| T-196 | `ConfigTests/oldKnobsGoIntoEveryPreset` | A 2.1.0 file's deck-level knobs (N3 and N4, with presets or without) go into every preset, so the decks behave as before; an N3 with presets may leave out knobs; the file is written with knobs in every preset and none on the deck |
+| T-197 | `ConfigTests/presetKnobsWinOverDeckKnobs` | A preset with its own `knobs`, even `{}`, keeps them; only a preset without the key gets the deck's |
+| T-198 | `ConfigTests/listKnobRoundTrips` | A list knob reads with its items (action, icon, tile) and turn and press `none`, is written as its `list` alone, and reads back the same |
+| T-199 | `ConfigTests/badKnobsAreRefused` | A knob with a list and a turn or press, a knob with neither, and a list on an N3 knob (in a preset or on the deck) make the file invalid; an empty N4 list loads |
+| T-200 | `ConfigTests/builtInsOnlyKeepsVolumeAndBrightness` | What New Preset copies from a knob: only halves with built-in actions (volume, mute, monitor brightness, switch monitor), the rest `none`; nothing from a list or a knob with no built-in half |
 
 ## On the device
 Manual checks with the owner; each task's device check is recorded as a run line in `PROGRESS.md`.

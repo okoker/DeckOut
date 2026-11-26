@@ -12,7 +12,7 @@ func tempConfigPath() throws -> String {
 }
 
 let storeSample = AppConfig(n4: N4Section(
-    brightness: 75, knobs: [:], swipe: nil, lockPhoto: nil,
+    brightness: 75, swipe: nil, lockPhoto: nil,
     presets: [N4Preset(name: "Work", keys: ["key_1": ButtonConfig(action: "url:https://example.com")], strip: [:]),
               N4Preset(name: "Music", keys: [:], strip: [:])],
     activePreset: "Work"))

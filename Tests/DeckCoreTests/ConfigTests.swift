@@ -276,7 +276,7 @@ private let presetsConfig = """
 @Test func tileRoundTripsAndIsOptional() throws {                   // T-139
     // How a generated icon was made rides along with the key; the agent only ever draws `icon`.
     let tile = IconTile(kind: .symbol, text: nil, symbol: "acorn", style: "fill", background: "#0F8A7E", foreground: nil)
-    let config = AppConfig(n4: N4Section(brightness: 75, knobs: [:], swipe: nil, lockPhoto: nil,
+    let config = AppConfig(n4: N4Section(brightness: 75, swipe: nil, lockPhoto: nil,
                                          presets: [N4Preset(name: "Default",
                                                             keys: ["key_1": ButtonConfig(action: "none", icon: "/i.png", tile: tile)],
                                                             strip: [:])],
@@ -293,7 +293,7 @@ private let presetsConfig = """
     // A strip block's generated icon remembers how it was made, as a key's does; the agent only draws `icon`.
     let tile = IconTile(kind: .text, text: "Weather", symbol: nil, style: nil, background: "#0A84FF", foreground: nil)
     let block = StripBlockConfig(type: .picture, action: "shell:echo hi", icon: "/icons/tile-1.png", tile: tile)
-    let config = AppConfig(n4: N4Section(brightness: 75, knobs: [:], swipe: nil, lockPhoto: nil,
+    let config = AppConfig(n4: N4Section(brightness: 75, swipe: nil, lockPhoto: nil,
                                          presets: [N4Preset(name: "Default", keys: [:], strip: ["3": block])],
                                          activePreset: "Default"))
     #expect(try AppConfig.parse(config.encoded()) == config)
@@ -312,4 +312,110 @@ private let presetsConfig = """
         let c = try parse(#"{ "decks": { "n4": { "brightness": 50, "strip": { "1": { "type": "internet", "host": "# + host + " } } } } }")
         #expect(c.n4?.strip["1"]?.host == StripBlockConfig.defaultHost, "\(host)")
     }
+}
+
+// MARK: - Knobs per preset, knob lists (docs/design/knob_lists.md)
+
+private let volumeKnobJSON = #"{ "rotate": { "action": "system_volume", "step": 5 }, "press": { "action": "system_mute_toggle" } }"#
+private let brightnessKnobJSON =
+    #"{ "rotate": { "action": "display_brightness", "step": 5 }, "press": { "action": "display_brightness_cycle" } }"#
+private let volumeKnob = KnobConfig(rotate: KnobAction(action: "system_volume", step: 5),
+                                    press: KnobAction(action: "system_mute_toggle"))
+private let brightnessKnob = KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
+                                        press: KnobAction(action: "display_brightness_cycle"))
+
+@Test func oldKnobsGoIntoEveryPreset() throws {                     // T-196
+    // A 2.1.0 file: knobs on the deck. Every preset gets them, so the decks behave as before.
+    let c = try parse("""
+    { "decks": {
+        "n3": { "brightness": 50, "knobs": { "big": \(volumeKnobJSON), "small_1": \(brightnessKnobJSON) },
+                "presets": [ { "name": "A", "buttons": {} }, { "name": "B", "buttons": {} } ], "active_preset": "B" },
+        "n4": { "brightness": 50, "knobs": { "knob_1": \(brightnessKnobJSON), "knob_4": \(volumeKnobJSON) },
+                "presets": [ { "name": "Work" }, { "name": "Music" } ], "active_preset": "Work" } } }
+    """)
+    let n3Knobs = ["big": volumeKnob, "small_1": brightnessKnob]
+    let n4Knobs = ["knob_1": brightnessKnob, "knob_4": volumeKnob]
+    #expect(c.n3!.presets.map(\.knobs) == [n3Knobs, n3Knobs])
+    #expect(c.n4!.presets.map(\.knobs) == [n4Knobs, n4Knobs])
+    #expect(c.n3!.knobs == n3Knobs)                                   // the live preset's
+    // A section from before presets: its one preset, Default, gets them.
+    let old = try parse(#"{ "decks": { "n4": { "brightness": 50, "knobs": { "knob_4": "# + volumeKnobJSON + " } } } }")
+    #expect(old.n4!.presets[0].knobs == ["knob_4": volumeKnob])
+    // An N3 with presets may leave out the deck's knobs now.
+    let noKnobs = try parse(#"{ "decks": { "n3": { "brightness": 50, "presets": [ { "name": "A" } ] } } }"#)
+    #expect(noKnobs.n3!.knobs.isEmpty)
+    // Written in every preset, never on the deck.
+    let object = try #require(try JSONSerialization.jsonObject(with: try c.encoded()) as? [String: Any])
+    let decks = try #require(object["decks"] as? [String: Any])
+    for deck in ["n3", "n4"] {
+        let section = try #require(decks[deck] as? [String: Any])
+        #expect(section["knobs"] == nil, "\(deck)")
+        let presets = try #require(section["presets"] as? [[String: Any]])
+        #expect(presets.count == 2 && presets.allSatisfy { ($0["knobs"] as? [String: Any])?.count == 2 }, "\(deck)")
+    }
+}
+
+@Test func presetKnobsWinOverDeckKnobs() throws {                   // T-197
+    // A preset with its own knobs, even none, keeps them; one without the key gets the deck's.
+    let c = try parse("""
+    { "decks": { "n4": { "brightness": 50, "knobs": { "knob_1": \(volumeKnobJSON) },
+        "presets": [ { "name": "A", "knobs": {} }, { "name": "B" } ] } } }
+    """)
+    #expect(c.n4!.presets[0].knobs.isEmpty)
+    #expect(c.n4!.presets[1].knobs == ["knob_1": volumeKnob])
+}
+
+@Test func listKnobRoundTrips() throws {                            // T-198
+    let c = try parse("""
+    { "decks": { "n4": { "brightness": 50, "presets": [ { "name": "A", "knobs": { "knob_1": { "list": [
+        { "action": "url:https://github.com", "icon": "/tmp/g.png" },
+        { "action": "app:/Applications/Safari.app", "tile": { "kind": "text", "text": "Safari", "background": "#0A84FF" } }
+    ] } } } ] } } }
+    """)
+    let knob = try #require(c.n4?.knobs["knob_1"])
+    #expect(knob.list?.map(\.action) == ["url:https://github.com", "app:/Applications/Safari.app"])
+    #expect(knob.list?[0].icon == "/tmp/g.png")
+    #expect(knob.list?[1].tile?.text == "Safari")
+    #expect(knob.rotate.action == "none" && knob.press.action == "none")
+    // Written as the list alone, and read back the same.
+    let encoded = try c.encoded()
+    let object = try #require(try JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    let n4 = try #require((object["decks"] as? [String: Any])?["n4"] as? [String: Any])
+    let preset = try #require((n4["presets"] as? [[String: Any]])?.first)
+    let written = try #require((preset["knobs"] as? [String: Any])?["knob_1"] as? [String: Any])
+    #expect(Array(written.keys) == ["list"])
+    #expect(try AppConfig.parse(encoded) == c)
+}
+
+@Test func badKnobsAreRefused() throws {                            // T-199
+    func n4(_ knob: String) -> String {
+        #"{ "decks": { "n4": { "brightness": 50, "presets": [ { "name": "A", "knobs": { "knob_1": "# + knob + " } } ] } } }"
+    }
+    // A list and a turn or press, or neither.
+    #expect(throws: (any Error).self) {
+        try parse(n4(#"{ "list": [], "rotate": { "action": "system_volume" }, "press": { "action": "none" } }"#))
+    }
+    #expect(throws: (any Error).self) { try parse(n4(#"{ "list": [], "press": { "action": "none" } }"#)) }
+    #expect(throws: (any Error).self) { try parse(n4("{}")) }
+    // A list on the N3, which has no screen above its knobs: in a preset, or on the deck of an old file.
+    #expect(throws: (any Error).self) {
+        try parse(#"{ "decks": { "n3": { "brightness": 50, "presets": [ { "name": "A", "knobs": { "big": { "list": [] } } } ] } } }"#)
+    }
+    #expect(throws: (any Error).self) {
+        try parse(#"{ "decks": { "n3": { "brightness": 50, "knobs": { "big": { "list": [] } }, "buttons": {} } } }"#)
+    }
+    // An empty list on the N4 is fine: the app saves after every change, so a list starts empty.
+    #expect(try parse(n4(#"{ "list": [] }"#)).n4?.knobs["knob_1"]?.list == [])
+}
+
+@Test func builtInsOnlyKeepsVolumeAndBrightness() {                 // T-200
+    // What New Preset copies from a knob: only the halves that are built-in actions.
+    let volumeAndApp = KnobConfig(rotate: KnobAction(action: "system_volume", step: 5),
+                                  press: KnobAction(action: "app:/Applications/Safari.app"))
+    #expect(volumeAndApp.builtInsOnly() == KnobConfig(rotate: KnobAction(action: "system_volume", step: 5),
+                                                      press: KnobAction(action: "none")))
+    #expect(brightnessKnob.builtInsOnly() == brightnessKnob)
+    #expect(volumeKnob.builtInsOnly() == volumeKnob)
+    #expect(KnobConfig(list: [ButtonConfig(action: "url:https://github.com")]).builtInsOnly() == nil)
+    #expect(KnobConfig(rotate: KnobAction(action: "none"), press: KnobAction(action: "shell:ls")).builtInsOnly() == nil)
 }

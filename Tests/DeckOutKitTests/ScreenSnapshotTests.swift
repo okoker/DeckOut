@@ -8,12 +8,13 @@ import Testing
 @MainActor @Test func writesEveryScreen() throws {   // T-118 (design check)
     let notes = "/System/Applications/Notes.app/Contents/Resources/AppIcon.icns"
     let config = AppConfig(n4: N4Section(
-        brightness: 75,
-        knobs: ["knob_1": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5), press: KnobAction(action: "display_brightness_cycle")),
-                "knob_4": KnobConfig(rotate: KnobAction(action: "system_volume", step: 2), press: KnobAction(action: "system_mute_toggle"))],
-        swipe: nil, lockPhoto: nil,
+        brightness: 75, swipe: nil, lockPhoto: nil,
         presets: [N4Preset(name: "Work", keys: ["key_3": ButtonConfig(action: "app:/System/Applications/Notes.app", icon: notes)],
-                           strip: ["1": StripBlockConfig(type: .internet), "4": StripBlockConfig(type: .volume)])],
+                           strip: ["1": StripBlockConfig(type: .internet), "4": StripBlockConfig(type: .volume)],
+                           knobs: ["knob_1": KnobConfig(rotate: KnobAction(action: "display_brightness", step: 5),
+                                                        press: KnobAction(action: "display_brightness_cycle")),
+                                   "knob_4": KnobConfig(rotate: KnobAction(action: "system_volume", step: 2),
+                                                        press: KnobAction(action: "system_mute_toggle"))])],
         activePreset: "Work"))
     let face = DeckFace.of(.n4)
     var images: [String: CGImage] = [:]

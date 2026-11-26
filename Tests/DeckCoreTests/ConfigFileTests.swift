@@ -23,7 +23,7 @@ private func mode(of path: String) -> mode_t {
 
 private let sample = AppConfig(
     displays: [DisplayConfig(name: "Left", serial: "S1")],
-    n4: N4Section(brightness: 60, knobs: [:], swipe: nil, lockPhoto: nil,
+    n4: N4Section(brightness: 60, swipe: nil, lockPhoto: nil,
                   presets: [N4Preset(name: "Work", keys: ["key_1": ButtonConfig(action: "shell:open -a Notes")],
                                      strip: ["1": StripBlockConfig(type: .volume)])],
                   activePreset: "Work"))

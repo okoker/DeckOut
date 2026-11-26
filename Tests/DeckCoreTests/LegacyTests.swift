@@ -26,7 +26,7 @@ import Testing
     let n3 = try #require(config.n3)
     #expect(n3.brightness == 50)
     #expect(n3.buttons.count == 9)
-    #expect(n3.knobs.count == 3)
+    #expect(n3.presets[0].knobs.count == 3)       // the deck's knobs, now in its one preset
     #expect(config.displays?.count == 2)
     #expect(config.n4 == nil)
 }

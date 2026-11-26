@@ -27,7 +27,7 @@ private func hex(_ n: Int) -> String { String(format: "%016x", n) }
     let strip = icons + "/app-\(hex(3)).png", photo = base + "/lock-photo-\(hex(4)).jpg"
     let n3 = icons + "/tile-\(hex(5)).png"
     var config = AppConfig(n4: N4Section(
-        brightness: 75, knobs: [:], swipe: nil, lockPhoto: LockPhotoConfig(path: photo),
+        brightness: 75, swipe: nil, lockPhoto: LockPhotoConfig(path: photo),
         presets: [N4Preset(name: "Work", keys: ["key_1": ButtonConfig(action: "media_next", icon: live)],
                            strip: ["2": StripBlockConfig(type: .picture, icon: strip)]),
                   N4Preset(name: "Music", keys: ["key_2": ButtonConfig(action: "media_next", icon: other)], strip: [:])],

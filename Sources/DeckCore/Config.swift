@@ -4,10 +4,14 @@ import Foundation
 //
 //   { "displays": [...], "decks": { "n3": { ... }, "n4": { ... } } }
 //
-// Each deck section holds its presets (the keys, and on the N4 the strip) and names the live one in
-// `active_preset`; knobs, brightness, the swipe and the lock photo belong to the deck. A section without
-// `presets` (files from before presets) reads as one preset named "Default" made from its `keys` + `strip` (N4) or
-// `buttons` (N3).
+// Each deck section holds its presets (the keys, the knobs, and on the N4 the strip) and names the live one in
+// `active_preset`; brightness, the swipe and the lock photo belong to the deck. A section without `presets` (files
+// from before presets) reads as one preset named "Default" made from its `keys` + `strip` (N4) or `buttons` (N3),
+// and its `knobs`.
+//
+// Knobs moved from the deck into each preset in 2.2 (docs/design/knob_lists.md). A file from before keeps them on
+// the deck: every preset without a `knobs` key of its own gets a copy. They are written in every preset, never on
+// the deck.
 //
 // Old (v1.0.0) format: a file with no `decks` key is the N3 section itself
 // (top-level `brightness`, `buttons`, `knobs`). When `decks` is present, those
@@ -97,60 +101,90 @@ private func checkPresetNames<K: CodingKey>(_ names: [String], in c: KeyedDecodi
     }
 }
 
-/// One N3 layout: the six LCD keys and three buttons.
+/// One N3 layout: the six LCD keys, three buttons and three knobs.
 public struct N3Preset: Codable, Equatable {
     public var name: String
     public var buttons: [String: ButtonConfig]
+    public var knobs: [String: KnobConfig]
 
-    public init(name: String, buttons: [String: ButtonConfig]) {
+    public init(name: String, buttons: [String: ButtonConfig], knobs: [String: KnobConfig] = [:]) {
         self.name = name
         self.buttons = buttons
+        self.knobs = knobs
     }
 
-    private enum CodingKeys: String, CodingKey { case name, buttons }
+    private enum CodingKeys: String, CodingKey { case name, buttons, knobs }
 
+    /// A preset without `knobs` reads as none here; the section fills it from the deck's (`KnobsKey`).
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         name = try c.decode(String.self, forKey: .name)
         buttons = try c.decodeIfPresent([String: ButtonConfig].self, forKey: .buttons) ?? [:]
+        knobs = try c.decodeIfPresent([String: KnobConfig].self, forKey: .knobs) ?? [:]
     }
 }
 
-/// One N4 layout: the ten keys and the four strip blocks.
+/// One N4 layout: the ten keys, the four strip blocks and the four knobs.
 public struct N4Preset: Codable, Equatable {
     public var name: String
     public var keys: [String: ButtonConfig]
     public var strip: [String: StripBlockConfig]
+    public var knobs: [String: KnobConfig]
 
-    public init(name: String, keys: [String: ButtonConfig], strip: [String: StripBlockConfig]) {
+    public init(name: String, keys: [String: ButtonConfig], strip: [String: StripBlockConfig],
+                knobs: [String: KnobConfig] = [:]) {
         self.name = name
         self.keys = keys
         self.strip = strip
+        self.knobs = knobs
     }
 
-    private enum CodingKeys: String, CodingKey { case name, keys, strip }
+    private enum CodingKeys: String, CodingKey { case name, keys, strip, knobs }
 
+    /// A preset without `knobs` reads as none here; the section fills it from the deck's (`KnobsKey`).
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         name = try c.decode(String.self, forKey: .name)
         keys = try c.decodeIfPresent([String: ButtonConfig].self, forKey: .keys) ?? [:]
         strip = try c.decodeIfPresent([String: StripBlockConfig].self, forKey: .strip) ?? [:]
+        knobs = try c.decodeIfPresent([String: KnobConfig].self, forKey: .knobs) ?? [:]
+    }
+}
+
+/// Whether a preset in the file has a `knobs` key of its own (even `{}`). Those without one get the deck's knobs:
+/// a file from before knobs moved into presets.
+private struct KnobsKey: Decodable {
+    let present: Bool
+
+    private enum CodingKeys: String, CodingKey { case knobs }
+
+    init(from decoder: Decoder) throws {
+        present = try decoder.container(keyedBy: CodingKeys.self).contains(.knobs)
+    }
+}
+
+/// Gives every preset in `presets` without a `knobs` key of its own the deck's `knobs` (2.1.0 files).
+private func fillKnobs<K: CodingKey, P>(_ presets: inout [P], _ knobs: WritableKeyPath<P, [String: KnobConfig]>,
+                                        from deck: [String: KnobConfig]?, in c: KeyedDecodingContainer<K>,
+                                        key: K) throws {
+    guard let deck else { return }
+    let present = try c.decode([KnobsKey].self, forKey: key)
+    for index in presets.indices where !present[index].present {
+        presets[index][keyPath: knobs] = deck
     }
 }
 
 // MARK: - Deck sections
 
-/// TreasLin N3. Keys `lcd_1`–`lcd_6`, `btn_1`–`btn_3`; knobs `big`, `small_1`, `small_2`.
+/// TreasLin N3. Keys `lcd_1`–`lcd_6`, `btn_1`–`btn_3`; knobs `big`, `small_1`, `small_2` (per preset).
 public struct N3Section: Codable, Equatable {
     public var brightness: Int
-    public var knobs: [String: KnobConfig]
     public var presets: [N3Preset]
     /// The live preset's name. If no preset has it, the first preset is live.
     public var activePreset: String
 
-    public init(brightness: Int, knobs: [String: KnobConfig], presets: [N3Preset], activePreset: String) {
+    public init(brightness: Int, presets: [N3Preset], activePreset: String) {
         self.brightness = brightness
-        self.knobs = knobs
         self.presets = presets
         self.activePreset = activePreset
     }
@@ -161,6 +195,7 @@ public struct N3Section: Codable, Equatable {
     }
 
     public var buttons: [String: ButtonConfig] { active.buttons }
+    public var knobs: [String: KnobConfig] { active.knobs }
 
     private enum CodingKeys: String, CodingKey {
         case brightness, knobs, buttons, presets
@@ -170,42 +205,48 @@ public struct N3Section: Codable, Equatable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         brightness = try c.decode(Int.self, forKey: .brightness)
-        knobs = try c.decode([String: KnobConfig].self, forKey: .knobs)
-        if let presets = try c.decodeIfPresent([N3Preset].self, forKey: .presets) {
+        if var presets = try c.decodeIfPresent([N3Preset].self, forKey: .presets) {
             try checkPresetNames(presets.map(\.name), in: c, key: .presets)
+            try fillKnobs(&presets, \.knobs, from: try c.decodeIfPresent([String: KnobConfig].self, forKey: .knobs),
+                          in: c, key: .presets)
             self.presets = presets
             activePreset = try c.decodeIfPresent(String.self, forKey: .activePreset) ?? presets[0].name
         } else {
-            // Before presets, `buttons` was required, as it still is in this form.
-            presets = [N3Preset(name: "Default", buttons: try c.decode([String: ButtonConfig].self, forKey: .buttons))]
+            // Before presets, `buttons` and `knobs` were required, as they still are in this form.
+            presets = [N3Preset(name: "Default", buttons: try c.decode([String: ButtonConfig].self, forKey: .buttons),
+                                knobs: try c.decode([String: KnobConfig].self, forKey: .knobs))]
             activePreset = "Default"
+        }
+        // The N3 has no screen above its knobs to show a list's pick.
+        for preset in presets {
+            if let knob = preset.knobs.first(where: { $0.value.list != nil })?.key {
+                throw DecodingError.dataCorruptedError(forKey: .presets, in: c,
+                                                       debugDescription: "knob \(knob) has a list: lists need the N4's strip")
+            }
         }
     }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(brightness, forKey: .brightness)
-        try c.encode(knobs, forKey: .knobs)
         try c.encode(presets, forKey: .presets)
         try c.encode(activePreset, forKey: .activePreset)
     }
 }
 
 /// MiraBox N4. Keys `key_1`–`key_5` (top row), `key_6`–`key_10` (bottom row); knobs `knob_1`–`knob_4`
-/// left → right; strip blocks `"1"`–`"4"` left → right.
+/// left → right; strip blocks `"1"`–`"4"` left → right. Keys, knobs and strip per preset.
 public struct N4Section: Codable, Equatable {
     public var brightness: Int
-    public var knobs: [String: KnobConfig]
     public var swipe: ActionConfig?
     public var lockPhoto: LockPhotoConfig?
     public var presets: [N4Preset]
     /// The live preset's name. If no preset has it, the first preset is live.
     public var activePreset: String
 
-    public init(brightness: Int, knobs: [String: KnobConfig], swipe: ActionConfig?, lockPhoto: LockPhotoConfig?,
+    public init(brightness: Int, swipe: ActionConfig?, lockPhoto: LockPhotoConfig?,
                 presets: [N4Preset], activePreset: String) {
         self.brightness = brightness
-        self.knobs = knobs
         self.swipe = swipe
         self.lockPhoto = lockPhoto
         self.presets = presets
@@ -219,6 +260,7 @@ public struct N4Section: Codable, Equatable {
 
     public var keys: [String: ButtonConfig] { active.keys }
     public var strip: [String: StripBlockConfig] { active.strip }
+    public var knobs: [String: KnobConfig] { active.knobs }
 
     private enum CodingKeys: String, CodingKey {
         case brightness, keys, knobs, strip, swipe, presets
@@ -229,17 +271,19 @@ public struct N4Section: Codable, Equatable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         brightness = try c.decode(Int.self, forKey: .brightness)
-        knobs = try c.decodeIfPresent([String: KnobConfig].self, forKey: .knobs) ?? [:]
+        let deckKnobs = try c.decodeIfPresent([String: KnobConfig].self, forKey: .knobs)
         swipe = try c.decodeIfPresent(ActionConfig.self, forKey: .swipe)
         lockPhoto = try c.decodeIfPresent(LockPhotoConfig.self, forKey: .lockPhoto)
-        if let presets = try c.decodeIfPresent([N4Preset].self, forKey: .presets) {
+        if var presets = try c.decodeIfPresent([N4Preset].self, forKey: .presets) {
             try checkPresetNames(presets.map(\.name), in: c, key: .presets)
+            try fillKnobs(&presets, \.knobs, from: deckKnobs, in: c, key: .presets)
             self.presets = presets
             activePreset = try c.decodeIfPresent(String.self, forKey: .activePreset) ?? presets[0].name
         } else {
             presets = [N4Preset(name: "Default",
                                 keys: try c.decodeIfPresent([String: ButtonConfig].self, forKey: .keys) ?? [:],
-                                strip: try c.decodeIfPresent([String: StripBlockConfig].self, forKey: .strip) ?? [:])]
+                                strip: try c.decodeIfPresent([String: StripBlockConfig].self, forKey: .strip) ?? [:],
+                                knobs: deckKnobs ?? [:])]
             activePreset = "Default"
         }
     }
@@ -247,7 +291,6 @@ public struct N4Section: Codable, Equatable {
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(brightness, forKey: .brightness)
-        try c.encode(knobs, forKey: .knobs)
         try c.encodeIfPresent(swipe, forKey: .swipe)
         try c.encodeIfPresent(lockPhoto, forKey: .lockPhoto)
         try c.encode(presets, forKey: .presets)
@@ -431,13 +474,64 @@ public struct IconTile: Codable, Equatable, Hashable {
     }
 }
 
+/// A knob: a turn and a press, or (N4) a list. A list knob steps through its items as it turns; the strip block
+/// above it shows the pick, and a press of the knob or a tap of the block runs it (docs/design/knob_lists.md).
+/// Its `rotate` and `press` are `none` and never written.
 public struct KnobConfig: Codable, Equatable {
     public var rotate: KnobAction
     public var press: KnobAction
+    public var list: [ButtonConfig]?
 
     public init(rotate: KnobAction, press: KnobAction) {
         self.rotate = rotate
         self.press = press
+        self.list = nil
+    }
+
+    public init(list: [ButtonConfig]) {
+        self.rotate = KnobAction(action: "none")
+        self.press = KnobAction(action: "none")
+        self.list = list
+    }
+
+    private enum CodingKeys: String, CodingKey { case rotate, press, list }
+
+    /// Either `list`, or both `rotate` and `press`: a list with a turn or a press, or a knob with neither, makes the
+    /// file invalid.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        if let list = try c.decodeIfPresent([ButtonConfig].self, forKey: .list) {
+            guard !c.contains(.rotate), !c.contains(.press) else {
+                throw DecodingError.dataCorruptedError(forKey: .list, in: c,
+                                                       debugDescription: "a knob has a list or a turn and a press, not both")
+            }
+            self.init(list: list)
+        } else {
+            self.init(rotate: try c.decode(KnobAction.self, forKey: .rotate),
+                      press: try c.decode(KnobAction.self, forKey: .press))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        if let list {
+            try c.encode(list, forKey: .list)
+        } else {
+            try c.encode(rotate, forKey: .rotate)
+            try c.encode(press, forKey: .press)
+        }
+    }
+
+    /// What New Preset copies from this knob: each half whose action is built in (volume, mute, monitor
+    /// brightness, switch monitor, ZR7: `LockPolicy.builtIns`), the other as `none`. Nil for a list, or when
+    /// neither half is built in (owner, 26/11/2026).
+    public func builtInsOnly() -> KnobConfig? {
+        guard list == nil else { return nil }
+        func kept(_ half: KnobAction) -> KnobAction {
+            LockPolicy.builtIns.contains(half.action) ? half : KnobAction(action: "none")
+        }
+        let copy = KnobConfig(rotate: kept(rotate), press: kept(press))
+        return copy.rotate.action == "none" && copy.press.action == "none" ? nil : copy
     }
 }
 

@@ -1,7 +1,6 @@
 import DeckCore
 
-/// Reading and changing one control in the config: keys, buttons and strip blocks in the live preset, knobs on the
-/// deck. A deck with no section yet gets one on its first edit: one preset, "Default", brightness 75.
+/// Reading and changing one control in the config: keys, buttons, knobs and strip blocks, all in the live preset. A deck with no section yet gets one on its first edit: one preset, "Default", brightness 75.
 extension AppConfig {
 
     public func button(_ deck: DeckKind, _ id: String) -> ButtonConfig? {
@@ -29,11 +28,11 @@ extension AppConfig {
         switch deck {
         case .n4:
             var section = n4 ?? Self.newN4
-            section.knobs[id] = value
+            section.presets[section.liveIndex].knobs[id] = value
             n4 = section
         case .n3:
             var section = n3 ?? Self.newN3
-            section.knobs[id] = value
+            section.presets[section.liveIndex].knobs[id] = value
             n3 = section
         }
     }
@@ -46,9 +45,9 @@ extension AppConfig {
         n4 = section
     }
 
-    static let newN4 = N4Section(brightness: 75, knobs: [:], swipe: .nextPreset, lockPhoto: nil,
+    static let newN4 = N4Section(brightness: 75, swipe: .nextPreset, lockPhoto: nil,
                                  presets: [N4Preset(name: "Default", keys: [:], strip: [:])], activePreset: "Default")
-    static let newN3 = N3Section(brightness: 75, knobs: [:], presets: [N3Preset(name: "Default", buttons: [:])],
+    static let newN3 = N3Section(brightness: 75, presets: [N3Preset(name: "Default", buttons: [:])],
                                  activePreset: "Default")
 }
 

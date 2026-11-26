@@ -4,7 +4,7 @@ import Testing
 @testable import DeckOutKit
 
 private let twoPresets = AppConfig(n4: N4Section(
-    brightness: 75, knobs: [:], swipe: nil, lockPhoto: nil,
+    brightness: 75, swipe: nil, lockPhoto: nil,
     presets: [N4Preset(name: "Work", keys: ["key_1": ButtonConfig(action: "media_next")], strip: [:]),
               N4Preset(name: "Music", keys: [:], strip: [:])],
     activePreset: "Work"))

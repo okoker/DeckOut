@@ -5,7 +5,7 @@ Promote to `TODO.md` when ready to tackle.
 
 Use priority tags: `[P0]` `[P1]` `[P2]` and domain tags: `[security]` `[feature]` `[bug]` `[debt]`
 
-Next free ID: BL-043
+Next free ID: BL-044
 
 ---
 
@@ -119,4 +119,12 @@ Next free ID: BL-043
   --predicate 'process == "kernel" AND (eventMessage CONTAINS "enumerated 0x" OR eventMessage CONTAINS
   "terminateDevice" OR eventMessage CONTAINS "Retries exhausted")' --style compact`; N4 = 0x6602, N3 = 0x5548.
   `DeckManager.swift`, `DeckConnection.swift`, `Daemon.swift` (`tick`, `redrawLive`) (owner, 26/11/2026)
-
+- BL-043 [P2] [debt] Knob lists review minors (fresh opus review of `knob-lists`, deferred 26/11/2026): a list item
+  running a non-executable script shows the problem but no Make Executable button; the "strip block N's own setting
+  is set aside" line prints only at start-up, not on app or swipe reloads (no test); the load-time Accessibility
+  warning and load summary cover only the live preset's knobs, so a `key:` item in another preset warns only when it
+  goes live; T-207 doesn't exercise the agent's `start()` wiring, and no test checks that the agent's `next_preset`
+  save keeps a list; a fresh install's second save makes a `.before-2.2` copy of a file 2.2 wrote (as `.before-app`
+  does); the knob ↔ block mapping is written in four places; `KnobConfig.list` is a public var beside rotate / press
+  that mean nothing for a list. (The fast-spin lag it raised was measured on the deck: redraw median 4 ms.)
+  `Daemon.swift`, `Agent.swift`, `ConfigFile.swift`, `Config.swift` (owner, 26/11/2026)

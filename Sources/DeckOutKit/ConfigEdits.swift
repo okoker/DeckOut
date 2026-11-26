@@ -1,6 +1,8 @@
 import DeckCore
 
-/// Reading and changing one control in the config: keys, buttons, knobs and strip blocks, all in the live preset. A deck with no section yet gets one on its first edit: one preset, "Default" (on the N4 the baseline, `baselineN4`), brightness 75. A section already in the file is never replaced.
+/// Reading and changing one control in the config: keys, buttons, knobs and strip blocks, all in the live preset. A
+/// deck with no section yet gets one on its first edit: one preset, "Default" (on the N4 the baseline, `baselineN4`),
+/// brightness 75. A section already in the file is never replaced.
 extension AppConfig {
 
     public func button(_ deck: DeckKind, _ id: String) -> ButtonConfig? {

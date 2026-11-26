@@ -1,38 +1,26 @@
 # Progress
 
-## Session Handover — 26/11/2026 (evening): knob lists built on `knob-lists`; deck check half done
+## Session Handover — 26/11/2026 (late): DeckOut 2.2.0 released; this Mac still on 2.1.0
 
 ### What was done
-- Branch `knob-lists`, 10 commits on 37cb921 (c766780 … 8ce43dd), not pushed or merged: knobs per preset, N4 knob
-  lists, `.before-2.2`, picks to the app, list editor, BL-035, review fixes. `swift test` 267/267. Plan
-  `docs/superpowers/plans/2026-11-26-deckout-knob-lists.md`; ledger (rulings, deferred minors)
-  `.superpowers/sdd/2026-11-26-deckout-knob-lists/progress.md`: Tasks 1–8 done, Task 9 (on the deck) half done.
-- On the deck (DeckOut Dev, sample 2.1.0 file): the conversion held (knobs 1 and 4 volume on both presets, swipes
-  fine); knob 1 as a list of 5 sites: 29 turns, redraw median 4 ms (max 65), 5 block taps opened the sites; a press
-  of knob 1 opens the pick too (as designed, owner checked).
-
-### Uncommitted state
-- `docs/BACKLOG.md`: BL-042 (both decks dropping; owner suspects the agent / app). `docs/TODO.md`, this section.
+- Knob lists fast-forwarded into `main`, pushed (37cb921..bd611ab), branch `knob-lists` deleted. After the owner's
+  deck check, New Preset on the N4 gives a fixed baseline (f1c2e5f); KI-018 (small volume steps, speaker-dependent);
+  the deferred review minors are BL-043. v2.2.0 published from 7052845 (run line below).
+- On the deck (DeckOut Dev, sample file): the conversion held; a 5-site list on knob 1 (29 turns, redraw median 4 ms)
+  and on knob 2 (turns both ways, presses and block taps opened the picks); owner: "working as it should".
 
 ### Gotchas
-- A slow N4 looks like a broken build: at 12 Mbps every press is a babble error and a reset (dead knobs, constant
-  redraws, the window jumping N4 → N3). It fell at 17:53 under 2.1.0 alone. Before any deck test check both decks'
-  `USBSpeed` is 3 (`ioreg -a -p IOUSB -l -r -c IOUSBHostDevice`); fix: re-plug.
-- Quitting DeckOut Dev leaves its agent running: both agents drew both decks 18:15–18:21 (layouts flipping). Stop it
-  with `"~/Applications/DeckOut Dev.app/Contents/MacOS/DeckOut" --unregister`.
-- The sample file is sparse on purpose (one Notes key per deck); the owner read it as "everything gone". Say so first.
-
-### Volume on a small step: KI-018
-- The sample's knob 1 (volume, step 2) stalling on the Jabra is KI-018 (owner: steps depend on the speaker). Knob 1
-  muting / moving the volume was the sample file's own setting; New Preset no longer carries it (baseline below).
+- A slow N4 looks like a broken build: at 12 Mbps every press is a babble error and a reset. Before any deck test
+  check both decks' `USBSpeed` is 3 (`ioreg -p IOUSB -l -r -c IOUSBHostDevice`); fix: re-plug.
+- Quitting DeckOut Dev leaves its agent running, and both agents draw both decks. Stop it with
+  `"~/Applications/DeckOut Dev.app/Contents/MacOS/DeckOut" --unregister`.
 
 ### Environment state
-- The signed DeckOut 2.1.0 runs the decks again (owner, 26/11/2026 evening). DeckOut Dev: still installed in
-  `~/Applications`, stopped and removed by the owner; opening it registers its agent again (stop the signed one
-  first). `~/.deckout-dev`: the sample + knob 1 list; site icons in
-  `site-icons/`; `.before-2.2` and `.before-app` there. Both decks at 480 Mbps since the 18:40 re-plug.
-- Cleanup left (owner, 26/11/2026: lots of it): `make uninstall-dev` and `~/.deckout-dev` when the deck check is done;
-  the scratchpad's `icons-dl/`; the plan's workspace `.superpowers/sdd/2026-11-26-deckout-knob-lists/` after merge.
+- The signed DeckOut 2.1.0 runs the decks; the owner installs 2.2.0 here (owner, 26/11/2026). DeckOut Dev: still in
+  `~/Applications`, its agent removed by the owner.
+- Cleanup waiting for the owner's go: `make uninstall-dev`, `~/.deckout-dev` (the sample, the site lists, icons), the
+  plan's workspace `.superpowers/sdd/2026-11-26-deckout-knob-lists/` (its minors are BL-043), an earlier session
+  scratchpad's `icons-dl/`.
 - Rollback copies to delete from 28/11/2026 (owner's go): the retired 1.0 plist and program,
   `~/.config/vsd.bak-2026-11-21`, `~/.config/vsd-dev`. Developer ID certificate expires 01/02/2027 (BL-039).
 
@@ -43,19 +31,18 @@
   reconnecting at the lock screen shows its layout ≤5 s; an unplug mid-redraw logs up to 15 warnings.
 
 ### What's next
-1. Task 9's rest: press knob 1; swipe away and back (pick kept); lock / unlock; "On the deck" follows; half-type a
-   URL then − (T-219 by hand); New Preset gives the baseline; N3 big knob (no N3 input logged yet). Owner to
-   say whether block 1 kept showing CPU after Pick from a list (the log: blanked at once, "Drew 1 of 14").
-2. Resume: check both decks at 480 Mbps and no agent running, open DeckOut Dev (registers its agent). End the dev
-   session with `make uninstall-dev` (go); the owner opens DeckOut → Start Again.
-3. Owner picks from the deferred review minors (ledger); merge `knob-lists` (go); release 2.2.0 (each step a go;
-   `releasing.md` has the rollback note).
-4. BL-042 control run (DeckOut stopped, decks plugged in for hours). Second Mac (macOS 26), macOS 27 call, BL-029.
+1. The owner updates this Mac to 2.2.0 (quit DeckOut, replace from the image, open once). Worth a look after: the
+   agent restarts on 2.2.0 within 15 s with Accessibility kept (BL-039: this agent changed); New Preset on the N4
+   gives the baseline (delete it after); `~/.deckout/config.json.before-2.2` appears at the first save.
+2. Cleanup above (go).
+3. BL-042 control run (DeckOut stopped, decks plugged in for hours). Second Mac (macOS 26), macOS 27 call, BL-029.
 
 ## Current Status
-DeckOut 2.1.0 (Developer ID signed, notarised, released 26/11/2026; 2.0.0 on 21/11/2026) drives the TreasLin N3 and
-the MiraBox N4 from `/Applications` through its own agent, with its settings in `~/.deckout`; DeckOut Dev is removed
-and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's second Mac (macOS 26) is next.
+DeckOut 2.2.0 (Developer ID signed, notarised, released 26/11/2026; 2.1.0 earlier the same day, 2.0.0 on 21/11/2026)
+drives the TreasLin N3 and the MiraBox N4 from `/Applications` through its own agent, with its settings in
+`~/.deckout`; this Mac runs 2.1.0 until the owner installs 2.2.0; the 1.0 hand install is retired. Tested on macOS 15
+on this Mac; the owner's second Mac (macOS 26) is next.
+26/11/2026 — Release 2.2.0 from 7052845 (`knob-lists` fast-forwarded into `main`): `swift test` 268/268, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.203128), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 88bc431a…; v2.2.0 published (no candidate), downloaded back with `gh`: same sha256, accepted with a quarantine flag set by hand. Not run: the install on this Mac (owner), the update across builds (BL-039), New Preset in the real app.
 26/11/2026 — New-preset baseline on `knob-lists`: `swift test` 268/268 (new T-220; T-211 rewritten), watched; both failed first (knob 1's volume and ZR7 came over into a new preset; a fresh N4's Default was blank). T-128 and T-157 assumed a blank block 2 in a fresh N4: their setup moved (block 3; an N4 already in the file), their checks unchanged. Not run: New Preset in the real app.
 26/11/2026 — Knob lists on `knob-lists` (c766780..533491a): `swift test` 265/265 (242 + new T-195–T-217), watched; each new behaviour test failed first (T-201 on the missing copy, T-215 on the missing block image, T-217 on no push after a reload, the rest on the missing API); `make app` (build 261126.174339) passed T-107. Review fixes (2540305): `swift test` 267/267 (new T-218, T-219, both failed first: the deck jumped back to item 3, the item editor kept its identity). Not run: DeckOut Dev on the decks (Task 9).
 26/11/2026 — Release 2.1.0 from da7f66b: `swift test` 242/242, watched; `make app` and `make app VARIANT=release` OK; `make signed VARIANT=release` (build 261126.124509), T-193 OK on the Developer ID build, `spctl` "Unnotarized Developer ID" before notarising; `make notarize` Accepted, stapled, `source=Notarized Developer ID`, sha256 cc4c07ac…; v2.1.0 published (no candidate), downloaded back: same sha256, accepted with the quarantine flag set. This Mac: dry run first (13 paths under `/.config/vsd/`, 22 image paths, none missing), then `~/.config/vsd` → `~/.deckout`, paths rewritten (0 `vsd` left, all 22 present, 0600), `/Applications/DeckOut.app` replaced from the image while the 2.0.0 agent ran (same designated requirement), app opened: the agent restarted on 2.1.0 about a second later (launchd runs 1 → 2, last exit 0, the same pid 2 minutes on), read `~/.deckout` and drew 6 of 6 and 14 of 14 with the lock photo from the new folder; BTM showed the item "enabled, allowed". AMFI's "Constraint not matched" logged at the same second is unrelated (15 times in 3 hours, before and after). Owner, after: "all working as intended".
@@ -80,15 +67,14 @@ and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's se
 19/11/2026 — DeckOut plan 2 on `deckout-2-app-shell`: `swift test` 127/127 (new T-095–T-118), watched; `scripts/check-bundle.sh` on both variants; two test sessions on this Mac without the owner (registration, foreign client refused, update restart, both decks drawn in the real window via `--snapshot`); plug / unplug and key presses not checked (owner, at UAT).
 
 ## Active Work
-- Knob lists and per-preset knobs on branch `knob-lists`: built and tested; on the deck next (plan Task 9).
 - Phase 7 close-out: the second-Mac install (macOS 26), then the README's tested versions. Backlog: `docs/BACKLOG.md`.
 
 ## Completed
 
-### 26/11/2026 — An N4 knob can pick from a list of sites or apps; every preset has its own knobs
+### 26/11/2026 — DeckOut 2.2.0: an N4 knob can pick from a list of sites or apps; every preset has its own knobs
 - **Reference:** `docs/design/knob_lists.md`, `docs/REQUIREMENTS.md` (Structure; Knobs; Saving; Daemon Behaviour;
   Lock Behaviour), `docs/reference/n4.md` (Config; Knob lists), `docs/reference/app.md` (Editing: Knob lists; Presets),
-  README; plan `docs/superpowers/plans/2026-11-26-deckout-knob-lists.md` (gitignored); T-195–T-219; BL-035 (fixed),
+  README; plan `docs/superpowers/plans/2026-11-26-deckout-knob-lists.md` (gitignored); T-195–T-220; release v2.2.0; BL-035 (fixed),
   BL-041 (website icons, deferred).
 - **For a person:** in DeckOut, a knob's Turn can be "Pick from a list": websites, apps, anything a key can do, each
   with its own icon. Turning the knob steps through them and the strip block above it shows the pick; pressing the
@@ -103,9 +89,12 @@ and the 1.0 hand install retired. Tested on macOS 15 on this Mac; the owner's se
   (ZR7 and the network script stay in the owner's file), not the live preset's built-in knobs, which would carry a knob
   set for one preset (like the sample's knob 1 on volume, read as interference) into every new one; a fresh install never overwrites a config. (CL calls:) the pick lives in memory per preset, wraps both ways; a reload repeats it to
   the app (T-217).
+- **Decision (owner, 26/11/2026, release):** 2.2.0, not 2.1.1: the file format changes, and the `.before-2.2` copy
+  and the notes say 2.2; published without a candidate; the owner updates this Mac.
 - **Checked:** run line above; the window drawn against the owner-approved mock (T-195, T-216). A fresh opus review of
   the branch: no critical or important code issues; two minors re-graded important and fixed test-first (T-218,
-  T-219); the other minors are in the ledger. Not yet: on the deck.
+  T-219); the other minors are BL-043. On the deck: the handover above. Not checked: lock / unlock with a list knob,
+  the N3 big knob, New Preset in the real app.
 
 ### 26/11/2026 — DeckOut 2.1.0 keeps its settings in `~/.deckout`; 1.0's names are gone where nothing needs them
 - **Reference:** `docs/reference/app.md` (variants table; First run and removal), `docs/REQUIREMENTS.md`
